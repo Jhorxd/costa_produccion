@@ -39,7 +39,10 @@ class InventoryController extends Controller
     {
         return view('inventory::inventory.index');
     }
-
+    public function indexWarehouses()
+    {
+        return view('inventory::warehouses.warehousesList');
+    }
     public function columns()
     {
         return [

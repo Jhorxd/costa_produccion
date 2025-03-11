@@ -149,6 +149,7 @@ Vue.component('inventory-review-index', require('@viewsModuleInventory/inventory
 
 //
 Vue.component('tenant-inventory-report', require('../../modules/Inventory/Resources/assets/js/inventory/reports/index.vue'));
+Vue.component('tenant-inventory-warehouse-list',require('../../modules/Inventory/Resources/assets/js/warehouses/warehouseList.vue')); //jackgo
 //
 
 

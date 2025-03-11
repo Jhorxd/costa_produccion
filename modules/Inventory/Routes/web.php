@@ -140,6 +140,7 @@ if ($hostname) {
                  * inventory/move-multilple
                  */
                 Route::get('/', 'InventoryController@index')->name('inventory.index');
+                Route::get('/warehouses', 'InventoryController@indexWarehouses')->name('inventory.index2');
                 Route::get('records', 'InventoryController@records');
                 Route::get('columns', 'InventoryController@columns');
                 Route::get('tables', 'InventoryController@tables');
