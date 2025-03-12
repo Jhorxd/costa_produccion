@@ -106,16 +106,7 @@
                     <table class="table">
                         <thead>
                             <slot name="heading"></slot>
-                        </thead>
-                        <!-- <tbody>
-                        <tr>
-                            <td>Ana</td>
-                            <td>25</td>
-                            <td>25</td>
-                            <td>25</td>
-                            <td>325</td>                            
-                        </tr>
-                        </tbody>-->
+                        </thead>                        
                          <tbody>
                             <slot
                                 v-for="(row, index) in records"
@@ -127,14 +118,14 @@
                     <div>
                         <slot name="jacksito"></slot>
                         <p>..</p>
-                        <!-- <el-pagination
+                        <el-pagination
                             @current-change="getRecords"
                             layout="total, prev, pager, next"
                             :total="pagination.total"
                             :current-page.sync="pagination.current_page"
                             :page-size="pagination.per_page"
                         >
-                        </el-pagination>-->
+                        </el-pagination>
                     </div>
                 </div>
             </div>
@@ -225,7 +216,7 @@ export default {
         toggleInformation() {
             this.isVisible = !this.isVisible;
         },
-        customIndex(index) {
+        customIndex(index) {           
             return (
                 this.pagination.per_page * (this.pagination.current_page - 1) +
                 index +
@@ -235,13 +226,25 @@ export default {
         getRecords() {
             this.loading_submit = true;
             return this.$http
-                .get(`/${this.resource}/records?${this.getQueryParameters()}`)
+                .get(`/warehouses/recordsCustom?${this.getQueryParameters()}`)
                 .then(response => {
                     this.records = response.data.data;
-                    this.pagination = response.data.meta;
+                    this.pagination = {
+                    current_page: response.data.current_page,
+                    from: response.data.from,
+                    lastPage: response.data.last_page,
+                    path: response.data.path,
+                    perPage: response.data.per_page,
+                    to: response.data.to,
+                    total: response.data.total
+                    };
+                    console.log( this.pagination);
+                    //this.pagination = response.data.meta;
+                    //console.log(JSON.stringify(response.data.meta))
                     this.pagination.per_page = parseInt(
-                        response.data.meta.per_page
+                        response.data.per_page
                     );
+                    //console.log(JSON.stringify (response.data.meta.per_page));
                 })
                 .catch(error => {})
                 .then(() => {
@@ -254,6 +257,7 @@ export default {
             }
             if (this.productType == 'PRODUCTS') {
                 // Debe listar solo productos
+
                 this.search.type = this.productType;
             }
             return queryString.stringify({
