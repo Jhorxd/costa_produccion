@@ -24,11 +24,40 @@ class WarehouseController extends Controller
     }
 
     public function records(Request $request)
-    {
+    {   
         $records = Warehouse::where($request->column, 'like', "%{$request->value}%")
                             ->orderBy('description');
-
         return new WarehouseCollection($records->paginate(config('tenant.items_per_page')));
+    }
+
+
+    
+    public function recordsByCustomFields(Request $request)
+    {   
+        $records = Warehouse::select(
+            'warehouses.description as warehouse_description',
+            'establishments.description as establishment_description',
+            'warehouses.address',
+            'length', 'width', 'height', 'responsible'
+        )
+        ->join('establishments', 'warehouses.establishment_id', '=', 'establishments.id')
+        ->paginate(config('tenant.items_per_page'));
+    
+        $records->getCollection()->transform(function ($record) {
+        return [
+            'warehouse_description' => $record->warehouse_description,
+            'establishment_description' => $record->establishment_description,
+            'address' => $record->address,
+            'dimensions' => [
+                'length' => $record->length,
+                'width' => $record->width,
+                'height' => $record->height,
+            ],
+            'responsible' => $record->responsible,
+        ];
+       });
+    
+       return $records;
     }
 
     public function record($id)
