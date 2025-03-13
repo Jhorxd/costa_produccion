@@ -19,7 +19,9 @@ class WarehouseController extends Controller
     public function columns()
     {
         return [
-            'description' => 'Descripción'
+            'description' => 'Nombre',
+            'responsible' => 'Responsable',
+            'establishment_description' => 'Sucursal',
         ];
     }
 
@@ -40,9 +42,20 @@ class WarehouseController extends Controller
             'warehouses.address',
             'length', 'width', 'height', 'responsible'
         )
-        ->join('establishments', 'warehouses.establishment_id', '=', 'establishments.id')
-        ->paginate(config('tenant.items_per_page'));
-    
+        ->join('establishments', 'warehouses.establishment_id', '=', 'establishments.id');
+        if ($request->has(['column', 'value']) && !empty($request->column) && !empty($request->value)) {
+            if (in_array($request->column, ['description', 'address', 'length', 'width', 'height', 'responsible'])) {
+                $column = "warehouses.{$request->column}";
+            } elseif ($request->column === 'establishment_description') {
+                $column = "establishments.description";
+            } else {
+                $column = null; // Para evitar SQL injection
+            }
+            if ($column) {
+                $records->where($column, 'like', "%{$request->value}%");
+            }
+        }
+        $records = $records->paginate(config('tenant.items_per_page'));    
         $records->getCollection()->transform(function ($record) {
         return [
             'warehouse_description' => $record->warehouse_description,

@@ -45,7 +45,7 @@
                         <td>{{ row.responsible}}</td>
                         <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar da</button>
+                            <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
                         </td>
                         <!-- <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
@@ -89,12 +89,11 @@
           return {
               title: null,
               showDialog: false, 
-              resource: 'categories',
+              resource: 'warehouses',
               recordId: null,
           }
       },
-      created() {
-          this.$message.error("como vamos");          
+      created() {                    
           this.title = 'Listado Almacen'
 
           this.$http.get('/warehouses/recordsCustom')
@@ -105,14 +104,12 @@
     })
     .catch(error => {
         console.error("Error al obtener los datos:", error);
-    });
-
-          
+    });          
       },
       methods: { 
           clickCreate(recordId = null) {
             this.recordId = recordId
-            this.showDialog = true            
+            this.showDialog = true          
           }, 
           clickDelete(id) {                
                 this.destroy(`/warehouses/destroy/${id}`).then(() =>

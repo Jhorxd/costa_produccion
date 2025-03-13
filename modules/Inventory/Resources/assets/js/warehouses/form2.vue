@@ -162,7 +162,7 @@
                 this.initForm()
             },
             handleEstablishmentChange(value) {
-                alert("el id del establcimiento es "+ value);
+                //alert("el id del establcimiento es "+ value);
                 // console.log("Establecimiento seleccionado:", value);
             },
         }

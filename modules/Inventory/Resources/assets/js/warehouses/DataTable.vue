@@ -204,10 +204,11 @@ export default {
     },
     async mounted() {
         let column_resource = _.split(this.resource, "/");
+
         await this.$http
             .get(`/${_.head(column_resource)}/columns`)
             .then(response => {
-                this.columns = response.data;
+                this.columns = response.data;                
                 this.search.column = _.head(Object.keys(this.columns));
             });
         await this.getRecords();
@@ -224,7 +225,7 @@ export default {
             );
         },
         getRecords() {
-            this.loading_submit = true;
+            this.loading_submit = true;            
             return this.$http
                 .get(`/warehouses/recordsCustom?${this.getQueryParameters()}`)
                 .then(response => {
