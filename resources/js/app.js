@@ -132,6 +132,9 @@ Vue.component('tenant-payment-method-index', require('./views/tenant/payment_met
 
 
 // Modules
+Vue.component('location-index', require('../../modules/Inventory/Resources/assets/js/locations/index.vue'));
+Vue.component('location-form-create', require('../../modules/Inventory/Resources/assets/js/locations/form.vue'));
+Vue.component('location-form-edit', require('../../modules/Inventory/Resources/assets/js/locations/edit.vue'));
 Vue.component('inventory-index', require('../../modules/Inventory/Resources/assets/js/inventory/index.vue'));
 Vue.component('inventory-transfers-index', require('../../modules/Inventory/Resources/assets/js/transfers/index.vue'));
 Vue.component('warehouses-index', require('../../modules/Inventory/Resources/assets/js/warehouses/index.vue'));

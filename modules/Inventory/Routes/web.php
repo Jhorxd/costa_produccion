@@ -176,9 +176,23 @@ if ($hostname) {
                     Route::get('records', 'ReportInventoryController@records');
                     Route::post('export', 'ReportInventoryController@export');
                 });
-
-
             });
+
+            Route::prefix('locations')->group(function () {
+                Route::get('/', 'InventoryController@location_index')->name('locations.index');
+                Route::get('create', 'InventoryController@create')->name('locations.create');
+                Route::post('/', 'InventoryController@submit')->name('locations.submit');
+                Route::get('records', 'InventoryController@list')->name('locations.list');
+                Route::get('columns', 'InventoryController@locationColumns')->name('locations.locationColumns');
+                Route::get('getTypesLocation', 'InventoryController@getTypes')->name('locations.getTypesLocation');
+                Route::get('/{id}', 'InventoryController@show');
+                Route::put('/{id}', 'InventoryController@update');
+                Route::put('/positions/{id}', 'InventoryController@updatePositions');
+                Route::get('/edit/{id}', 'InventoryController@edit')->name('locations.edit');
+                Route::delete('{id}', 'InventoryController@destroy');
+            });
+
+            Route::get('/listWarehouses', 'InventoryController@warehouses')->name('locations.warehouses');
 
             Route::prefix('reports')->group(function () {
                 Route::get('inventory', 'ReportInventoryController@index')->name('reports.inventory.index');

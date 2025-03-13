@@ -27,12 +27,18 @@ use Modules\Inventory\Http\Requests\InventoryRequest;
 use Modules\Inventory\Http\Resources\InventoryResource;
 use Modules\Inventory\Http\Resources\InventoryCollection;
 use App\Imports\StockImport;
+use App\Models\Tenant\User;
+use App\Models\Tenant\Warehouse as TenantWarehouse;
 use Maatwebsite\Excel\Excel;
+use Modules\Inventory\Http\Requests\LocationRequest;
 use Modules\Inventory\Http\Requests\RemoveRequest;
-
+use Modules\Inventory\Models\InventoryWarehouseLocation;
+use Modules\Inventory\Models\WarehouseLocationPosition;
+use Modules\Inventory\Models\WarehouseLocationType;
 
 class InventoryController extends Controller
 {
+    protected $location;
     use InventoryTrait;
 
     public function index()
@@ -886,5 +892,237 @@ class InventoryController extends Controller
             'success' => true,
             'message' => 'Stock regularizado'
         ];
+    }
+
+    public function location_index()
+    {
+        $locationTypes = WarehouseLocationType::all();
+        return view('inventory::locations.index', compact('locationTypes'));
+    }
+
+    public function getTypes() {
+        $locationTypes = WarehouseLocationType::all();
+        if (!$locationTypes->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => $locationTypes
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontraron tipos de ubicación.'
+            ], 404);
+        }
+    }
+
+    public function create()
+    {
+        return view('inventory::locations.form');
+    }
+
+    public function submit(LocationRequest $request)
+    {
+        DB::connection('tenant')->transaction(function () use ($request) {
+            $data = $request->all();
+            
+            $this->location = new InventoryWarehouseLocation();
+            $this->location->fill($data);
+            $this->location->warehouse_id = $data['warehouse_id'];
+            $this->location->save();
+
+            // Crear posiciones basadas en filas y columnas
+            foreach ($data['positions'] as $positionData) {
+                $this->location->positions()->create([
+                    'row' => $positionData['row'],
+                    'column' => $positionData['column'],
+                    'status' => $positionData['status'] // Estado enviado desde el frontend
+                ]);
+            }
+        });
+        
+        return [
+            'success' => true,
+            'message' => 'Ubicación registrada correctamente',
+            'data' => [
+                'id' => $this->location->id
+            ],
+        ];
+    }
+
+    public function list(Request $request)
+    {
+        $query = InventoryWarehouseLocation::query();
+
+        // Aplicar filtros si existen
+        if ($request->has('column') && $request->has('value')) {
+            $query->where($request->column, 'like', '%' . $request->value . '%');
+        }
+
+        // Paginación
+        $records = $query->paginate(10);
+
+        return response()->json([
+            'data' => $records->items(),
+            'meta' => [
+                'total' => $records->total(),
+                'per_page' => $records->perPage(),
+                'current_page' => $records->currentPage(),
+                'last_page' => $records->lastPage(),
+            ],
+        ]);
+    }
+
+    public function locationColumns()
+    {
+        return response()->json([
+            'name' => 'Nombre',
+            'code' => 'Código'
+        ]);
+    }
+
+    public function show($id)
+    {
+        $location = InventoryWarehouseLocation::with('positions')->find($id);
+        if ($location) {
+            return response()->json([
+                'success' => true,
+                'data' => $location,
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ubicación no encontrada.',
+            ], 404);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        DB::transaction(function () use ($request, $id) {
+            $location = InventoryWarehouseLocation::find($id);
+            if (!$location) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ubicación no encontrada.',
+                ], 404);
+            }
+
+            $location->update($request->only(['name', 'code', 'status', 'type_id', 'rows', 'columns', 'maximum_stock']));
+
+            $currentRows = $location->positions()->pluck('row')->unique();
+            $currentColumns = $location->positions()->pluck('column')->unique();
+
+            if ($request->has('positions')) {
+                $updatedRows = collect();
+                $updatedColumns = collect();
+
+                foreach ($request->positions as $positionData) {
+                    $location->positions()
+                        ->updateOrCreate(
+                            [
+                                'row' => $positionData['row'],
+                                'column' => $positionData['column']
+                            ],
+                            ['status' => $positionData['status']]
+                        );
+
+                    $updatedRows->push($positionData['row']);
+                    $updatedColumns->push($positionData['column']);
+                }
+
+                $rowsToDelete = $currentRows->diff($updatedRows->unique());
+                if ($rowsToDelete->isNotEmpty()) {
+                    $location->positions()->whereIn('row', $rowsToDelete)->delete();
+                }
+
+                $columnsToDelete = $currentColumns->diff($updatedColumns->unique());
+                if ($columnsToDelete->isNotEmpty()) {
+                    $location->positions()->whereIn('column', $columnsToDelete)->delete();
+                }
+            } else {
+                $location->positions()->delete();
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ubicación y posiciones actualizadas correctamente.',
+        ]);
+    }
+
+    public function updatePositions(Request $request, $id)
+    {
+        $location = InventoryWarehouseLocation::find($id);
+        if ($location) {
+            // Eliminar las posiciones existentes
+            WarehouseLocationPosition::where('location_id', $id)->delete();
+
+            // Crear las nuevas posiciones
+            foreach ($request->positions as $position) {
+                WarehouseLocationPosition::create([
+                    'location_id' => $id,
+                    'row' => $position['row'],
+                    'column' => $position['column'],
+                    'status' => $position['status'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Posiciones actualizadas correctamente.',
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ubicación no encontrada.',
+            ], 404);
+        }
+    }
+
+    public function edit($id)
+    {
+        return view('inventory::locations.edit', [
+            'id' => $id,
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        DB::transaction(function () use ($id) {
+            $location = InventoryWarehouseLocation::find($id);
+            if (!$location) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ubicación no encontrada.',
+                ], 404);
+            }
+
+            $location->positions()->delete();
+
+            $location->delete();
+
+        });
+        return response()->json([
+            'success' => true,
+            'message' => 'Ubicación eliminada correctamente.',
+        ]);
+    }
+
+    public function warehouses(){
+        $warehouses = TenantWarehouse::all();
+
+        if(!$warehouses->isEmpty()){
+            return response()->json([
+                'success' => true,
+                'message' => 'Almacenes encontrados correctamente',
+                'data' => $warehouses
+            ]);
+        }else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Almacenes no encontrados'
+            ]);
+        }
+        
     }
 }
