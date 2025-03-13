@@ -23,6 +23,7 @@ if ($hostname) {
                 Route::get('/', 'WarehouseController@index')->name('warehouses.index');
                 Route::get('records', 'WarehouseController@records');
                 Route::get('recordsCustom', 'WarehouseController@recordsByCustomFields');
+                Route::delete('destroy/{warehouse}', 'WarehouseController@destroy');
                 Route::get('columns', 'WarehouseController@columns');
                 Route::get('tables', 'WarehouseController@tables');
                 Route::get('record/{warehouse}', 'WarehouseController@record');

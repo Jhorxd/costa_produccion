@@ -36,12 +36,12 @@
                         <td>
                             <p>Longitud {{ row.dimensions.length}}</p>
                             <p>Ancho {{ row.dimensions.width}}</p>
-                            <p>Altura {{ row.dimensions.height}}</p>                        
+                            <p>Altura {{ row.dimensions.height}}</p>                                           
                         </td>
                         <td>{{ row.responsible}}</td>
                         <td class="text-right">
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info" >Editar</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-danger">Eliminar da</button>
+                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
+                            <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar da</button>
                         </td>
                         <!-- <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
@@ -71,10 +71,12 @@
   import DataTable from './DataTable.vue'
   //import CategoryForm from './form.vue' 
   //import DataTable from '../../../../../../../resources/js/components/DataTable.vue'
+  import {deletable} from '../../../../../../resources/js/mixins/deletable'
   //import {deletable} from '../../../../../../../resources/js/mixins/deletable'
 
+
   export default {
-      //mixins: [deletable],
+      mixins: [deletable],
       components: {DataTable},
       data() {
           return {
@@ -102,13 +104,15 @@
       },
       methods: { 
           clickCreate(recordId = null) {
-              this.recordId = recordId
-              this.showDialog = true
+            alert("dato "+ recordId);
+
+              /*this.recordId = recordId
+              this.showDialog = true*/
           }, 
-          clickDelete(id) {
-              this.destroy(`/${this.resource}/${id}`).then(() =>
-                  this.$eventHub.$emit('reloadData')
-              )
+          clickDelete(id) {                
+                this.destroy(`/warehouses/destroy/${id}`).then(() =>
+                    this.$eventHub.$emit('reloadData')
+                )             
           }
       }
   }

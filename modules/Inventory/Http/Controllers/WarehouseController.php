@@ -35,7 +35,7 @@ class WarehouseController extends Controller
     public function recordsByCustomFields(Request $request)
     {   
         $records = Warehouse::select(
-            'warehouses.description as warehouse_description',
+            'warehouses.id as id_warehouse','warehouses.description as warehouse_description',
             'establishments.description as establishment_description',
             'warehouses.address',
             'length', 'width', 'height', 'responsible'
@@ -54,12 +54,29 @@ class WarehouseController extends Controller
                 'height' => $record->height,
             ],
             'responsible' => $record->responsible,
+            'id' => $record->id_warehouse,
         ];
        });
     
        return $records;
     }
-
+    
+    public function destroy($id)
+    {   
+        try {
+            $record = Warehouse::findOrFail($id);
+            $record->delete();
+            return [
+                'success' => true,
+                'message' => 'Almacén eliminado con éxito'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ];
+        }       
+    }
     public function record($id)
     {
         $record = new WarehouseResource(Warehouse::findOrFail($id));
