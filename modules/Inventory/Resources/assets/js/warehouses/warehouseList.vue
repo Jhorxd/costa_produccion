@@ -8,9 +8,9 @@
               <li class="active"><span>{{ title }}</span></li>
           </ol>
           <div class="right-wrapper pull-right">
-                <!--  <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>-->
-                  <a href="/dashboard" class="btn btn-custom btn-sm mt-2 mr-2">
-                    <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>
+                <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Agregar nuevo almacen</button>
+                <!--  <a href="/dashboard" class="btn btn-custom btn-sm mt-2 mr-2">
+                    <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>-->
           </div>
       </div>
       <div class="card tab-content-default row-new mb-0">
@@ -25,7 +25,9 @@
                         <th>Nombre</th>
                         <th>Sucursal</th>
                         <th>Ubicación </th>
-                        <th>Dimensiones</th>                                               
+                        <th>Dimensiones</th>
+                        <th>Ubicaciones</th>
+                        <th>Stock</th>                                                                                                                                                                                         
                         <th>Reponsable</th>
                         <th>Acciones</th>                                               
                 </tr>
@@ -38,6 +40,8 @@
                             <p>Ancho {{ row.dimensions.width}}</p>
                             <p>Altura {{ row.dimensions.height}}</p>                                           
                         </td>
+                        <td>********</td>
+                        <td>********</td>
                         <td>{{ row.responsible}}</td>
                         <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
@@ -49,7 +53,10 @@
                 </tr>         
             </data-table>
           </div>
-       
+          <form-warehouse 
+                :showDialog.sync="showDialog"
+                :recordId="recordId"
+           ></form-warehouse> 
         
       </div>
   </div>
@@ -69,7 +76,7 @@
 <script>
   
   import DataTable from './DataTable.vue'
-  //import CategoryForm from './form.vue' 
+  import FormWarehouse from './form2.vue'
   //import DataTable from '../../../../../../../resources/js/components/DataTable.vue'
   import {deletable} from '../../../../../../resources/js/mixins/deletable'
   //import {deletable} from '../../../../../../../resources/js/mixins/deletable'
@@ -77,7 +84,7 @@
 
   export default {
       mixins: [deletable],
-      components: {DataTable},
+      components: {DataTable,FormWarehouse},
       data() {
           return {
               title: null,
@@ -104,10 +111,8 @@
       },
       methods: { 
           clickCreate(recordId = null) {
-            alert("dato "+ recordId);
-
-              /*this.recordId = recordId
-              this.showDialog = true*/
+            this.recordId = recordId
+            this.showDialog = true            
           }, 
           clickDelete(id) {                
                 this.destroy(`/warehouses/destroy/${id}`).then(() =>

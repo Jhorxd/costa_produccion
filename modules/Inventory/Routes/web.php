@@ -23,11 +23,14 @@ if ($hostname) {
                 Route::get('/', 'WarehouseController@index')->name('warehouses.index');
                 Route::get('records', 'WarehouseController@records');
                 Route::get('recordsCustom', 'WarehouseController@recordsByCustomFields');
+                Route::get('getEstablishments', 'WarehouseController@getEstablishments');
+                Route::get('getWarehouse/{id}', 'WarehouseController@getWarehouse');
                 Route::delete('destroy/{warehouse}', 'WarehouseController@destroy');
                 Route::get('columns', 'WarehouseController@columns');
                 Route::get('tables', 'WarehouseController@tables');
                 Route::get('record/{warehouse}', 'WarehouseController@record');
                 Route::post('/', 'WarehouseController@store');
+                Route::post('storeWarehouse', 'WarehouseController@storeWarehouse2');           
                 Route::get('initialize', 'WarehouseController@initialize');
             });
             /**

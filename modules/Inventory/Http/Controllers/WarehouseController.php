@@ -8,7 +8,7 @@ use Modules\Inventory\Http\Resources\WarehouseCollection;
 use Modules\Inventory\Http\Resources\WarehouseResource;
 use Modules\Inventory\Http\Requests\WarehouseRequest;
 use Modules\Inventory\Models\Warehouse;
-
+use App\Models\Tenant\Establishment;
 class WarehouseController extends Controller
 {
     public function index()
@@ -83,7 +83,27 @@ class WarehouseController extends Controller
 
         return $record;
     }
+    
+    public function getEstablishments()
+    {
+        return Establishment::select('id', 'description')->get()->makeHidden(['country', 'department', 'province', 'district']);
 
+    }
+    public function getWarehouse($id)
+    {
+        return Warehouse::findOrFail($id)->makeHidden(['created_at', 'updated_at']);
+    }
+    public function storeWarehouse2(WarehouseRequest $request){
+
+    $id = $request->input('id');
+    $record = Warehouse::firstOrNew(['id' => $id]);
+    $record->fill($request->all());
+    $record->save();
+    return [
+        'success' => true,
+        'message' => 'Almacén guardado correctamente.'
+      ];   
+    }
     public function store(WarehouseRequest $request)
     {
         $id = $request->input('id');
