@@ -22,10 +22,15 @@ if ($hostname) {
             Route::prefix('warehouses')->group(function () {
                 Route::get('/', 'WarehouseController@index')->name('warehouses.index');
                 Route::get('records', 'WarehouseController@records');
+                Route::get('recordsCustom', 'WarehouseController@recordsByCustomFields');
+                Route::get('getEstablishments', 'WarehouseController@getEstablishments');
+                Route::get('getWarehouse/{id}', 'WarehouseController@getWarehouse');
+                Route::delete('destroy/{warehouse}', 'WarehouseController@destroy');
                 Route::get('columns', 'WarehouseController@columns');
                 Route::get('tables', 'WarehouseController@tables');
                 Route::get('record/{warehouse}', 'WarehouseController@record');
                 Route::post('/', 'WarehouseController@store');
+                Route::post('storeWarehouse', 'WarehouseController@storeWarehouse2');           
                 Route::get('initialize', 'WarehouseController@initialize');
             });
             /**
@@ -140,6 +145,7 @@ if ($hostname) {
                  * inventory/move-multilple
                  */
                 Route::get('/', 'InventoryController@index')->name('inventory.index');
+                Route::get('/warehouses', 'InventoryController@indexWarehouses')->name('inventory.index2');
                 Route::get('records', 'InventoryController@records');
                 Route::get('columns', 'InventoryController@columns');
                 Route::get('tables', 'InventoryController@tables');
