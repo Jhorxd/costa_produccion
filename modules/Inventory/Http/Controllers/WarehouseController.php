@@ -8,7 +8,10 @@ use Modules\Inventory\Http\Resources\WarehouseCollection;
 use Modules\Inventory\Http\Resources\WarehouseResource;
 use Modules\Inventory\Http\Requests\WarehouseRequest;
 use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
 use App\Models\Tenant\Establishment;
+use Illuminate\Support\Facades\DB;
+
 class WarehouseController extends Controller
 {
     public function index()
@@ -35,7 +38,7 @@ class WarehouseController extends Controller
 
     
     public function recordsByCustomFields(Request $request)
-    {   
+    {          
         $records = Warehouse::select(
             'warehouses.id as id_warehouse','warehouses.description as warehouse_description',
             'establishments.description as establishment_description',
@@ -57,6 +60,13 @@ class WarehouseController extends Controller
         }
         $records = $records->paginate(config('tenant.items_per_page'));    
         $records->getCollection()->transform(function ($record) {
+         // Obtener conteo de tipos de ubicación por almacén
+        $locationTypes = InventoryWarehouseLocation::where('warehouse_id', $record->id_warehouse)
+        ->join('warehouse_location_type', 'inventory_warehouse_locations.type_id', '=', 'warehouse_location_type.id')
+        ->select('warehouse_location_type.name', DB::raw('COUNT(*) as total'))
+        ->groupBy('warehouse_location_type.name')
+        ->get()
+        ->pluck('total', 'name'); 
         return [
             'warehouse_description' => $record->warehouse_description,
             'establishment_description' => $record->establishment_description,
@@ -68,9 +78,9 @@ class WarehouseController extends Controller
             ],
             'responsible' => $record->responsible,
             'id' => $record->id_warehouse,
+            'location_types' => $locationTypes,           
         ];
        });
-    
        return $records;
     }
     

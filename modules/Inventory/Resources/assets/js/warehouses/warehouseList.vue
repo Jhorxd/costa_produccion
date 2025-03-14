@@ -8,7 +8,7 @@
               <li class="active"><span>{{ title }}</span></li>
           </ol>
           <div class="right-wrapper pull-right">
-                <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Agregar nuevo almacen</button>
+                <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i>Nuevo</button>
                 <!--  <a href="/dashboard" class="btn btn-custom btn-sm mt-2 mr-2">
                     <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>-->
           </div>
@@ -40,8 +40,19 @@
                             <p>Ancho {{ row.dimensions.width}}</p>
                             <p>Altura {{ row.dimensions.height}}</p>                                           
                         </td>
-                        <td>********</td>
-                        <td>********</td>
+                        <p v-if="row.location_types && Object.keys(row.location_types).length">
+                          <span v-for="(count, type) in row.location_types" :key="type">
+                            {{ type }}: {{ count }}<br>
+                             </span>
+                        </p>
+                        <p v-else>No hay ubicaciones</p>
+                        <td>
+                        <button
+                                        class="btn waves-effect waves-light btn-xs btn-info"
+                                        type="button"                                       
+                                    >
+                                        <i class="fa fa-search"></i>
+                        </button></td>
                         <td>{{ row.responsible}}</td>
                         <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
