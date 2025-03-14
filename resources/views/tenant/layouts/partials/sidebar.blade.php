@@ -397,7 +397,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     @if(in_array('inventory', $vc_modules))
                                         <li
                                             class="nav-parent
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {{ (in_array($firstLevel, ['inventory', 'moves', 'transfers', 'devolutions', 'extra_info_items', 'inventory-review']) | ($firstLevel === 'reports' && in_array($secondLevel, ['kardex', 'inventory', 'valued-kardex']))) ? 'nav-active nav-expanded' : '' }}
+                                            {{ (in_array($firstLevel, ['inventory', 'moves', 'transfers', 'locations', 'devolutions', 'extra_info_items', 'inventory-review']) | ($firstLevel === 'reports' && in_array($secondLevel, ['kardex', 'inventory', 'valued-kardex']))) ? 'nav-active nav-expanded' : '' }}
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ">
                                             <a class="nav-link" href="#">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -417,11 +417,9 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                     <a class="nav-link" href="{{route('inventory.index2')}}">Almacen</a>
                                                 </li>
                                                 @endif
-                                                @if(in_array('inventory', $vc_module_levels))
-                                                    <li class="{{ ($firstLevel === 'locations') ? 'nav-active' : '' }}">
-                                                        <a class="nav-link" href="{{route('locations.index')}}">Ubicaciones</a>
-                                                    </li>
-                                                @endif
+                                                <li class="{{ ($firstLevel === 'locations') ? 'nav-active' : '' }}">
+                                                    <a class="nav-link" href="{{route('locations.index')}}">ubicación</a>
+                                                </li>
                                                 @if(in_array('inventory', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'inventory') ? 'nav-active' : '' }}">
                                                         <a class="nav-link" href="{{route('inventory.index')}}">Movimientos</a>

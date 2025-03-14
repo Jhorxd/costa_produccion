@@ -90,40 +90,35 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <label class="control-label">Toda Fila <span class="text-danger">*</span></label>
-                            <el-input v-model="form.rows"
-                                        type="number" min="0"></el-input>
-                            <small v-if="errors.rows"
-                                    class="form-control-feedback has-danger"
-                                        v-text="errors.rows[0]"></small>
+                            <div>
+                                <label class="control-label">Toda Fila <span class="text-danger">*</span></label>
+                                <el-input v-model="form.rows"
+                                            type="number" min="0"></el-input>
+                                <small v-if="errors.rows"
+                                        class="form-control-feedback has-danger"
+                                            v-text="errors.rows[0]"></small>
+                            </div>
+                            <div>
+                                <label class="control-label">Columna <span class="text-danger">*</span></label>
+                                <el-input v-model="form.columns"
+                                            type="number" min="0"></el-input>
+                                <small v-if="errors.columns"
+                                        class="form-control-feedback"
+                                            v-text="errors.columns[0]"></small>
+                            </div>
+                            <div>
+                                <label class="control-label">Stock Máximo(Posición) <span class="text-danger">*</span></label>
+                                <el-input v-model="form.maximum_stock"
+                                            type="number" min="0"></el-input>
+                                <small v-if="errors.maximum_stock"
+                                        class="form-control-feedback"
+                                            v-text="errors.maximum_stock[0]"></small>
+                            </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 img-container">
+                            <img src="../../img/anaquel.png" alt="Imagen de ubicación" class="img_location">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="control-label">Columna <span class="text-danger">*</span></label>
-                            <el-input v-model="form.columns"
-                                        type="number" min="0"></el-input>
-                            <small v-if="errors.columns"
-                                    class="form-control-feedback"
-                                        v-text="errors.columns[0]"></small>
-                        </div>
-                        <div class="col-md-6">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="control-label">Stock Máximo(Posición) <span class="text-danger">*</span></label>
-                            <el-input v-model="form.maximum_stock"
-                                        type="number" min="0"></el-input>
-                            <small v-if="errors.maximum_stock"
-                                    class="form-control-feedback"
-                                        v-text="errors.maximum_stock[0]"></small>
-                        </div>
-                        <div class="col-md-6">
-                        </div>
-                    </div><br>
                     <div class="row">
                         <div class="col-md-6">
                             <el-button @click.prevent="openPositionEditor">Editar Posiciones</el-button>
@@ -291,3 +286,17 @@ export default {
     }
 };
 </script>
+<style>
+    .row{
+        margin-bottom: 15px;
+    }
+    .img_location{
+        max-width: 45%;
+    }
+    .img-container{
+        padding: 10px;
+        display: flex;
+        justify-content: center;
+        align-content: center;
+    }
+</style>
