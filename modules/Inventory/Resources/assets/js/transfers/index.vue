@@ -33,8 +33,8 @@
                         <th>Almacen Destino</th>
                         <th>Detalle</th>
                         <th>Detalle Productos</th>
-                        <th class="text-right">Cantidad Total Productos</th>
-                        <th class="text-right">Acciones</th>
+                        <th class="text-center">Cantidad Total Productos</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
                     <tr></tr>
                     <tr slot-scope="{ index, row }">
@@ -76,8 +76,8 @@
                                            icon="el-icon-zoom-in"></el-button>
                             </el-popover>
                         </td>
-                        <td class="text-right">{{ row.quantity }}</td>
-                        <td class="text-right">
+                        <td class="text-center">{{ row.quantity }}</td>
+                        <td class="text-center">
                             <button
                                 class="btn waves-effect waves-light btn-xs btn-info"
                                 type="button"
@@ -86,6 +86,36 @@
                                 <i class="fa fa-file-pdf"></i>
                                 PDF
                             </button>
+                        </td>
+                        <td class="text-right" v-if="typeUser != 'integrator'">
+                            <div class="dropdown">
+                                <button
+                                    class="btn btn-default btn-sm"
+                                    type="button"
+                                    id="dropdownMenuButton"
+                                    data-toggle="dropdown"
+                                    aria-haspopup="true"
+                                    aria-expanded="false"
+                                >
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div
+                                    class="dropdown-menu"
+                                    aria-labelledby="dropdownMenuButton"
+                                >
+                                    <a
+                                        :href="
+                                            `/dispatches/create_new/inventories_transfer/${
+                                                row.id
+                                            }`
+                                        "
+                                        class="dropdown-item"
+                                        v-if="row.btn_guide"
+                                    >
+                                        Guía
+                                    </a>
+                                </div>
+                            </div>
                         </td>
                         <!--<td class="text-right">
                                          <button type="button" class="btn waves-effect waves-light btn-xs btn-info"

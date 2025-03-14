@@ -17,6 +17,7 @@ class TransferCollection extends ResourceCollection
 
 
         return $this->collection->transform(function ($row, $key) {
+            $btn_guide = true;
             $transfers = $row->inventory_transfer_item->transform(function ($o) use ($row) {
                 if ($o->item_lots_group_id != null) {
                     return [
@@ -44,6 +45,7 @@ class TransferCollection extends ResourceCollection
                 'description' => $row->description,
                 'quantity' => round($row->quantity, 1),
                 'warehouse' => $row->warehouse->description,
+                'btn_guide' => $btn_guide,
                 'warehouse_destination' => $row->warehouse_destination->description,
                 'created_at' => $row->created_at->format('d-m-Y h:iA'),
                 'inventory' => $row->inventory->transform(function ($o) use ($row, $transfers) {
