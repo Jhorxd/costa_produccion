@@ -40,8 +40,19 @@
                             <p>Ancho {{ row.dimensions.width}}</p>
                             <p>Altura {{ row.dimensions.height}}</p>                                           
                         </td>
-                        <td>********</td>
-                        <td>********</td>
+                        <p v-if="row.location_types && Object.keys(row.location_types).length">
+                          <span v-for="(count, type) in row.location_types" :key="type">
+                            {{ type }}: {{ count }}<br>
+                             </span>
+                        </p>
+                        <p v-else>No hay ubicaciones</p>
+                        <td>
+                        <button
+                                        class="btn waves-effect waves-light btn-xs btn-info"
+                                        type="button"                                       
+                                    >
+                                        <i class="fa fa-search"></i>
+                        </button></td>
                         <td>{{ row.responsible}}</td>
                         <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
