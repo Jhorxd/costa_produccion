@@ -77,8 +77,38 @@
           <small class="form-control-feedback" v-if="errors.altura" v-text="errors.altura[0]"></small>
         </div>
       </div>
-                </div>
-            </div>            
+    </div>
+    <template v-if="recordId">
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Ubicaciones</h3>
+          <div class="right-wrapper pull-right">
+              <a :href="`/${resourceDataTable}/create/${recordId}`" class="btn btn-custom btn-sm mt-2 mr-2">
+                  <i class="fa fa-plus-circle"></i> Nuevo
+              </a>
+          </div>
+          <div class="card-body">
+              <data-table :resource="resourceDataTable" :idWarehouse="recordId">
+                  <tr slot="heading">
+                      <th>Nombre</th>
+                      <th>Código</th>
+                      <th>Tipo</th>
+                      <th>Estado</th>
+                      <th>Posiciones</th>
+                  </tr>
+                  <tr slot-scope="{ index, row }">
+                      <td>{{ row.name }}</td>
+                      <td>{{ row.code }}</td>
+                      <td>{{ getLocationTypeName(row.type_id) }}</td>
+                      <td>{{ getStatusName(row.status) }}</td>
+                      <td>{{ row.rows * row.columns }}</td>
+                  </tr>
+              </data-table>
+          </div>
+        </div>
+      </div>
+    </template>
+    </div>            
             <div class="form-actions text-right mt-4">
                 <el-button @click.prevent="close()">Cancelar</el-button>
                 <el-button type="primary" native-type="submit" :loading="loading_submit">Aceptar</el-button>
@@ -89,23 +119,27 @@
 </template>
 
 <script>
-
+    import DataTable from '../../components/DataTableLocationWarehouse.vue';
     export default {
+        components: { DataTable },
         props: ['showDialog', 'recordId'],
         data() {
             return {
                 loading_submit: false,
                 titleDialog: null,
                 resource: 'warehouses',
+                resourceDataTable : 'locations',
                 errors: {},
                 form: {
                     establishment_id: null
                 },
-                establishments: []
+                establishments: [],
+                locationTypes: []
             }
         },
         created() {
-            this.initForm()
+            this.initForm(),
+            this.getTypes();
         },
         methods: {
             initForm() {
@@ -165,6 +199,34 @@
                 //alert("el id del establcimiento es "+ value);
                 // console.log("Establecimiento seleccionado:", value);
             },
+            async getTypes() {
+              await this.$http.get(`/${this.resourceDataTable}/getTypesLocation`)
+                  .then(response => {
+                      if (response.data.success) {
+                          this.locationTypes = response.data.data;
+                      } else {
+                          this.$message.error('No se pudieron cargar los tipos de ubicación.');
+                      }
+                  })
+                  .catch(error => {
+                      console.log(error);
+                      this.$message.error('Error al cargar los tipos de ubicación.');
+                  });
+            },
+            getLocationTypeName(type_id) {
+              const locationType = this.locationTypes.find(type => type.id === type_id);
+              return locationType ? locationType.name : 'Desconocido';
+            },
+            getStatusName(status) {
+                switch (status) {
+                    case 1:
+                        return 'Venta';
+                    case 2:
+                        return 'Picking';
+                    case 3:
+                        return 'Mermado';
+                }
+            }
         }
     }
 </script>

@@ -1128,4 +1128,26 @@ class InventoryController extends Controller
         }
         
     }
+
+    public function getLocationsById($id){
+
+        $query = InventoryWarehouseLocation::where('warehouse_id', $id);
+
+        // Paginación
+        $records = $query->paginate(10);
+
+        return response()->json([
+            'data' => $records->items(),
+            'meta' => [
+                'total' => $records->total(),
+                'per_page' => $records->perPage(),
+                'current_page' => $records->currentPage(),
+                'last_page' => $records->lastPage(),
+            ],
+        ]);
+    }
+
+    public function createWarehouse($id){
+        return view('inventory::locations.formWithInput',[ 'id' => $id ]);
+    }
 }

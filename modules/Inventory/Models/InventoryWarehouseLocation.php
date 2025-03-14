@@ -60,7 +60,7 @@ class InventoryWarehouseLocation extends ModelTenant
         'maximum_stock' => 'int',
     ]; */
     protected $fillable = [
-        'store_id',
+        'warehouse_id',
         'name',
         'code',
         'status',

@@ -196,6 +196,8 @@ if ($hostname) {
                 Route::put('/positions/{id}', 'InventoryController@updatePositions');
                 Route::get('/edit/{id}', 'InventoryController@edit')->name('locations.edit');
                 Route::delete('{id}', 'InventoryController@destroy');
+                Route::get('locations/{id}', 'InventoryController@getLocationsById');
+                Route::get('create/{id}', 'InventoryController@createWarehouse')->name('locations.create.warehouse');
             });
 
             Route::get('/listWarehouses', 'InventoryController@warehouses')->name('locations.warehouses');

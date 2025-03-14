@@ -153,7 +153,12 @@
 <script>
 import PositionEditor from './PositionCreate.vue';
 export default {
-    components: {PositionEditor },
+    props: {
+        id: {
+            type: Number
+        }
+    },
+    components: { PositionEditor },
     data() {
         return {
             showPositionEditor: false,
@@ -189,7 +194,9 @@ export default {
     async created() {
         this.getTypes();
         this.getWarehouses();
-        
+        if(this.id!=null){
+            this.form.warehouse_id = this.id;
+        }
         this.status = [
             {id: 1, description: 'Venta'},
             {id: 2, description: 'Picking'},
