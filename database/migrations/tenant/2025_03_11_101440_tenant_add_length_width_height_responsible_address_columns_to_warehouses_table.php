@@ -15,11 +15,11 @@ class TenantAddLengthWidthHeightResponsibleAddressColumnsToWarehousesTable exten
     {
         Schema::table('warehouses', function (Blueprint $table) {
             //
-            $table->decimal('length', 8, 2)->after('description'); // Longitud
-            $table->decimal('width', 8, 2)->after('length'); // Ancho
-            $table->decimal('height', 8, 2)->after('width'); // Altura
-            $table->string('responsible')->after('height'); // Persona responsable
-            $table->string('address')->after('responsible'); // Dirección del almacén
+            $table->decimal('length', 8, 2)->after('description')->nullable(); // Longitud
+            $table->decimal('width', 8, 2)->after('length')->nullable(); // Ancho
+            $table->decimal('height', 8, 2)->after('width')->nullable(); // Altura
+            $table->string('responsible')->after('height')->nullable(); // Persona responsable
+            $table->string('address')->after('responsible')->nullable(); // Dirección del almacén
         });
     }
 
