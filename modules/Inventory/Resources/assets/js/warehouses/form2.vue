@@ -4,14 +4,14 @@
             <div class="form-body">
                 <div class="row">
                     <div class="col-md-6">
-        <div class="form-group" :class="{'has-danger': errors.nombre}">
+        <div class="form-group" :class="{'has-danger': errors.description}">
           <label class="control-label">Nombre</label>
           <el-input v-model="form.description"></el-input>
-          <small class="form-control-feedback" v-if="errors.nombre" v-text="errors.nombre[0]"></small>
+          <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
         </div>
       </div>
       <div class="col-md-6">
-        <div class="form-group" :class="{'has-danger': errors.sucursal}">
+        <div class="form-group" :class="{'has-danger': errors.establishment_id}">
           <label class="control-label">Sucursal</label>
           <el-select
       v-model="form.establishment_id"
@@ -27,28 +27,28 @@
       ></el-option>
     </el-select>
           <!-- <el-input v-model="form.sucursal"></el-input>-->
-          <small class="form-control-feedback" v-if="errors.sucursal" v-text="errors.sucursal[0]"></small>
+          <small class="form-control-feedback" v-if="errors.establishment_id" v-text="errors.establishment_id[0]"></small>
         </div>
       </div>
     </div>
     
     <div class="row">
       <div class="col-md-6">
-        <div class="form-group" :class="{'has-danger': errors.direccion}">
+        <div class="form-group" :class="{'has-danger': errors.address}">
           <label class="control-label">Dirección</label>
           <el-input v-model="form.address">
             <template #append>
               <el-button icon="el-icon-search"></el-button>
             </template>
           </el-input>
-          <small class="form-control-feedback" v-if="errors.direccion" v-text="errors.direccion[0]"></small>
+          <small class="form-control-feedback" v-if="errors.address" v-text="errors.address[0]"></small>
         </div>
       </div>
       <div class="col-md-6">
-        <div class="form-group" :class="{'has-danger': errors.responsable}">
+        <div class="form-group" :class="{'has-danger': errors.responsible}">
           <label class="control-label">Responsable</label>
           <el-input v-model="form.responsible"></el-input>
-          <small class="form-control-feedback" v-if="errors.responsable" v-text="errors.responsable[0]"></small>
+          <small class="form-control-feedback" v-if="errors.responsible" v-text="errors.responsible[0]"></small>
         </div>
       </div>
     </div>
@@ -57,24 +57,24 @@
     
     <div class="row">
       <div class="col-md-4">
-        <div class="form-group" :class="{'has-danger': errors.longitud}">
+        <div class="form-group" :class="{'has-danger': errors.length}">
           <label class="control-label">Longitud (m)</label>
           <el-input v-model="form.length"></el-input>
-          <small class="form-control-feedback" v-if="errors.longitud" v-text="errors.longitud[0]"></small>
+          <small class="form-control-feedback" v-if="errors.length" v-text="errors.length[0]"></small>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="form-group" :class="{'has-danger': errors.ancho}">
+        <div class="form-group" :class="{'has-danger': errors.width}">
           <label class="control-label">Ancho (m)</label>
           <el-input v-model="form.width"></el-input>
-          <small class="form-control-feedback" v-if="errors.ancho" v-text="errors.ancho[0]"></small>
+          <small class="form-control-feedback" v-if="errors.width" v-text="errors.width[0]"></small>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="form-group" :class="{'has-danger': errors.altura}">
+        <div class="form-group" :class="{'has-danger': errors.height}">
           <label class="control-label">Altura (m)</label>
           <el-input v-model="form.height"></el-input>
-          <small class="form-control-feedback" v-if="errors.altura" v-text="errors.altura[0]"></small>
+          <small class="form-control-feedback" v-if="errors.height" v-text="errors.height[0]"></small>
         </div>
       </div>
     </div>
@@ -181,10 +181,10 @@
                         }
                     })
                     .catch(error => {
-                        if (error.response.status === 422) {
-                            this.errors = error.response.data.errors
+                        if (error.response.status === 422) {                                            
+                            this.errors =error.response.data                            
                         } else {
-                            console.log(error)
+                            console.log(error);
                         }
                     })
                     .then(() => {
