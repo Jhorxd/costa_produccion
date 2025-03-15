@@ -45,6 +45,10 @@ class InventoryController extends Controller
     {
         return view('inventory::inventory.index');
     }
+    public function indexPhysicalInventory()
+    {
+        return view('inventory::inventory.physicalInventory');
+    }
     public function indexWarehouses()
     {
         return view('inventory::warehouses.warehousesList');

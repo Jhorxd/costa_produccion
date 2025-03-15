@@ -130,6 +130,10 @@ if ($hostname) {
                 });
 
             });
+            Route::prefix('physicalInventory')->group(function () {
+                Route::get('/', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
+            });
+            
 
             Route::prefix('inventory')->group(function () {
                 /**
