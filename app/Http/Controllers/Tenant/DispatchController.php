@@ -41,11 +41,12 @@ use Modules\Document\Traits\SearchTrait;
 use Modules\Finance\Traits\FinanceTrait;
 use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 use Modules\Order\Http\Resources\DispatchResource;
+use Modules\Inventory\Models\InventoryTransfer;
 use Modules\Order\Mail\DispatchEmail;
 use Modules\Order\Models\OrderNote;
 use App\Models\Tenant\PaymentCondition;
 use App\Models\Tenant\Catalogs\RelatedDocumentType;
-
+use Modules\Inventory\Models\InventoryTransferItem;
 
 /**
  * Class DispatchController
@@ -176,6 +177,7 @@ class DispatchController extends Controller
         $reference_sale_note_id = null;
         $reference_order_form_id = null;
         $reference_order_note_id = null;
+        $reference_transfer_id = null;
 
         if ($parentTable === 'document') {
             $reference_document_id = $parentId;
@@ -191,25 +193,44 @@ class DispatchController extends Controller
             $query = OrderNote::query();
         } elseif ($parentTable === 'dispatch') {
             $query = Dispatch::query();
+        } elseif ($parentTable === 'inventories_transfer'){
+            $reference_transfer_id = $parentId;
+            $query = InventoryTransfer::query();
         }
         $document = $query->find($parentId);
         $configuration = Configuration::query()->first();
         $items = [];
-        foreach ($document->items as $item) {
-            $name_product_pdf = ($configuration->show_pdf_name) ? strip_tags($item->name_product_pdf) : null;
-            $description = $item->item->description;
-            $presentation = !empty($item->item->presentation) ? $item->item->presentation->description : '';
-            $unit_type = !empty($item->item->presentation) ? $item->item->presentation->unit_type_id : $item->item->unit_type_id;
-            $IdLoteSelected = !empty($item->item->IdLoteSelected) ? $item->item->IdLoteSelected : null;
-            $items[] = [
-                'item_id' => $item->item_id,
-                'item' => $item,
-                'quantity' => $item->quantity,
-                'description' => $description.' '.$presentation,
-                'unit_type_id' => $unit_type,
-                'name_product_pdf' => $name_product_pdf,
-                'IdLoteSelected' => $IdLoteSelected,
-            ];
+        if($parentTable === 'inventories_transfer'){
+            foreach($document->inventory as $item_inventory){
+                // dd($item_inventory);
+                $description = $item_inventory->item->description;
+                $items[] =[
+                    'item_id' => $item_inventory->item_id,
+                    'quantity' => $item_inventory->quantity,
+                    'description' => $description,
+                    'unit_type_id' => $item_inventory->item->unit_type_id,
+                    'unit_price' => $item_inventory->item->sale_unit_price,
+                ];
+            }
+            
+        }
+        else{
+            foreach ($document->items as $item) {
+                $name_product_pdf = ($configuration->show_pdf_name) ? strip_tags($item->name_product_pdf) : null;
+                $description = $item->item->description;
+                $presentation = !empty($item->item->presentation) ? $item->item->presentation->description : '';
+                $unit_type = !empty($item->item->presentation) ? $item->item->presentation->unit_type_id : $item->item->unit_type_id;
+                $IdLoteSelected = !empty($item->item->IdLoteSelected) ? $item->item->IdLoteSelected : null;
+                $items[] = [
+                    'item_id' => $item->item_id,
+                    'item' => $item,
+                    'quantity' => $item->quantity,
+                    'description' => $description.' '.$presentation,
+                    'unit_type_id' => $unit_type,
+                    'name_product_pdf' => $name_product_pdf,
+                    'IdLoteSelected' => $IdLoteSelected,
+                ];
+            }
         }
 
         if ($parentTable === 'dispatch') {
@@ -237,7 +258,14 @@ class DispatchController extends Controller
                 'delivery_address_id' => $document->delivery_address_id,
                 'date_delivery_to_transport' => $document->date_delivery_to_transport?$document->date_delivery_to_transport->format('Y-m-d'):null,
             ];
-        } else {
+        }elseif( $parentTable === 'inventories_transfer'){
+            // dd($document);
+            $data = [
+                'establishment_id' => $document->warehouse->establishment_id,
+                'transfer_reason_type_id' => '04',
+                'items' => $items,
+            ];
+        }else {
             $data = [
                 'establishment_id' => $document->establishment_id,
                 'customer_id' => $document->customer_id,
@@ -247,6 +275,7 @@ class DispatchController extends Controller
                 'reference_sale_note_id' => $reference_sale_note_id,
                 'reference_order_form_id' => $reference_order_form_id,
                 'reference_order_note_id' => $reference_order_note_id,
+                'reference_transfer_id' => $reference_transfer_id,
             ];
         }
 
