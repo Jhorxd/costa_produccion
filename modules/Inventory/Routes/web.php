@@ -9,8 +9,7 @@ if ($hostname) {
         Route::middleware(['auth', 'redirect.module', 'locked.tenant'])->group(function () {
 
             Route::get('advanced-items-search', 'ItemController@advancedItemsSearch');
-            Route::post('validate-current-item-stock', 'ItemController@validateCurrentItemStock');
-
+            Route::post('validate-current-item-stock', 'ItemController@validateCurrentItemStock');                        
             
             Route::prefix('items')->group(function () {
                 Route::post('import-item-lots-group', 'ItemController@importItemLotsGroup');
@@ -132,6 +131,8 @@ if ($hostname) {
             });
             Route::prefix('physicalInventory')->group(function () {
                 Route::get('/', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
+                Route::get('getEstablishments', 'InventoryController@getEstablishmentsByName');
+                Route::get('getWarehousesByEstablishment/{id}', 'InventoryController@getWarehousesByEstablishment');
             });
             
 

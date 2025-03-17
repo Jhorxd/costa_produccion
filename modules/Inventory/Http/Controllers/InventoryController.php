@@ -35,6 +35,8 @@ use Modules\Inventory\Http\Requests\RemoveRequest;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
 use Modules\Inventory\Models\WarehouseLocationPosition;
 use Modules\Inventory\Models\WarehouseLocationType;
+use App\Models\Tenant\Establishment;
+
 
 class InventoryController extends Controller
 {
@@ -83,7 +85,23 @@ class InventoryController extends Controller
         return new InventoryCollection($records->paginate(config('tenant.items_per_page')));
     }
 
-
+    public function getEstablishmentsByName(Request $request)
+    {   
+        Log::debug($request->all());
+        $establishments = Establishment::where('description', 'like', '%' . $request->input('value') . '%')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $establishments
+        ]);
+    }
+    public function getWarehousesByEstablishment($id)
+    {
+        $warehouses = Warehouse::where('establishment_id', $id)->get();
+        return response()->json([
+            'success' => true,
+            'data' => $warehouses
+        ]);
+    }
     /**
      *
      * Obtener registros
