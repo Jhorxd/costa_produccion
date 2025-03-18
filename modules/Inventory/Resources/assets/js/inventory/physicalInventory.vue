@@ -13,33 +13,120 @@
                     <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>-->
           </div>
       </div>
+      <div class="container">
+  <div class="row">
+    <!-- Sucursal -->
+    <div class="col-md-6">
       <label class="control-label">Sucursal</label>
-          <el-select
-      v-model="form.establishment_id"
-      filterable
-      placeholder="Selecciona un establecimiento"
-      @change="handleEstablishmentChange"
-      :filter-method="handleFilter"
-    >
-      <el-option
-        v-for="option in establishments"
-        :key="option.id"
-        :label="option.description"
-        :value="option.id"
-      ></el-option>
-    </el-select>
-    <label class="control-label">Almacen</label>
-    <el-select
-      v-model="form.warehouse_id"
-      filterable
-      placeholder="Selecciona un almacen">
-      <el-option
-        v-for="option in warehouses"
-        :key="option.id"
-        :label="option.description"
-        :value="option.id"></el-option>
-    </el-select>
+      <div class="input-group">
+        <el-select
+          v-model="form.establishment_id"
+          filterable
+          placeholder="Selecciona un establecimiento"
+          @change="handleEstablishmentChange"
+          :filter-method="handleFilter"
+          class="form-select"
+        >
+          <el-option
+            v-for="option in establishments"
+            :key="option.id"
+            :label="option.description"
+            :value="option.id"
+          ></el-option>
+        </el-select>
+      </div>
+    </div>
+
+    <!-- Almacén -->
+    <div class="col-md-6">
+      <label class="control-label">Almacén</label>
+      <div class="input-group">
+        <el-select
+          v-model="form.warehouse_id"
+          filterable
+          placeholder="Selecciona un almacén"
+          class="form-select"
+        >
+          <el-option
+            v-for="option in warehouses"
+            :key="option.id"
+            :label="option.description"
+            :value="option.id"
+          ></el-option>
+        </el-select>
+      </div>
+    </div>
+  </div>
+  <div class="row mt-2">
+    <!-- Comentario -->
+    <div class="col-md-6">
+      <label class="control-label">Comentario</label>
+      <input type="text" class="form-control" placeholder="N/A">
+    </div>
     
+    <!-- Botón Agregar Producto -->
+    <div class="col-md-6 d-flex align-items-end">
+      <button type="button" class="btn btn-custom w-75" @click.prevent="clickCreate()">Agregar Producto</button>
+    </div>
+  </div>
+</div>
+<form-add-product  @add-item="addItem" :showDialog.sync="showDialog" ></form-add-product>
+<br>
+<div class="col-md-12">
+  <div class="table-responsive table-responsive-new">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Clave</th>
+          <th>Descripción</th>
+          <th>Cantidad-1</th>
+          <th>Cantidad-2</th>
+          <th>Costo</th>
+          <th>Importe Costo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item, index) in items" :key="index">
+          <td>{{ item.item_id}}</td>
+          <td>{{ item.description }}</td>
+          <td>{{ item.stock }}</td>
+          <td>{{ item.cantidad2 }}</td>
+          <td>{{ item.sale_unit_price }}</td>
+          <td>{{ item.stock * item.sale_unit_price }}</td>
+          <!-- <td>
+            <button type="button" class="btn btn-danger btn-sm" @click.prevent="removeItem(index)">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>-->
+        </tr>        
+      </tbody>
+    </table>
+    <div>
+      <slot name="jacksito"></slot>
+      <p>..</p>
+    </div>
+  </div>
+</div> 
+<div class="container" style="border: 1px solid red;">
+  <div class="row align-items-center">
+    <div class="col-auto" style="border: 1px solid red;">
+      <label for="cantidad1" class="form-label">Cantidad-1</label>
+      <input type="number" v-model="totalCantidad1" id="cantidad1" class="form-control w-75 mb-2" />
+      
+      <label for="cantidad2" class="form-label" style="border: 1px solid red;">Cantidad-2</label>
+      <input type="number" v-model="totalCantidad2" id="cantidad2" class="form-control w-75 mb-2" />
+      
+      <label for="importe" class="form-label">Importe</label>
+      <input type="number" v-model="importeTotal" id="importe" class="form-control w-75" />
+    </div>
+
+    <!-- Cambiar col-auto por col -->
+    <div class="col d-flex align-items-center justify-content-center " style="border: 1px solid red;">
+      <button type="button" class="btn btn-primary w-75">Confirmar</button>
+    </div>
+  </div>
+</div>
+
   </div>
 </template>
 <style>
@@ -61,11 +148,11 @@
   //import DataTable from '../../../../../../../resources/js/components/DataTable.vue'
   //import {deletable} from '../../../../../../resources/js/mixins/deletable'
   //import {deletable} from '../../../../../../../resources/js/mixins/deletable'
-
+   import formAddProduct from './formAddProduct.vue'
 
   export default {
       mixins: [],
-      components: {},
+      components: {formAddProduct},
       data() {
           return {
               title: null,
@@ -77,7 +164,11 @@
                     warehouse_id: null,
               },
               establishments: [],
-              warehouses: []
+              warehouses: [],
+              items: [] ,
+              totalCantidad1: 0,
+              totalCantidad2: 0,
+              importeTotal: 0          
           }
       },
       created() {                    
@@ -85,8 +176,7 @@
           this.getEstablishments()
       },
       methods: { 
-          clickCreate(recordId = null) {
-            this.recordId = recordId
+          clickCreate() {            
             this.showDialog = true          
           }, 
           clickDelete(id) {                
@@ -115,7 +205,7 @@
             .then(() => {
                 this.loading_submit = false;
             });            
-          },
+          },          
           getWarehousesByEstablishment(id=null){
             let url = `/physicalInventory/getWarehousesByEstablishment/${id}`;            
             return this.$http
@@ -156,6 +246,12 @@
                  this.getEstablishments();
                  console.log("estara vacio mirando"+ JSON.stringify(this.establishments));
              }
+          },
+          addItem(newItem) {
+            this.totalCantidad1+= Number(newItem.stock);
+            this.totalCantidad2 += Number(newItem.cantidad2);
+            this.importeTotal += (this.totalCantidad2 - this.totalCantidad1) * newItem.sale_unit_price;             
+            this.items.push(newItem);
           }
       }
   }

@@ -94,6 +94,39 @@ class InventoryController extends Controller
             'data' => $establishments
         ]);
     }
+    public function getProductsByEstablishmentAndWarehouse(Request $request){ 
+        //$establishment_id = $request->input('establishment_id');
+        //$warehouse_id = $request->input('warehouse_id');
+        $establishment_id = 1;
+        $warehouse_id = 1;  
+        
+        $searchValue = $request->input('value'); // Puede ser nulo
+        //$searchValue=null;
+        $query = ItemWarehouse::join('items', 'item_warehouse.item_id', '=', 'items.id')
+            ->join('warehouses', 'item_warehouse.warehouse_id', '=', 'warehouses.id')
+            ->where('item_warehouse.warehouse_id', $warehouse_id)
+            ->where('warehouses.establishment_id', $establishment_id);
+
+// Si `value` está presente, agregamos la condición de búsqueda
+        if (!empty($searchValue)) {
+            $query->where('items.description', 'like', '%' . $searchValue . '%');
+        }
+// Ejecutamos la consulta
+        $products = $query->select(
+                'item_warehouse.id',
+                'item_warehouse.item_id',
+                'item_warehouse.warehouse_id',
+                'item_warehouse.stock',
+                'items.sale_unit_price',
+                'items.description'
+            )
+    ->orderBy('item_warehouse.item_id')
+    ->get();
+    return response()->json([
+        'success' => true,
+        'data' => $products
+    ]);
+    }
     public function getWarehousesByEstablishment($id)
     {
         $warehouses = Warehouse::where('establishment_id', $id)->get();

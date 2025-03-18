@@ -133,6 +133,7 @@ if ($hostname) {
                 Route::get('/', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
                 Route::get('getEstablishments', 'InventoryController@getEstablishmentsByName');
                 Route::get('getWarehousesByEstablishment/{id}', 'InventoryController@getWarehousesByEstablishment');
+                Route::get('getProductsByEstablishmentAndWarehouse', 'InventoryController@getProductsByEstablishmentAndWarehouse');
             });
             
 
