@@ -8,11 +8,30 @@
               <li class="active"><span>{{ title }}</span></li>
           </ol>
           <div class="right-wrapper pull-right">
-                <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i>Nuevo</button>
+                <el-select v-model="seleccionado" placeholder="Seleccione una opción">
+                  <el-option label="Captura de inventario físico" value="inventario"></el-option>
+                  <el-option label="Reportes" value="reportes"></el-option>
+                </el-select>
                 <!--  <a href="/dashboard" class="btn btn-custom btn-sm mt-2 mr-2">
                     <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>-->
-          </div>
-      </div>
+          </div> 
+          <el-checkbox v-model="checked"  @change="handleChangeChecked">Inventario selectivo</el-checkbox>        
+          <el-select v-if="!checked" v-model="selectedCategory" placeholder="Seleccione una categoría">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            ></el-option>
+          </el-select>
+          <el-date-picker
+            v-model="form.date"
+            type="date"
+            format="yyyy-MM-dd"
+            value-format="yyyy-MM-dd"
+            placeholder="Selecciona una fecha">            
+          </el-date-picker>
+      </div>      
       <div class="container">
   <div class="row">
     <!-- Sucursal -->
@@ -61,7 +80,7 @@
     <!-- Comentario -->
     <div class="col-md-6">
       <label class="control-label">Comentario</label>
-      <input type="text" class="form-control" placeholder="N/A">
+      <input type="text" v-model="form.comment" class="form-control" placeholder="N/A">
     </div>
     
     <!-- Botón Agregar Producto -->
@@ -70,7 +89,7 @@
     </div>
   </div>
 </div>
-<form-add-product  @add-item="addItem" :showDialog.sync="showDialog" ></form-add-product>
+<form-add-product  @add-item="addItem" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>
 <br>
 <div class="col-md-12">
   <div class="table-responsive table-responsive-new">
@@ -86,7 +105,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(item, index) in items" :key="index">
+        <tr v-for="(item, index) in form.details" :key="index">
           <td>{{ item.item_id}}</td>
           <td>{{ item.description }}</td>
           <td>{{ item.stock }}</td>
@@ -122,7 +141,7 @@
 
     <!-- Cambiar col-auto por col -->
     <div class="col d-flex align-items-center justify-content-center " style="border: 1px solid red;">
-      <button type="button" class="btn btn-primary w-75">Confirmar</button>
+      <button type="button" @click.prevent="sendForm()" class="btn btn-primary w-75">Confirmar</button>
     </div>
   </div>
 </div>
@@ -162,17 +181,26 @@
               form: {
                     establishment_id: null,
                     warehouse_id: null,
+                    comment: null ,
+                    adjustment_type_id: 1,
+                    date: null ,
+                    details: []                               
               },
               establishments: [],
               warehouses: [],
               items: [] ,
               totalCantidad1: 0,
               totalCantidad2: 0,
-              importeTotal: 0          
+              importeTotal: 0,
+              checked: true,
+              seleccionado: "inventario",
+              categories: [],
+              selectedCategory: null    
           }
       },
       created() {                    
           this.title = 'Inventario Fisicos'
+          this.getAllPhysicalInventoryCategories()
           this.getEstablishments()
       },
       methods: { 
@@ -249,9 +277,60 @@
           },
           addItem(newItem) {
             this.totalCantidad1+= Number(newItem.stock);
-            this.totalCantidad2 += Number(newItem.cantidad2);
-            this.importeTotal += (this.totalCantidad2 - this.totalCantidad1) * newItem.sale_unit_price;             
-            this.items.push(newItem);
+            this.totalCantidad2 += Number(newItem.system_quantity);
+            this.importeTotal += (this.totalCantidad2 - this.totalCantidad1) * newItem.sale_unit_price;
+            this.form.details.push(newItem);          
+            //this.items.push(newItem);
+          },
+          getAllPhysicalInventoryCategories(){
+            let url = '/physicalInventory/getAllPhysicalInventoryCategories';           
+            return this.$http
+            .get(url)
+            .then(response => {              
+              this.categories = response.data; 
+              console.log(this.categories);         
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+                this.loading_submit = false;
+            }); 
+          },
+          handleChangeChecked(value){
+            if(value==true){
+              this.form.adjustment_type_id = 1;
+            }else{
+              this.form.adjustment_type_id = 2;
+            }                               
+          },
+          sendForm(){
+            alert(JSON.stringify(this.form));
+            let url = '/physicalInventory/store';           
+            return this.$http
+            .post(url,this.form)
+            .then(response => {                            
+              console.log(response);         
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+              this.cleanForm();
+                //this.loading_submit = false;
+            });            
+          },
+          cleanForm(){
+            this.form = {
+                    establishment_id: null,
+                    warehouse_id: null,
+                    comment: null ,
+                    adjustment_type_id: 1,
+                    date: null ,
+                    details: []                               
+              }
           }
       }
   }

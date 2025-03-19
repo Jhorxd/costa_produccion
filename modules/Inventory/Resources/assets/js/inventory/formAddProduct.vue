@@ -2,6 +2,15 @@
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" width="700px">
       <form autocomplete="off" @submit.prevent="submit">
         <div class="form-body">
+          <p v-if="checked">El checkbox está activado ✅</p>
+          <el-select  v-if="checked" v-model="selectedCategory" placeholder="Seleccione una categoría">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            ></el-option>
+          </el-select>
           <!-- Primera fila: Producto -->
           <div class="row">
             <div class="col-md-8">
@@ -29,7 +38,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label class="control-label">Cantidad</label>
-                <el-input v-model="form.cantidad2" type="number"></el-input>
+                <el-input v-model="form.system_quantity" type="number"></el-input>
               </div>
             </div>
             <div class="col-md-6">
@@ -82,7 +91,7 @@
 import { method } from 'lodash';
 
   export default {
-    props: ['showDialog', 'recordId'],
+    props: ['showDialog', 'recordId','checked'],
     data() {
       return {
         titleDialog: "Agregar Producto",
@@ -93,12 +102,16 @@ import { method } from 'lodash';
             sale_unit_price: 0,
             precioTotal: 0,
             description: null,
-            cantidad2: 0
+            system_quantity: 0
         },
-        products: []
+        products: [],
+        categories: [],
+        selectedCategory: null
       };
     },
-    created() {                    
+    created() {               
+        this.store();
+        this.getAllPhysicalInventoryCategories();
         this.getProductsByEstablishmentAndWarehouse();
     },
     methods: {
@@ -135,7 +148,7 @@ import { method } from 'lodash';
         this.form.precioTotal = product.sale_unit_price * product.stock;
         this.form.description = product.description;
         this.form.item_id = product.id;
-        this.form.cantidad2 = product.stock;
+        this.form.system_quantity = product.stock;
         alert("Producto seleccionado: "+ product.description);        
         },
         cleanForm(){
@@ -145,7 +158,7 @@ import { method } from 'lodash';
             sale_unit_price: 0,
             precioTotal: 0,
             description: null,
-            cantidad2: 0
+            system_quantity: 0
           }
        },
        sendItem() {
@@ -158,7 +171,43 @@ import { method } from 'lodash';
             else {
                 this.$message.error('Debe seleccionar un producto');
             }
-        }
+        },
+        getAllPhysicalInventoryCategories(){
+            let url = '/physicalInventory/getAllPhysicalInventoryCategories';           
+            return this.$http
+            .get(url)
+            .then(response => {              
+              this.categories = response.data; 
+              console.log(this.categories);         
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+                this.loading_submit = false;
+            }); 
+          },
+          store(){
+            /*const data = {
+              title: 'Ejemplo de POST',
+              body: 'Este es un cuerpo de prueba',
+              userId: 1
+            };
+            let url = '/physicalInventory/store';           
+            return this.$http
+            .post(url,data)
+            .then(response => {                            
+              console.log(response);         
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+                //this.loading_submit = false;
+            }); */
+          }
     }
   }
   </script>
