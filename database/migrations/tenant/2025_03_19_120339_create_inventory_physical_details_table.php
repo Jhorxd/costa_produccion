@@ -26,6 +26,7 @@ class CreateInventoryPhysicalDetailsTable extends Migration
             $table->foreign('item_id')->references('id')->on('items');
             $table->foreign('physical_inventory_id')->references('id')->on('physical_inventories')->onDelete('cascade');
             $table->foreign('category_id')->references('id')->on('physical_inventory_categories')->onDelete('set null');
+            $table->timestamps(); 
         });
     }
 

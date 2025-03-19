@@ -89,7 +89,7 @@ class InventoryController extends Controller
 
     public function getEstablishmentsByName(Request $request)
     {   
-        Log::debug($request->all());
+        //Log::debug($request->all());
         $establishments = Establishment::where('description', 'like', '%' . $request->input('value') . '%')->get();
         return response()->json([
             'success' => true,
@@ -100,15 +100,13 @@ class InventoryController extends Controller
     {
         return PhysicalInventoryCategory::all();
     }
-    public function store3(Request $request){
+    public function store3(Request $request){                 
         DB::beginTransaction(); // Iniciar transacción
         try {
-            // Crear el PhysicalInventory y obtener el ID
-            $physicalInventory = PhysicalInventory::create($request->except('details'));
-
-            // Verificar si hay detalles en el request
+            
+            $physicalInventory = PhysicalInventory::create($request->except('details'));           
             if ($request->has('details')) {
-                /*foreach ($request->details as $detail) {
+                foreach ($request->details as $detail) {                 
                     PhysicalInventoryDetail::create([
                         'physical_inventory_id' => $physicalInventory->id, // Relación
                         'item_id' => $detail['item_id'],
@@ -117,34 +115,16 @@ class InventoryController extends Controller
                         'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
                         'category_id' => $detail['category_id'],
                     ]);
-                }*/
-                log::debug("tiene detalle");
+                    
+                }                               
             }
 
             DB::commit(); // Confirmar transacción
-            return response()->json(['message' => 'Inventory and details saved successfully'], 201);
-        } catch (\Exception $e) {
+            return response()->json(['message' => 'Inventario y detalle guarado satisfactoriamente'], 201);
+        } catch (\Exception $e) {            
             DB::rollBack(); // Revertir transacción en caso de error
             return response()->json(['error' => $e->getMessage()], 500);
-        }
-
-
-        //PhysicalInventory::create($request->all());
-        //PhysicalInventoryDetail::create($request->all());
-        /*PhysicalInventory::create( 
-            [
-                'date' => '2025-03-19',
-                'adjustment_type_id' => '1',
-                'establishment_id' => '1',
-                'warehouse_id' => '1',
-                'comment' => 'Comentario de prueba'           
-            ]
-        );*/
-        log::debug("entramos");
-        Log::debug($request->all());
-        $data=request()->all();
-        return $data;
-
+        }        
     }
     public function getProductsByEstablishmentAndWarehouse(Request $request){ 
         //$establishment_id = $request->input('establishment_id');
@@ -155,8 +135,7 @@ class InventoryController extends Controller
         $warehouse_id = 1;  
         
         $searchValue = $request->input('value'); // Puede ser nulo
-        //$searchValue=null;
-        log::debug($searchValue);
+        //$searchValue=null;       
         $query = ItemWarehouse::join('items', 'item_warehouse.item_id', '=', 'items.id')
             ->join('warehouses', 'item_warehouse.warehouse_id', '=', 'warehouses.id')
             ->where('item_warehouse.warehouse_id', $warehouse_id)
@@ -177,8 +156,6 @@ class InventoryController extends Controller
             )
     ->orderBy('item_warehouse.item_id')
     ->get();
-    log::debug($products);
-
     return response()->json([
         'success' => true,
         'data' => $products

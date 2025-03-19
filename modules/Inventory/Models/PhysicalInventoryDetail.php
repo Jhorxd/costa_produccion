@@ -1,6 +1,7 @@
 <?php
 
 namespace Modules\Inventory\Models;
+
 use App\Models\Tenant\ModelTenant;
 use Hyn\Tenancy\Traits\UsesTenantConnection;
 use App\Models\Tenant\Item;
@@ -10,7 +11,7 @@ class PhysicalInventoryDetail extends ModelTenant
 
     use UsesTenantConnection;
     //
-    protected $table = 'physical_inventory_details';
+    protected $table = 'inventory_physical_details';
 
     protected $fillable = [
         'physical_inventory_id',

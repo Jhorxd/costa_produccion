@@ -108,10 +108,10 @@
         <tr v-for="(item, index) in form.details" :key="index">
           <td>{{ item.item_id}}</td>
           <td>{{ item.description }}</td>
-          <td>{{ item.stock }}</td>
-          <td>{{ item.cantidad2 }}</td>
-          <td>{{ item.sale_unit_price }}</td>
-          <td>{{ item.stock * item.sale_unit_price }}</td>
+          <td>{{ item.system_quantity}}</td>
+          <td>{{ item.counted_quantity}}</td>
+          <td>{{ item.sale_unit_price}}</td>
+          <td>{{ item.system_quantity * item.sale_unit_price }}</td>
           <!-- <td>
             <button type="button" class="btn btn-danger btn-sm" @click.prevent="removeItem(index)">
               <i class="fa fa-trash"></i>
@@ -126,13 +126,13 @@
     </div>
   </div>
 </div> 
-<div class="container" style="border: 1px solid red;">
+<div class="container">
   <div class="row align-items-center">
-    <div class="col-auto" style="border: 1px solid red;">
+    <div class="col-auto">
       <label for="cantidad1" class="form-label">Cantidad-1</label>
       <input type="number" v-model="totalCantidad1" id="cantidad1" class="form-control w-75 mb-2" />
       
-      <label for="cantidad2" class="form-label" style="border: 1px solid red;">Cantidad-2</label>
+      <label for="cantidad2" class="form-label">Cantidad-2</label>
       <input type="number" v-model="totalCantidad2" id="cantidad2" class="form-control w-75 mb-2" />
       
       <label for="importe" class="form-label">Importe</label>
@@ -140,7 +140,7 @@
     </div>
 
     <!-- Cambiar col-auto por col -->
-    <div class="col d-flex align-items-center justify-content-center " style="border: 1px solid red;">
+    <div class="col d-flex align-items-center justify-content-center ">
       <button type="button" @click.prevent="sendForm()" class="btn btn-primary w-75">Confirmar</button>
     </div>
   </div>
@@ -212,19 +212,15 @@
                     this.$eventHub.$emit('reloadData')
                 ) */            
           },         
-          getEstablishments(Establishment=null){
-            console.log("Establecimiento seleccionado:", Establishment);
+          getEstablishments(Establishment=null){            
             let url = '/physicalInventory/getEstablishments';
             if (Establishment !== null) {
                url += `?value=${Establishment}`;
             }
             return this.$http
             .get(url)
-            .then(response => { 
-              console.log(response.data.data);
-              this.establishments = response.data.data;
-              console.log(this.establishments);
-              console.log(this.form.establishment_id);
+            .then(response => {               
+              this.establishments = response.data.data;             
                 // Procesar la respuesta aquí
             })
             .catch(error => {
@@ -239,9 +235,7 @@
             return this.$http
             .get(url)
             .then(response => { 
-              this.warehouses = response.data.data;
-              console.log(this.warehouses);
-              //console.log(this.form.establishment_id);
+              this.warehouses = response.data.data;              
                 // Procesar la respuesta aquí
             })
             .catch(error => {
@@ -251,33 +245,24 @@
                 this.loading_submit = false;
             });  
           },        
-          handleEstablishmentChange(value) {
-            //const selectedEstablishment = this.establishments.find(est => est.id === value);
-            //console.log("Establecimiento seleccionado:", selectedEstablishment);
-            //this.getEstablishments(selectedEstablishment.description);
-            alert("el valor es"+ value);
-            console.log("el valor es"+ value);
+          handleEstablishmentChange(value) {                        
             this.getWarehousesByEstablishment(value);          
           },
           handleFilter(value) {
 
             //const selectedEstablishment = this.establishments.find(est => est.id === value);
-            this.getEstablishments(value);
-             console.log("Hola mundo, escribiste:", value);
-             console.log("Hola mundo, escribiste2 :"+ this.form.establishment_id);
-             console.log(this.establishments.length);
+            this.getEstablishments(value);             
              if(this.establishments.length == 0){
                  this.form.establishment_id = null;
                  this.form.warehouse_id = null;
                  this.establishments = [];
                  this.warehouses = [];
-                 this.getEstablishments();
-                 console.log("estara vacio mirando"+ JSON.stringify(this.establishments));
+                 this.getEstablishments();                 
              }
           },
           addItem(newItem) {
-            this.totalCantidad1+= Number(newItem.stock);
-            this.totalCantidad2 += Number(newItem.system_quantity);
+            this.totalCantidad1+= Number(newItem.system_quantity);
+            this.totalCantidad2 += Number(newItem.counted_quantity);
             this.importeTotal += (this.totalCantidad2 - this.totalCantidad1) * newItem.sale_unit_price;
             this.form.details.push(newItem);          
             //this.items.push(newItem);
@@ -287,8 +272,7 @@
             return this.$http
             .get(url)
             .then(response => {              
-              this.categories = response.data; 
-              console.log(this.categories);         
+              this.categories = response.data;                     
                 // Procesar la respuesta aquí
             })
             .catch(error => {
@@ -306,13 +290,11 @@
             }                               
           },
           sendForm(){
-            alert(JSON.stringify(this.form));
             let url = '/physicalInventory/store';           
             return this.$http
             .post(url,this.form)
-            .then(response => {                            
-              console.log(response);         
-                // Procesar la respuesta aquí
+            .then(response => { 
+              this.$message.success(response.data.message);     
             })
             .catch(error => {
                 // Manejar el error aquí
@@ -329,8 +311,11 @@
                     comment: null ,
                     adjustment_type_id: 1,
                     date: null ,
-                    details: []                               
+                    details: []                            
               }
+            this.totalCantidad1 = 0;
+            this.totalCantidad2 = 0;
+            this.importeTotal = 0;
           }
       }
   }

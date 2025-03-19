@@ -3,7 +3,7 @@
       <form autocomplete="off" @submit.prevent="submit">
         <div class="form-body">
           <p v-if="checked">El checkbox está activado ✅</p>
-          <el-select  v-if="checked" v-model="selectedCategory" placeholder="Seleccione una categoría">
+          <el-select  v-if="checked" v-model="form.category_id" placeholder="Seleccione una categoría">
             <el-option
               v-for="category in categories"
               :key="category.id"
@@ -19,9 +19,9 @@
                 <el-select v-model="form.item_id" filterable placeholder="Selecciona un producto"  @change="handleProductChange">
                   <el-option
                     v-for="product in products"
-                    :key="product.id"
+                    :key="product.item_id"
                     :label="`${product.description} | ${product.code} | ${product.category}`"
-                    :value="product.id"
+                    :value="product.item_id"
                   ></el-option>
                 </el-select>
               </div>
@@ -38,7 +38,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label class="control-label">Cantidad</label>
-                <el-input v-model="form.system_quantity" type="number"></el-input>
+                <el-input v-model="form.counted_quantity" type="number"></el-input>
               </div>
             </div>
             <div class="col-md-6">
@@ -102,7 +102,10 @@ import { method } from 'lodash';
             sale_unit_price: 0,
             precioTotal: 0,
             description: null,
-            system_quantity: 0
+            system_quantity: 0,
+            counted_quantity: 0,
+            difference: 0,
+            category_id: null            
         },
         products: [],
         categories: [],
@@ -142,27 +145,30 @@ import { method } from 'lodash';
             }); 
         },
         handleProductChange(value){
-        let product = this.products.find(product => product.id === value);
+        let product = this.products.find(product => product.item_id === value);
         this.form.sale_unit_price = product.sale_unit_price;
-        this.form.stock = product.stock;
+        //this.form.stock = product.stock;
         this.form.precioTotal = product.sale_unit_price * product.stock;
         this.form.description = product.description;
-        this.form.item_id = product.id;
+        this.form.item_id = product.item_id;
         this.form.system_quantity = product.stock;
-        alert("Producto seleccionado: "+ product.description);        
+        this.form.counted_quantity=product.stock;
+        this.form.difference=this.form.system_quantity-this.form.counted_quantity;        
         },
         cleanForm(){
-          this.form = {
+          this.form={
             item_id: null,
             stock: 0,
             sale_unit_price: 0,
             precioTotal: 0,
             description: null,
-            system_quantity: 0
-          }
+            system_quantity: 0,
+            counted_quantity: 0,
+            difference: 0,
+            category_id: null
+          }         
        },
-       sendItem() {
-            alert("emitiendo");
+       sendItem() {           
             if(this.form.item_id){ 
                 this.$emit('add-item', this.form);
                 this.cleanForm();
@@ -188,25 +194,7 @@ import { method } from 'lodash';
                 this.loading_submit = false;
             }); 
           },
-          store(){
-            /*const data = {
-              title: 'Ejemplo de POST',
-              body: 'Este es un cuerpo de prueba',
-              userId: 1
-            };
-            let url = '/physicalInventory/store';           
-            return this.$http
-            .post(url,data)
-            .then(response => {                            
-              console.log(response);         
-                // Procesar la respuesta aquí
-            })
-            .catch(error => {
-                // Manejar el error aquí
-            })
-            .then(() => {
-                //this.loading_submit = false;
-            }); */
+          store(){            
           }
     }
   }
