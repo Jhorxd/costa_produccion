@@ -294,7 +294,10 @@
             return this.$http
             .post(url,this.form)
             .then(response => { 
-              this.$message.success(response.data.message);     
+              this.$message.success(response.data.message);
+              setTimeout(() => {
+                window.location.href = "/physicalInventory";
+              }, 1000); // 1000 milisegundos = 1 segundo     
             })
             .catch(error => {
                 // Manejar el error aquí
@@ -302,7 +305,8 @@
             .then(() => {
               this.cleanForm();
                 //this.loading_submit = false;
-            });            
+            });
+                      
           },
           cleanForm(){
             this.form = {

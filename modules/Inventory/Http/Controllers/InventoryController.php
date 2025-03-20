@@ -53,6 +53,10 @@ class InventoryController extends Controller
     {
         return view('inventory::inventory.physicalInventory');
     }
+    public function indexPhysicalInventoryList()
+    {
+        return view('inventory::inventory.physicalInventoryList');
+    }
     public function indexWarehouses()
     {
         return view('inventory::warehouses.warehousesList');
@@ -99,6 +103,19 @@ class InventoryController extends Controller
     public function getAllPhysicalInventoryCategories()
     {
         return PhysicalInventoryCategory::all();
+    }
+    public function getAllPhysicalInventories(){
+        $query = PhysicalInventory::join('establishments', 'physical_inventories.establishment_id', '=', 'establishments.id')
+        ->join('warehouses', 'physical_inventories.warehouse_id', '=', 'warehouses.id')
+        ->join('physical_inventory_adjustment_types', 'physical_inventories.adjustment_type_id', '=', 'physical_inventory_adjustment_types.id')
+        ->select(
+            'physical_inventories.*', 
+            'establishments.description as establishment_description', 
+            'warehouses.description as warehouse_description',
+            'physical_inventory_adjustment_types.name as adjustment_type_name'
+        )->orderBy('physical_inventories.id')
+        ->get();
+        return $query;
     }
     public function store3(Request $request){                 
         DB::beginTransaction(); // Iniciar transacción
@@ -610,7 +627,10 @@ class InventoryController extends Controller
 
 
     public function stock(Request $request)
-    {
+    {   
+
+        log::info($request->all());
+        return;
         $result = DB::connection('tenant')->transaction(function () use ($request) {
             $id = $request->input('id');
             $item_id = $request->input('item_id');

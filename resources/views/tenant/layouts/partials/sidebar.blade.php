@@ -417,8 +417,8 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                     <a class="nav-link" href="{{route('inventory.index2')}}">Almacen</a>
                                                 </li>
                                                 @endif
-                                                <li class="{{ ($firstLevel === 'physicalInventory') ? 'nav-active' : '' }}">
-                                                    <a class="nav-link" href="{{route('inventory.physicalInventory')}}">Inventario Fisico</a>
+                                                <li  class="{{ ($firstLevel === 'physicalInventory') ? 'nav-active' : '' }}">
+                                                    <a class="nav-link" href="{{route('inventory.physicalList')}}">Inventario Fisico</a>
                                                 </li>
                                                 <li class="{{ ($firstLevel === 'locations') ? 'nav-active' : '' }}">
                                                     <a class="nav-link" href="{{route('locations.index')}}">ubicación</a>
@@ -723,7 +723,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     <path d="M9 16h6" />
                                 </svg>
                                 <span>Comprobantes avanzados</span>
-                            </a>
+                            </a>f
                             <ul class="nav nav-children" style="">
                                 @if(in_array('advanced_retentions', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'retentions') ? 'nav-active' : '' }}">
