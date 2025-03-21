@@ -117,31 +117,56 @@ class InventoryController extends Controller
         ->get();
         return $query;
     }
-    public function store3(Request $request){                 
-        DB::beginTransaction(); // Iniciar transacción
-        try {
-            
-            $physicalInventory = PhysicalInventory::create($request->except('details'));           
-            if ($request->has('details')) {
-                foreach ($request->details as $detail) {                 
-                    PhysicalInventoryDetail::create([
-                        'physical_inventory_id' => $physicalInventory->id, // Relación
-                        'item_id' => $detail['item_id'],
-                        'counted_quantity' => $detail['counted_quantity'],
-                        'system_quantity' => $detail['system_quantity'],
-                        'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
-                        'category_id' => $detail['category_id'],
-                    ]);
-                    
-                }                               
-            }
+    public function store3(Request $request){
+        DB::beginTransaction(); 
+            try {        
+            $physicalInventory = PhysicalInventory::create($request->except('details'));
 
-            DB::commit(); // Confirmar transacción
-            return response()->json(['message' => 'Inventario y detalle guarado satisfactoriamente'], 201);
-        } catch (\Exception $e) {            
-            DB::rollBack(); // Revertir transacción en caso de error
-            return response()->json(['error' => $e->getMessage()], 500);
-        }        
+            if ($request->has('details')) {
+                foreach ($request->details as $detail) {
+                    if ($detail['counted_quantity'] < 0) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'La cantidad de stock real debe ser mayor o igual a 0'
+                        ], 400);
+                    }
+
+            $type = 1;
+            $quantity_new = $detail['counted_quantity'] - $detail['system_quantity'];
+            if ($detail['counted_quantity'] < $detail['system_quantity']) {
+                $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
+                $type = null;
+            }           
+            $inventory = new Inventory();
+            $inventory->type = $type;
+            $inventory->description = 'Stock Real';
+            $inventory->item_id = $detail['item_id'];
+            $inventory->warehouse_id = $request->warehouse_id; 
+            $inventory->quantity = $quantity_new;
+            if ($detail['counted_quantity'] != $detail['system_quantity']) {
+                $inventory->inventory_transaction_id = 28;
+            }
+            $inventory->real_stock = $detail['counted_quantity'];
+            $inventory->system_stock = $detail['system_quantity'];
+            $inventory->save();     
+            PhysicalInventoryDetail::create([
+                'physical_inventory_id' => $physicalInventory->id,
+                'item_id' => $detail['item_id'],
+                'counted_quantity' => $detail['counted_quantity'],
+                'system_quantity' => $detail['system_quantity'],
+                'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
+                'category_id' => $detail['category_id'] ?? null, 
+            ]);
+        }
+    }
+
+        DB::commit(); 
+        return response()->json(['message' => 'Inventario y detalle guardado satisfactoriamente'], 201);
+    } catch (\Exception $e) {
+        DB::rollBack(); 
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
     }
     public function getProductsByEstablishmentAndWarehouse(Request $request){ 
         //$establishment_id = $request->input('establishment_id');
@@ -158,25 +183,23 @@ class InventoryController extends Controller
             ->where('item_warehouse.warehouse_id', $warehouse_id)
             ->where('warehouses.establishment_id', $establishment_id);
 
-// Si `value` está presente, agregamos la condición de búsqueda
         if (!empty($searchValue)) {
             $query->where('items.description', 'like', '%' . $searchValue . '%');
         }
-// Ejecutamos la consulta
-        $products = $query->select(
-                'item_warehouse.id',
-                'item_warehouse.item_id',
-                'item_warehouse.warehouse_id',
-                'item_warehouse.stock',
-                'items.sale_unit_price',
-                'items.description'
-            )
-    ->orderBy('item_warehouse.item_id')
-    ->get();
-    return response()->json([
-        'success' => true,
-        'data' => $products
-    ]);
+            $products = $query->select(
+                    'item_warehouse.id',
+                    'item_warehouse.item_id',
+                    'item_warehouse.warehouse_id',
+                    'item_warehouse.stock',
+                    'items.sale_unit_price',
+                    'items.description'
+                )
+        ->orderBy('item_warehouse.item_id')
+        ->get();
+        return response()->json([
+            'success' => true,
+            'data' => $products
+        ]);
     }
     public function getWarehousesByEstablishment($id)
     {
@@ -627,10 +650,7 @@ class InventoryController extends Controller
 
 
     public function stock(Request $request)
-    {   
-
-        log::info($request->all());
-        return;
+    {           
         $result = DB::connection('tenant')->transaction(function () use ($request) {
             $id = $request->input('id');
             $item_id = $request->input('item_id');
@@ -676,7 +696,7 @@ class InventoryController extends Controller
 
         return $result;
     }
-
+    
     public function stockMultiples(Request $request)
     {
         $request->validate([
