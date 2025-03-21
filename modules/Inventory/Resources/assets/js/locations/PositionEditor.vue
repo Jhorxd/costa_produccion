@@ -74,22 +74,24 @@ export default {
         return;
       }
 
-      this.positions = [];
-      for (let i = 1; i <= rows; i++) {
+      const newPositions = [];
+      for (let i = rows; i > 0; i--) {
         const row = [];
         for (let j = 1; j <= columns; j++) {
+          const existingPosition = this.positions.flat().find(p => p.row === i && p.column === j);
           row.push({
             row: i,
             column: j,
-            status: 'available',
+            status: existingPosition ? existingPosition.status : 'available',
           });
         }
-        this.positions.push(row);
+        newPositions.push(row);
       }
+      this.positions = newPositions;
     },
     mapPositionsToGrid(positions, rows, columns) {
       const grid = [];
-      for (let i = 1; i <= rows; i++) {
+      for (let i = rows; i > 0; i--) {
         const row = [];
         for (let j = 1; j <= columns; j++) {
           const position = positions.find(p => p.row === i && p.column === j);
@@ -123,6 +125,7 @@ export default {
       this.positions.forEach(row => {
         row.push({ row: row[0].row, column: newColumnIndex, status: 'available' });
       });
+      this.$emit('addColumn');
     },
     addRow() {
       const newRowIndex = this.positions.length + 1;
@@ -131,9 +134,11 @@ export default {
         newRow.push({ row: newRowIndex, column: j, status: 'available' });
       }
       this.positions.unshift(newRow);
+      this.$emit('addRow');
     },
     deleteRow(rowIndex) {
       this.positions.splice(rowIndex, 1);
+      this.$emit('deleteRow');
     },
   },
 };

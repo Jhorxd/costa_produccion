@@ -421,7 +421,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                     <a class="nav-link" href="{{route('inventory.physicalList')}}">Inventario Fisico</a>
                                                 </li>
                                                 <li class="{{ ($firstLevel === 'locations') ? 'nav-active' : '' }}">
-                                                    <a class="nav-link" href="{{route('locations.index')}}">ubicación</a>
+                                                    <a class="nav-link" href="{{route('locations.index')}}">Ubicación</a>
                                                 </li>
                                                 @if(in_array('inventory', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'inventory') ? 'nav-active' : '' }}">

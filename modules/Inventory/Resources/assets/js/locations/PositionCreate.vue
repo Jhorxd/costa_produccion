@@ -82,7 +82,7 @@ export default {
       this.$emit('position-status-updated', position);
     },
     savePositions() {
-      this.$emit('save');
+      this.$emit('save', this.positions.flat());
     },
     addColumn() {
       const newColumnIndex = this.positions[0].length + 1;

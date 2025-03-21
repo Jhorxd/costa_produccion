@@ -12,6 +12,7 @@ class CreateWarehouseLocationPositionsTable extends Migration
         Schema::create('warehouse_location_positions', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('location_id');
+            $table->integer('quantity_used')->default(0);
             $table->integer('row');
             $table->integer('column');
             $table->string('status');

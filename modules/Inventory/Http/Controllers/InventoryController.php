@@ -1089,12 +1089,11 @@ class InventoryController extends Controller
             $this->location->warehouse_id = $data['warehouse_id'];
             $this->location->save();
 
-            // Crear posiciones basadas en filas y columnas
             foreach ($data['positions'] as $positionData) {
                 $this->location->positions()->create([
                     'row' => $positionData['row'],
                     'column' => $positionData['column'],
-                    'status' => $positionData['status'] // Estado enviado desde el frontend
+                    'status' => $positionData['status']
                 ]);
             }
         });
@@ -1112,12 +1111,10 @@ class InventoryController extends Controller
     {
         $query = InventoryWarehouseLocation::query();
 
-        // Aplicar filtros si existen
         if ($request->has('column') && $request->has('value')) {
             $query->where($request->column, 'like', '%' . $request->value . '%');
         }
 
-        // Paginación
         $records = $query->paginate(10);
 
         return response()->json([

@@ -22,6 +22,10 @@ class ItemRequest extends FormRequest
     {
         $id = $this->input('id');
         return [
+            'item_files.*.file' => 'file|max:2048', // Máximo 2MB por archivo
+            'item_files.*.filename' => 'string',
+            'item_files.*.created_at' => 'date',
+            'item_files.*.user_created_at' => 'string',
             'internal_id' => [
                 'nullable',
                 Rule::unique('tenant.items')->ignore($id),

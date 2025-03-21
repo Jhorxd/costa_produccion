@@ -3,9 +3,11 @@
     namespace App\Http\Resources\Tenant;
 
     use App\Models\Tenant\Configuration;
-    use App\Models\Tenant\ItemSupply;
+use App\Models\Tenant\ItemPosition;
+use App\Models\Tenant\ItemSupply;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Inventory\Models\WarehouseLocationPosition;
 
     /**
      * Class ItemResource
@@ -71,8 +73,23 @@
                     return $row-> getCollectionData();
                 });
             }
+            $item_positions = [];
+            $item_positions_selected = ItemPosition::where('item_id', $this->id)->get();
+            if($item_positions_selected){
+                foreach($item_positions_selected as $position_selected){
+                    $item_position = WarehouseLocationPosition::find($position_selected->position_id);
+                    if($item_position){
+                        $item_position->stock=$position_selected->stock;
+                        array_push($item_positions, $item_position);
+                    }
+                }
+                
+            }
+
             return [
                 'id' => $this->id,
+                'positions_selected' => $item_positions,
+                'location_id' => $item_positions!= [] ? $item_positions[0]->location_id:null,
                 'is_for_production'=>$this->isIsForProduction(),
                 'description' => $this->description,
                 'technical_specifications' => $this->technical_specifications,
@@ -96,6 +113,15 @@
                 'currency_type_id' => $this->currency_type_id,
                 'sale_unit_price' => $this->getFormatSaleUnitPrice(),
                 // 'sale_unit_price' => $this->sale_unit_price,
+                'sale_price' => $this->getFormatSalePrice(),
+                'active_principle' => $this->active_principle,
+                'concentration' => $this->concentration,
+                'pharmaceutical_unit_type_id' => $this->pharmaceutical_unit_type_id,
+                'supplier_id' => $this->supplier_id,
+                'sales_condition_id' => $this->sales_condition_id,
+                'lot' => $this->lot,
+                'supplier_id' => $this->supplier_id,
+                'item_files' => $this->item_files,
                 'purchase_unit_price' => $this->purchase_unit_price,
                 'unit_type_id' => $this->unit_type_id,
                 'has_isc' => (bool)$this->has_isc,

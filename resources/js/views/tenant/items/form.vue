@@ -17,7 +17,7 @@
                              name="first">
                     <span slot="label">General</span>
                     <div class="row">
-                        <div class="col-md-3">
+                        <!-- <div class="col-md-3">
                             <div v-show="show_has_igv"
                                  class="">
                                 <div :class="{'has-danger': errors.has_igv}"
@@ -57,16 +57,311 @@
                                            v-text="errors.has_plastic_bag_taxes[0]"></small>
                                 </div>
                             </div>
+                        </div> -->
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.internal_id}"
+                            class="form-group">
+                                 <label class="control-label">Código Único
+                                        <el-tooltip class="item"
+                                                    content="Código interno de la empresa para el control de sus productos"
+                                                    effect="dark"
+                                                    placement="top-start">
+                                            <i class="fa fa-info-circle"></i>
+                                        </el-tooltip>
+                                    </label>
+                                    <el-input v-model="form.internal_id"
+                                            dusk="internal_id"></el-input>
+                                    <small v-if="errors.internal_id"
+                                        class="form-control-feedback"
+                                        v-text="errors.internal_id[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.cod_digemid}"
+                            class="form-group">
+                                 <label class="control-label">
+                                    Código DIGEMID
+                                    <el-tooltip
+                                        class="item"
+                                        content="Código de observación DIGEMID"
+                                        effect="dark"
+                                        placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-input v-model="form.cod_digemid">
+                                </el-input>
+                                <small v-if="errors.cod_digemid"
+                                       class="form-control-feedback"
+                                       v-text="errors.cod_digemid[0]"></small>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div :class="{'has-danger': errors.description}"
                                  class="form-group">
-                                <label class="control-label">Nombre<span class="text-danger">*</span></label>
+                                <label class="control-label">Nombre <span class="text-danger">*</span></label>
                                 <el-input v-model="form.description"
                                           dusk="description"></el-input>
                                 <small v-if="errors.description"
                                        class="form-control-feedback"
                                        v-text="errors.description[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.active_principle}"
+                                 class="form-group">
+                                <label class="control-label">Principio activo</label>
+                                <el-input v-model="form.active_principle"
+                                          dusk="active_principle"></el-input>
+                                <small v-if="errors.active_principle"
+                                       class="form-control-feedback"
+                                       v-text="errors.active_principle[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.concentration}"
+                                 class="form-group">
+                                <label class="control-label">Concentración</label>
+                                <el-input v-model="form.concentration"
+                                          dusk="name"></el-input>
+                                <small v-if="errors.concentration"
+                                       class="form-control-feedback"
+                                       v-text="errors.concentration[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.unit_type_id}"
+                                 class="form-group">
+                                <label class="control-label">Presentación / Forma Farmaceútica <span class="text-danger">*</span></label>
+                                <el-select v-model="form.pharmaceutical_unit_type_id"
+                                           dusk="unit_type_id">
+                                    <el-option v-for="option in pharmaceutical_unit_types"
+                                               :key="option.id"
+                                               :label="option.description"
+                                               :value="option.id"></el-option>
+                                </el-select>
+                                <small v-if="errors.unit_type_id"
+                                       class="form-control-feedback"
+                                       v-text="errors.unit_type_id[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.sale_price}"
+                                 class="form-group">
+                                <label class="control-label">Precio de venta <span class="text-danger">*</span></label>
+                                <el-input v-model="form.sale_price"
+                                          dusk="sale_price"
+                                          @input="calculatePercentageOfProfitBySale"></el-input>
+                                <small v-if="errors.sale_price"
+                                       class="form-control-feedback"
+                                       v-text="errors.sale_price[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.sanitary}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Registros Sanitarios
+                                    <el-tooltip
+                                        class="item"
+                                        content="Número de registro sanitario"
+                                        effect="dark"
+                                        placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-input v-model="form.sanitary">
+                                </el-input>
+                                <small v-if="errors.sanitary"
+                                       class="form-control-feedback"
+                                       v-text="errors.sanitary[0]"></small>
+                            </div>
+                        </div>
+                        <div :class="recordId?'col-md-6':'col-md-3'">
+                            <div :class="{'has-danger': errors.lot}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Lote
+                                    <el-tooltip
+                                        class="item"
+                                        content="Lote"
+                                        effect="dark"
+                                        placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-input v-model="form.lot">
+                                </el-input>
+                                <small v-if="errors.lot"
+                                       class="form-control-feedback"
+                                       v-text="errors.lot[0]"></small>
+                            </div>
+                        </div>
+                        <div v-show="recordId==null && form.unit_type_id !='ZZ'"
+                             class="col-md-3">
+                            <div :class="{'has-danger': errors.stock}"
+                                 class="form-group">
+                                <label class="control-label">Stock Inicial</label>
+                                <el-input v-model="form.stock"></el-input>
+                                <small v-if="errors.stock"
+                                       class="form-control-feedback"
+                                       v-text="errors.stock[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.sale_affectation_igv_type_id}"
+                                 class="form-group">
+                                <label class="control-label">Tipo de afectación</label>
+                                <el-select
+                                    v-model="form.sale_affectation_igv_type_id"
+                                    filterable
+                                    @change="changeAffectationIgvType">
+                                    <el-option
+                                        v-for="option in affectation_igv_types"
+                                        :key="option.id"
+                                        :label="option.description"
+                                        :value="option.id"
+                                    ></el-option>
+                                </el-select>
+                                <small
+                                    v-if="errors.sale_affectation_igv_type_id"
+                                    class="form-control-feedback"
+                                    v-text="errors.sale_affectation_igv_type_id[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.unit_type_id}"
+                                 class="form-group">
+                                <label class="control-label">Unidad</label>
+                                <el-select v-model="form.unit_type_id"
+                                           dusk="unit_type_id">
+                                    <el-option v-for="option in unit_types"
+                                               :key="option.id"
+                                               :label="option.description"
+                                               :value="option.id"></el-option>
+                                </el-select>
+                                <small v-if="errors.unit_type_id"
+                                       class="form-control-feedback"
+                                       v-text="errors.unit_type_id[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.supplier_id}"
+                                 class="form-group">
+                                <label class="control-label">Proveedor</label>
+                                <el-select
+                                    v-model="form.supplier_id"
+                                    filterable
+                                    @change="changeAffectationIgvType">
+                                    <el-option
+                                        v-for="option in suppliers"
+                                        :key="option.id"
+                                        :label="option.name"
+                                        :value="option.id"
+                                    ></el-option>
+                                </el-select>
+                                <small
+                                    v-if="errors.sale_affectation_igv_type_id"
+                                    class="form-control-feedback"
+                                    v-text="errors.sale_affectation_igv_type_id[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div :class="{'has-danger': errors.sales_condition_id}"
+                                 class="form-group">
+                                <label class="control-label">Condición de venta</label>
+                                <el-select
+                                    v-model="form.sales_condition_id"
+                                    filterable
+                                    @change="changeAffectationIgvType">
+                                    <el-option
+                                        v-for="option in sales_conditions"
+                                        :key="option.id"
+                                        :label="option.description"
+                                        :value="option.id"
+                                    ></el-option>
+                                </el-select>
+                                <small
+                                    v-if="errors.sales_condition_id"
+                                    class="form-control-feedback"
+                                    v-text="errors.sales_condition_id[0]"></small>
+                            </div>
+                        </div>
+                        <div :class="recordId?'col-md-6':'col-md-3'">
+                            <div :class="{'has-danger': errors.sale_unit_price}"
+                                 class="form-group">
+                                <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
+                                <el-input v-model="form.sale_unit_price"
+                                          dusk="sale_unit_price"
+                                          @input="calculatePercentageOfProfitBySale"></el-input>
+                                <small v-if="errors.sale_unit_price"
+                                       class="form-control-feedback"
+                                       v-text="errors.sale_unit_price[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-6" v-if="recordId">
+                            <div class="form-group">
+                                <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+                                <el-select
+                                    v-model="location_id"
+                                    filterable>
+                                    <el-option
+                                        v-for="option in locations"
+                                        :key="option.id"
+                                        :label="option.name"
+                                        :value="option.id"
+                                    ></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end" v-if="recordId">
+                            <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
+                        </div>
+                        <div v-if="form.unit_type_id !='ZZ'"
+                             v-show="recordId==null"
+                             class="col-md-3">
+                            <div :class="{'has-danger': errors.warehouse_id}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Almacén
+                                    <el-tooltip class="item"
+                                                content="Si no selecciona almacén, se asignará por defecto el relacionado al sucursal"
+                                                effect="dark"
+                                                placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-select v-model="form.warehouse_id"
+                                           filterable>
+                                    <el-option v-for="option in warehouses"
+                                               :key="option.id"
+                                               :label="option.description"
+                                               :value="option.id"></el-option>
+                                </el-select>
+                                <small v-if="errors.warehouse_id"
+                                       class="form-control-feedback"
+                                       v-text="errors.warehouse_id[0]"></small>
+                            </div>
+                        </div>
+
+
+
+
+
+                        <!-- <div class="col-md-3">
+                            <div :class="{'has-danger': errors.currency_type_id}"
+                                 class="form-group">
+                                <label class="control-label">Moneda</label>
+                                <el-select v-model="form.currency_type_id"
+                                           dusk="currency_type_id">
+                                    <el-option v-for="option in currency_types"
+                                               :key="option.id"
+                                               :label="option.description"
+                                               :value="option.id"></el-option>
+                                </el-select>
+                                <small v-if="errors.currency_type_id"
+                                       class="form-control-feedback"
+                                       v-text="errors.currency_type_id[0]"></small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -102,71 +397,6 @@
                                        v-text="errors.model[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.unit_type_id}"
-                                 class="form-group">
-                                <label class="control-label">Unidad</label>
-                                <el-select v-model="form.unit_type_id"
-                                           dusk="unit_type_id">
-                                    <el-option v-for="option in unit_types"
-                                               :key="option.id"
-                                               :label="option.description"
-                                               :value="option.id"></el-option>
-                                </el-select>
-                                <small v-if="errors.unit_type_id"
-                                       class="form-control-feedback"
-                                       v-text="errors.unit_type_id[0]"></small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.currency_type_id}"
-                                 class="form-group">
-                                <label class="control-label">Moneda</label>
-                                <el-select v-model="form.currency_type_id"
-                                           dusk="currency_type_id">
-                                    <el-option v-for="option in currency_types"
-                                               :key="option.id"
-                                               :label="option.description"
-                                               :value="option.id"></el-option>
-                                </el-select>
-                                <small v-if="errors.currency_type_id"
-                                       class="form-control-feedback"
-                                       v-text="errors.currency_type_id[0]"></small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.sale_unit_price}"
-                                 class="form-group">
-                                <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
-                                <el-input v-model="form.sale_unit_price"
-                                          dusk="sale_unit_price"
-                                          @input="calculatePercentageOfProfitBySale"></el-input>
-                                <small v-if="errors.sale_unit_price"
-                                       class="form-control-feedback"
-                                       v-text="errors.sale_unit_price[0]"></small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div :class="{'has-danger': errors.sale_affectation_igv_type_id}"
-                                 class="form-group">
-                                <label class="control-label">Tipo de afectación</label>
-                                <el-select
-                                    v-model="form.sale_affectation_igv_type_id"
-                                    filterable
-                                    @change="changeAffectationIgvType">
-                                    <el-option
-                                        v-for="option in affectation_igv_types"
-                                        :key="option.id"
-                                        :label="option.description"
-                                        :value="option.id"
-                                    ></el-option>
-                                </el-select>
-                                <small
-                                    v-if="errors.sale_affectation_igv_type_id"
-                                    class="form-control-feedback"
-                                    v-text="errors.sale_affectation_igv_type_id[0]"></small>
-                            </div>
-                        </div>
                         <div class="col-12"></div>
                         <div v-if="form.unit_type_id !='ZZ'"
                              v-show="recordId==null"
@@ -194,17 +424,7 @@
                                        v-text="errors.warehouse_id[0]"></small>
                             </div>
                         </div>
-                        <div v-show="recordId==null && form.unit_type_id !='ZZ'"
-                             class="col-md-3">
-                            <div :class="{'has-danger': errors.stock}"
-                                 class="form-group">
-                                <label class="control-label">Stock Inicial</label>
-                                <el-input v-model="form.stock"></el-input>
-                                <small v-if="errors.stock"
-                                       class="form-control-feedback"
-                                       v-text="errors.stock[0]"></small>
-                            </div>
-                        </div>
+                        
                         <div v-show="form.unit_type_id !='ZZ'"
                              class="col-md-3">
                             <div :class="{'has-danger': errors.stock_min}"
@@ -243,23 +463,6 @@
                         <div class="col-md-3">
                             <div :class="{'has-danger': errors.internal_id}"
                                  class="form-group">
-                                <!-- migracion desarrollo sin terminar #1401 -->
-                                 <!-- <template v-if="inventory_configuration && inventory_configuration.generate_internal_id == 1">
-                                    <label class="control-label">Código Interno
-                                    <el-tooltip class="item"
-                                                content="Código interno de la empresa para el control de sus productos | Autogenerado por el sistema"
-                                                effect="dark"
-                                                placement="top-start">
-                                        <i class="fa fa-info-circle"></i>
-                                    </el-tooltip>
-                                    </label>
-                                    <el-input :disabled="true" v-model="form.internal_id"
-                                          dusk="internal_id"></el-input>
-                                    <small v-if="errors.internal_id"
-                                       class="form-control-feedback"
-                                       v-text="errors.internal_id[0]"></small>
-                                </template> -->
-                                <!-- <template v-else> -->
                                     <label class="control-label">Código Interno
                                         <el-tooltip class="item"
                                                     content="Código interno de la empresa para el control de sus productos"
@@ -273,7 +476,6 @@
                                     <small v-if="errors.internal_id"
                                         class="form-control-feedback"
                                         v-text="errors.internal_id[0]"></small>
-                                <!-- </template> -->
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -313,8 +515,8 @@
                                        v-text="errors.line[0]"></small>
                             </div>
                         </div>
-                        <!-- sanitary -->
-                        <div v-show="showPharmaElement"
+                        
+                        <div
                              class="col-md-3">
                             <div :class="{'has-danger': errors.sanitary}"
                                  class="form-group">
@@ -335,8 +537,8 @@
                                        v-text="errors.sanitary[0]"></small>
                             </div>
                         </div>
-                        <!-- cod_digemid -->
-                        <div v-show="showPharmaElement"
+                        
+                        <div
                              class="col-md-3">
                             <div :class="{'has-danger': errors.cod_digemid}"
                                  class="form-group">
@@ -561,9 +763,9 @@
                                     <small v-if="errors.quantity_of_points" class="form-control-feedback" v-text="errors.quantity_of_points[0]"></small>
                                 </div>
                             </div>
-                        </template>
+                        </template> -->
 
-                    </div>
+                    </div> 
                 </el-tab-pane>
 
                 <el-tab-pane class
@@ -1178,6 +1380,63 @@
                         -->
                     </div>
                 </el-tab-pane>
+                <el-tab-pane class name="seven">
+                    <span slot="label">Documentos</span>
+                    <div class="row">
+                        <div class="col-md-12 d-flex justify-content-center mb-4 mt-4">
+                            <el-upload
+                                :action="''"
+                                ref="upload"
+                                :headers="headers"
+                                :show-file-list="false"
+                                :auto-upload="false"
+                                :on-change="handleFileChange"
+                                :on-error="errorUpload"
+                                :multiple="true"
+                                :data="form">
+                                <el-button slot="trigger" type="primary">Añadir archivo</el-button>
+                            </el-upload>
+                        </div>
+                        <div v-if="form.item_files && form.item_files.length > 0"
+                             class="col-md-12">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="bg-light">
+                                    <tr>
+                                        <th class="text-center">Nombre</th>
+                                        <th class="text-center">Fecha</th>
+                                        <th class="text-center">Usuario</th>
+                                        <th class="text-center">Opciones</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr v-for="(row, index) in form.item_files"
+                                        :key="index">
+                                        <template v-if="true">
+                                            <td class="text-center"> {{row.filename}} </td>
+                                            <td class="text-center">{{ row.created_at }}</td>
+                                            <td class="text-center">{{ row.user_created_at }}</td>
+                                            <td class="series-table-actions text-right" v-if="config.enable_list_product">
+                                                <button class="btn waves-effect waves-light btn-xs btn-danger"
+                                                        type="button"
+                                                        @click.prevent="deleteFile(index)">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                                <button class="btn waves-effect waves-light btn-xs btn-primary"
+                                                        type="button"
+                                                        v-if="recordId"
+                                                        @click.prevent="downloadFile(row.id)">
+                                                    <i class="fa fa-download"></i>
+                                                </button>
+                                            </td>
+                                        </template>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </el-tab-pane>
             </el-tabs>
             <div class="form-actions text-right pt-2 mt-2">
                 <template v-if="forOnlyShowAllDetails">
@@ -1201,6 +1460,14 @@
             @addRowLot="addRowLot">
         </lots-form>
 
+        <item-location
+            :showDialog.sync="showDialogLocation"
+            :location_id="location_id"
+            :positions_selected="positions_selected"
+            :positions="positions"
+            @positions-save="saveDataPosition">
+        </item-location>
+
     </el-dialog>
 </template>
 
@@ -1209,7 +1476,7 @@ import LotsForm from './partials/lots.vue'
 import ExtraInfo from './partials/extra_info'
 import {mapActions, mapState} from "vuex";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../helpers/modal_item";
-
+import ItemLocation from './locations.vue';
 
 export default {
     props: [
@@ -1222,7 +1489,8 @@ export default {
     ],
     components: {
         LotsForm,
-        ExtraInfo
+        ExtraInfo,
+        ItemLocation
     },
     computed: {
         forOnlyShowAllDetails()
@@ -1304,10 +1572,23 @@ export default {
         return {
             loading_search: false,
             showDialogLots: false,
+            showDialogLocation: false,
             form_category: {add: false, name: null, id: null},
             form_brand: {add: false, name: null, id: null},
             warehouses: [],
             items: [],
+            suppliers: [],
+            sales_conditions: [],
+            positions: [],
+            positions_selected: [],
+            location_id: null,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+            pharmaceutical_unit_types: [],
+            username: '---',
+            item_files_deleted: [],
+            locations: [],
             loading_submit: false,
             showPercentagePerception: false,
             has_percentage_perception: false,
@@ -1359,7 +1640,10 @@ export default {
         await this.$http.get(`/${this.resource}/tables`)
             .then(response => {
                 let data = response.data;
-                this.unit_types = data.unit_types
+                this.unit_types = data.unit_types;
+                this.pharmaceutical_unit_types = data.pharmaceutical_item_unit_types;
+                this.sales_conditions = data.sales_conditions
+                this.suppliers = data.suppliers
                 this.accounts = data.accounts
                 this.currency_types = data.currency_types
                 this.system_isc_types = data.system_isc_types
@@ -1368,6 +1652,8 @@ export default {
                 this.categories = data.categories
                 this.brands = data.brands
                 this.attribute_types = data.attribute_types
+                this.locations = data.locations;
+                
                 // this.config = data.configuration
                 if (this.canShowExtraData) {
                     this.$store.commit('setColors', data.colors);
@@ -1407,6 +1693,31 @@ export default {
         ...mapActions([
             'loadConfiguration',
         ]),
+        handleFileChange(file) {            
+            if(this.username='---'){
+                this.username = JSON.parse(localStorage.getItem('establishment')).email;
+            }
+            const filename = file.name;
+            const now = new Date();
+            const created_at = now.toISOString().slice(0, 19).replace("T", " ");
+            let data = {
+                filename: filename,
+                created_at: created_at,
+                user_created_at: this.username,
+                raw: file.raw
+            };
+            this.form.item_files.push(data);
+        },
+        errorUpload(error) {
+            console.log(error)
+        },
+        saveDataPosition(data) {
+            if(data.length>0){
+                this.position_selected = [];
+                this.positions_selected = data;
+            }
+            console.log(this.positions_selected);
+        },
         setDefaultConfiguration() {
             this.form.sale_affectation_igv_type_id = (this.config) ? this.config.affectation_igv_type_id : '10'
 
@@ -1474,6 +1785,29 @@ export default {
         addRowLot(lots) {
             this.form.lots = lots
         },
+        async clickItemLocation() {
+            if(!this.location_id){
+                this.$message.error("Seleccione una ubicación");
+            }else{
+                await this.$http.get(`/${this.resource}/positions/${this.location_id}`)
+                .then(response => {
+                    if (response.data.success) {
+                        this.positions = response.data.data;
+                        this.positions_selected.forEach(element => {
+                            const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
+                            if(position_finded){
+                                position_finded.stock = parseInt(element.stock);
+                            }else{
+                                position_finded.stock = 0;
+                            }
+                        });
+                    }
+                });
+                console.log(this.positions);
+                
+                this.showDialogLocation = true;
+            }
+        },
         clickLotcode() {
             this.showDialogLots = true
         },
@@ -1483,23 +1817,9 @@ export default {
         changeEnabledPercentageOfProfit() {
             // if(!this.enabled_percentage_of_profit) this.form.percentage_of_profit = 0
         },
-        clickDelete(id) {
-
-            this.$http.delete(`/${this.resource}/item-unit-type/${id}`)
-                .then(res => {
-                    if (res.data.success) {
-                        this.loadRecord()
-                        this.$message.success('Se eliminó correctamente el registro')
-                    }
-                })
-                .catch(error => {
-                    if (error.response.status === 500) {
-                        this.$message.error('Error al intentar eliminar');
-                    } else {
-                        console.log(error.response.data.message)
-                    }
-                })
-
+        deleteFile(index) {
+            this.item_files_deleted.push(this.form.item_files[index]);
+            this.form.item_files.splice(index, 1);
         },
         changeHasPerception() {
             if (!this.form.has_perception) {
@@ -1537,8 +1857,11 @@ export default {
                 name: null,
                 second_name: null,
                 unit_type_id: 'NIU',
+                pharmaceutical_unit_type_id: null,
+                item_files: [],
                 currency_type_id: 'PEN',
                 sale_unit_price: 0,
+                sale_price: 0,
                 purchase_unit_price: 0,
                 has_isc: false,
                 system_isc_type_id: null,
@@ -1566,6 +1889,7 @@ export default {
                 line: null,
                 lots_enabled: false,
                 lots: [],
+                //lot:0,
                 attributes: [],
                 series_enabled: false,
                 purchase_has_igv: true,
@@ -1583,7 +1907,8 @@ export default {
                 quantity_of_points: 0,
                 factory_code: null,
                 restrict_sale_cpe: false,
-
+                sales_condition_id: null,
+                supplier_id: null,
             }
 
             this.show_has_igv = true
@@ -1644,27 +1969,32 @@ export default {
         },
 
         async create() {
-            // console.log(this.warehouses)
-            // this.warehouses = this.warehouses.map(w => {
-            //     delete w.price;
-            //     return w;
-            // });
-this.activeName =  'first'
+            this.activeName =  'first'
             if (this.type) {
                 if (this.type !== 'PRODUCTS') {
                     this.form.unit_type_id = 'ZZ';
                 }
             }
 
-            this.setDialogTitle()
+            this.setDialogTitle();
 
             if (this.recordId) {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
-                        this.form = response.data.data
-                        this.has_percentage_perception = (this.form.percentage_perception) ? true : false
-                        this.changeAffectationIgvType()
-                        this.changePurchaseAffectationIgvType()
+                        this.form = response.data.data;
+                        if(response.data.data.positions_selected.length>0){
+                            response.data.data.positions_selected.forEach(position_selected => {
+                                this.positions_selected.push({
+                                    row: position_selected.row,
+                                    column: position_selected.column,
+                                    stock: position_selected.stock,
+                                });
+                            });
+                        }
+                        this.location_id = response.data.data.location_id;
+                        this.has_percentage_perception = (this.form.percentage_perception) ? true : false;
+                        this.changeAffectationIgvType();
+                        this.changePurchaseAffectationIgvType();
                         // let warehousePrices = response.data.data.warehouse_prices;
                         // console.error(warehousePrices);
                         // if (warehousePrices.length > 0) {
@@ -1811,14 +2141,50 @@ this.activeName =  'first'
                     return this.$message.error('El porcentaje isc debe ser mayor a 0 (Compras)');
             }
 
+            if(this.positions_selected.length>0){
+                this.form.positions_selected = this.positions_selected;
+            }
+            this.form.location_id = this.location_id;
+
             this.loading_submit = true
 
-
             await this.$http.post(`/${this.resource}`, this.form)
-                .then(response => {
+                .then(async response => {
                     console.log(response.data)
                     if (response.data.success) {
                         this.$message.success(response.data.message)
+                        const item_id = response.data.id;
+                        
+                        if (this.form.item_files.length > 0 || this.recordId)  {
+                            let formData = new FormData();
+                            
+                            await this.form.item_files.forEach((file, index) => {
+                                if (file.raw){
+                                    formData.append(`documents[${index}]`, file.raw, file.filename);
+                                }
+                            });
+
+                            if (this.item_files_deleted && this.item_files_deleted.length > 0) {
+                                formData.append('files_deleted', JSON.stringify(this.item_files_deleted));
+                            }
+                            console.log(formData);
+                            this.$http.post(`/${this.resource}/saveDocuments/${item_id}`, formData, {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data'
+                                }
+                            })
+                            .then(response => {
+                                if (response.data.success) {
+                                    this.item_files_deleted=[];
+                                    this.close();
+                                } else {
+                                    console.error("Error al subir documentos:", response.data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error en la petición:", error);
+                            });
+                        }
                         if (this.external) {
                             this.$eventHub.$emit('reloadDataItems', response.data.id)
                         } else {
@@ -1830,16 +2196,34 @@ this.activeName =  'first'
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
+                    console.log(error);
+                    /* if (error.response.status === 422) {
                         this.errors = error.response.data
                     } else {
                         console.log(error)
                         this.$message.error(error.response.data.message)
-                    }
+                    } */
                 })
                 .then(() => {
                     this.loading_submit = false
                 })
+        },
+        async downloadFile(file_id){
+            await this.$http.get(`/${this.resource}/fileDownload/${file_id}`, this.form)
+            .then(response => {
+                const contentDisposition = response.headers['content-disposition'];
+                const filename = contentDisposition
+                    ? contentDisposition.split('filename=')[1].replace(/['"]/g, '')
+                    : `archivo_${file_id}.ext`;
+
+                const blob = new Blob([response.data]);
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+
+                this.$message.success("Archivo descargado correctamente");
+            });
         },
         close() {
             this.$emit('update:showDialog', false)
