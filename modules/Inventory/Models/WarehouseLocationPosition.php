@@ -63,6 +63,7 @@ class WarehouseLocationPosition extends ModelTenant
     ]; */
     protected $fillable = [
         'row',
+        'quantity_used',
         'column',
         'status',
         'location_id',

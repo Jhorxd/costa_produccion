@@ -125,6 +125,8 @@
                         :code="form.code"
                         :initialPositions="initialPositions"
                         @save="handleSavePositions"
+                        @addRow="addRow" @addColumn="addColumn"
+                        @deleteRow="deleteRow"
                     ></position-editor>
                 </el-dialog>
             </div>
@@ -229,12 +231,12 @@ export default {
 
                 const response = await this.$http.put(`/${this.resource}/${this.form.id}`, payload);
                 
-                if (response.data.success) {
+                /* if (response.data.success) {
                     this.$message.success('Ubicación y posiciones actualizadas correctamente.');
                     this.close();
                 } else {
                     this.$message.error(response.data.message || 'Error al actualizar la ubicación.');
-                }
+                } */
             } catch (error) {
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data.errors || {};
@@ -271,6 +273,15 @@ export default {
         close() {
             location.href = '/locations'
         },
+        addRow(){
+            this.form.rows++;
+        },
+        deleteRow(){
+            this.form.rows--;
+        },
+        addColumn(){
+            this.form.columns++;
+        }
     },
 };
 </script>

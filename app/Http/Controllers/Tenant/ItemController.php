@@ -36,12 +36,17 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Item;
+use App\Models\Tenant\ItemFile;
 use App\Models\Tenant\ItemImage;
 use App\Models\Tenant\ItemMovement;
+use App\Models\Tenant\ItemPosition;
+use App\Models\Tenant\ItemSalesCondition;
 use App\Models\Tenant\ItemSupply;
 use App\Models\Tenant\ItemTag;
 use App\Models\Tenant\ItemUnitType;
 use App\Models\Tenant\ItemWarehousePrice;
+use App\Models\Tenant\Person;
+use App\Models\Tenant\PharmaceuticalItemUnitType;
 use App\Models\Tenant\Warehouse;
 use App\Traits\OfflineTrait;
 use Barryvdh\DomPDF\Facade as PDF;
@@ -49,6 +54,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Excel;
@@ -64,6 +70,8 @@ use Mpdf\HTMLParserMode;
 use Mpdf\Mpdf;
 use setasign\Fpdi\Fpdi;
 use Modules\Inventory\Models\InventoryConfiguration;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
+use Modules\Inventory\Models\WarehouseLocationPosition;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 
@@ -274,6 +282,10 @@ class ItemController extends Controller
         /** Informacion adicional */
         $configuration = $configuration->getCollectionData();
         $inventory_configuration = InventoryConfiguration::firstOrFail();
+        $sales_conditions = ItemSalesCondition::all();
+        $suppliers = Person::where('type','suppliers')->get();
+        $pharmaceutical_item_unit_types = PharmaceuticalItemUnitType::where('active', 1)->get();
+        $locations = InventoryWarehouseLocation::all();
         /*
         $configuration = Configuration::select(
             'affectation_igv_type_id',
@@ -282,6 +294,8 @@ class ItemController extends Controller
         )->firstOrFail();
         */
         return compact(
+            'pharmaceutical_item_unit_types',
+            'locations',
             'unit_types',
             'currency_types',
             'attribute_types',
@@ -302,8 +316,31 @@ class ItemController extends Controller
             'CatItemPackageMeasurement',
             'CatItemProductFamily',
             'CatItemUnitsPerPackage',
-            'inventory_configuration'
+            'inventory_configuration',
+            'sales_conditions',
+            'suppliers'
         );
+    }
+
+    public function positions($location_id){
+        $positions = WarehouseLocationPosition::where('location_id',$location_id)->get();
+        $location = InventoryWarehouseLocation::find($location_id);
+        foreach($positions as $position){
+            $position->stock_available = $location->maximum_stock - $position->quantity_used;
+            $position->code_location = $location->code;
+        }
+        if(!empty($positions)){
+            return response()->json([
+                'success' => true,
+                'message' => 'Datos extraidos correctamente',
+                'data' => $positions
+            ], 200);
+        }else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos no encontrados'
+            ], 200);
+        }
     }
 
     public function record($id)
@@ -313,9 +350,96 @@ class ItemController extends Controller
         return $record;
     }
 
+    public function saveDocuments(Request $request, $id)
+    {
+        try {
+            $item = Item::findOrFail($id);
+
+            if ($request->has('files_deleted')) {
+                $filesDeleted = json_decode($request->input('files_deleted'), true);
+
+                foreach ($filesDeleted as $fileData) {
+                    try {
+                        $fileToDelete = $item->item_files()->find($fileData['id']);
+                        if ($fileToDelete) {
+                            Storage::disk('tenant')->delete($fileToDelete->route);
+                            $fileToDelete->delete();
+                        }
+                    } catch (Exception $e) {
+                        Log::error('Error al eliminar archivo: ' . $e->getMessage());
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Error al eliminar archivo: ' . $e->getMessage(),
+                        ], 500);
+                    }
+                }
+            }
+
+            if ($request->hasFile('documents')) {
+                foreach ($request->file('documents') as $document) {
+                    try {
+                        $file_name_old = $document->getClientOriginalName();
+                        $file_info = pathinfo($file_name_old);
+                        $file_content = file_get_contents($document->getPathname());
+                        $file_name = Str::slug($file_info['filename']) . "-" . $item->id . '.' . $file_info['extension'];
+                        $path_file = 'document_products' . DIRECTORY_SEPARATOR . $file_name;
+
+                        // Guardar el archivo en el almacenamiento
+                        Storage::disk('tenant')->put($path_file, $file_content);
+
+                        // Crear el registro en la base de datos
+                        $item->item_files()->create([
+                            'item_id' => $id,
+                            'filename' => $file_name_old,
+                            'route' => $path_file,
+                            'user_created_at' => auth()->user()->email,
+                        ]);
+                    } catch (Exception $e) {
+                        Log::error('Error al subir archivo: ' . $e->getMessage());
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Error al subir archivo: ' . $e->getMessage(),
+                        ], 500);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Documentos guardados y eliminados correctamente',
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Error en saveDocuments: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en el servidor: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function downloadDocument($id){
+        $item_file = ItemFile::find($id);
+        if($item_file){
+            $rutaCompleta = Storage::disk('tenant')->path($item_file->route);
+            if (!file_exists($rutaCompleta)) {
+                return json_encode([
+                    'success' => false,
+                    'message' => 'Archivo no encontrado',
+                    'id' => $id
+                ]);
+            }
+            return response()->download($rutaCompleta);
+        }else{
+            return json_encode([
+                'success' => false,
+                'message' => 'Archivo no encontrado con el id: '.$id,
+                'id' => $id
+            ]);
+        }
+    }
+
     public function store(ItemRequest $request) {
-
-
         $id = $request->input('id');
         if (!$request->barcode) {
             if ($request->internal_id) {
@@ -394,6 +518,58 @@ class ItemController extends Controller
         }
 
         $item->save();
+
+        /* if ($request->hasFile('item_files')) {
+            foreach ($request->file('item_files') as $file) {
+                $filename = $file->getClientOriginalName();
+                $path = $file->store('public/uploads/items');
+                
+                ItemFile::create([
+                    'item_id' => $item->id,
+                    'filename' => $filename,
+                    'route' => $path,
+                    'user_created_at' => $request->input('user_created_at'),
+                ]);
+            }
+        } */
+
+        if(isset($request->positions_selected)){
+            foreach ($request->positions_selected as $position) {
+                $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $request->location_id)
+                    ->where('row', $position['row'])
+                    ->where('column', $position['column'])
+                    ->first();
+        
+                if ($warehouseLocationPosition) {
+                    $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
+                    if($inventoryWarehouseLocation){
+                        ItemPosition::updateOrCreate(
+                            [
+                                'item_id' => $item->id,
+                                'position_id' => $warehouseLocationPosition->id,
+                                'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                'location_id' => $inventoryWarehouseLocation->id
+                            ],
+                            [
+                                'stock' => $position['stock'],
+                            ]
+                        );
+                    }
+                    
+                    /* $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
+                    if($inventoryWarehouseLocation){
+                        $warehouse = ModelsWarehouse::find($inventoryWarehouseLocation->warehouse_id);
+                        if($warehouse){
+                            $itemWarehouse = ItemWarehouse::where('item_id',$item->id)->where('warehouse_id', $warehouse->id)->first();
+                            if($itemWarehouse){
+                                $itemWarehouse->stock = $itemWarehouse->stock;
+                            }
+                        }
+                    } */
+                    $warehouseLocationPosition->increment('quantity_used');
+                }
+            }
+        }
 
         foreach ($request->item_unit_types as $value) {
 

@@ -33,7 +33,7 @@
                         <div class="col-md-4">
                             <div
                                  class="form-group">
-                                <label class="control-label">Estado</label>
+                                <label class="control-label">Estado <span class="text-danger">*</span></label>
                                 <el-select v-model="form.status">
                                     <el-option
                                         v-for="option in status"
@@ -54,7 +54,7 @@
                         <div class="col-md-6">
                             <div 
                                  class="form-group">
-                                <label class="control-label">Tipo de ubicación</label>
+                                <label class="control-label">Tipo de ubicación <span class="text-danger">*</span></label>
                                 <el-select v-model="form.type_id">
                                     <el-option
                                         v-for="option in locationTypes"
@@ -72,7 +72,7 @@
                         <div class="col-md-6">
                             <div 
                                  class="form-group">
-                                <label class="control-label">Almacén</label>
+                                <label class="control-label">Almacén <span class="text-danger">*</span></label>
                                 <el-select v-model="form.warehouse_id">
                                     <el-option
                                         v-for="option in warehouses"
@@ -121,7 +121,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <el-button @click.prevent="openPositionEditor">Editar Posiciones</el-button>
+                            <el-button @click.prevent="openPositionEditor">Elegir Posiciones</el-button>
                         </div>
                     </div>
                 </div>
@@ -169,7 +169,7 @@ export default {
             form: {
                 name: '',
                 code: '',
-                status: '',
+                status: parseInt(1),
                 type_id: '',
                 rows: 0,
                 columns: 0,
@@ -199,11 +199,16 @@ export default {
         ];
     },
     methods: {
-        async handleSavePositions() {
+        async handleSavePositions(positions) {
+            this.form.positions = positions;
             this.$message.success('Cambios guardados');
             this.showPositionEditor = false;
         },
         async submit() {
+            if(this.form.positions.length==0){
+                this.$message.error('Confirme las posiciones');
+                return;
+            }
             this.loading_submit = true;
             await this.$http
                 .post(`/${this.resource}`, this.form)
@@ -260,10 +265,10 @@ export default {
             location.href = '/locations'
         },
         openPositionEditor() {
-            if (this.form.rows && this.form.columns) {
+            if (this.form.rows>=1 && this.form.columns>=1 && this.form.maximum_stock>=1) {
                 this.showPositionEditor = true;
             } else {
-                this.$message.error('Debe ingresar filas y columnas antes de editar las posiciones.');
+                this.$message.error('Debe ingresar filas, columnas y stock máximo antes de editar las posiciones.');
             }
         },
         updatePositionStatus(position) {

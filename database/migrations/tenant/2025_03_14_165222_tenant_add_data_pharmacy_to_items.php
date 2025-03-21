@@ -11,7 +11,11 @@ class TenantAddDataPharmacyToItems extends Migration
         Schema::table('items', function (Blueprint $table) {
             $table->string('active_principle')->nullable();
             $table->string('concentration')->nullable();
+            $table->decimal('sale_price',8,2);
+            $table->integer('lot')->nullable();
+            $table->unsignedInteger('supplier_id')->nullable();
             $table->unsignedInteger('sales_condition_id')->nullable();
+            $table->foreign('supplier_id')->references('id')->on('persons');
             $table->foreign('sales_condition_id')->references('id')->on('item_sales_conditions');
         });
     }

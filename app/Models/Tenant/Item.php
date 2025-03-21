@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models\Tenant;
+
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\CatColorsItem;
 use App\Models\Tenant\Catalogs\CatItemMoldCavity;
@@ -12,6 +13,7 @@ use App\Models\Tenant\Catalogs\CatItemUnitBusiness;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\UnitType;
+use App\Models\Tenant\ItemSalesCondition;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -112,7 +114,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
  */
 class Item extends ModelTenant
 {
-    protected $with = ['item_type', 'unit_type', 'currency_type', 'warehouses','item_unit_types', 'tags','item_lots'];
+    protected $with = ['item_type', 'unit_type', 'currency_type', 'warehouses', 'item_files', 'item_unit_types', 'tags','item_lots'];
 
     public const SERVICE_UNIT_TYPE = 'ZZ';
 
@@ -185,6 +187,13 @@ class Item extends ModelTenant
         'quantity_of_points',
         'factory_code',
         'restrict_sale_cpe',
+        'active_principle',
+        'concentration',
+        'sales_condition_id',
+        'pharmaceutical_unit_type_id',
+        'sale_price',
+        'lot',
+        'supplier_id'
 
         // 'warehouse_id'
     ];
@@ -287,6 +296,26 @@ class Item extends ModelTenant
     public function item_type()
     {
         return $this->belongsTo(ItemType::class);
+    }
+
+    public function item_sales_condition()
+    {
+        return $this->belongsTo(ItemSalesCondition::class);
+    }
+
+    public function pharmaceutical_item_unit_type()
+    {
+        return $this->belongsTo(PharmaceuticalItemUnitType::class);
+    }
+
+    public function item_files()
+    {
+        return $this->hasMany(ItemFile::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Person::class);
     }
 
     /**
@@ -1248,6 +1277,11 @@ class Item extends ModelTenant
     public function getFormatSaleUnitPrice()
     {
         return ((int)$this->sale_unit_price != $this->sale_unit_price) ? $this->sale_unit_price : round($this->sale_unit_price);
+    }
+
+    public function getFormatSalePrice()
+    {
+        return ((int)$this->sale_price != $this->sale_price) ? $this->sale_price : round($this->sale_price);
     }
 
 
