@@ -91,7 +91,7 @@
 import { method } from 'lodash';
 
   export default {
-    props: ['showDialog', 'recordId','checked'],
+    props: ['showDialog', 'recordId','checked','establishment_id','warehouse_id'],
     data() {
       return {
         titleDialog: "Agregar Producto",
@@ -112,24 +112,22 @@ import { method } from 'lodash';
         selectedCategory: null
       };
     },
-    created() {               
-        this.store();
-        this.getAllPhysicalInventoryCategories();
-        this.getProductsByEstablishmentAndWarehouse();
+    created() {                       
+        this.getAllPhysicalInventoryCategories();      
     },
     methods: {
       close() {
         this.cleanForm();
         this.$emit('update:showDialog', false);        
       },
-      create() {
-        console.log("Hola Mundo");
+      create() {        
+        this.getProductsByEstablishmentAndWarehouse();        
       },
-      submit() {
-        console.log("Hola Mundo");
+      submit() {        
       },
       getProductsByEstablishmentAndWarehouse(){
-            let url = '/physicalInventory/getProductsByEstablishmentAndWarehouse';           
+            let url = '/physicalInventory/getProductsByEstablishmentAndWarehouse';
+            url+=`?establishment_id=${this.establishment_id}&warehouse_id=${this.warehouse_id}`;              
             return this.$http
             .get(url)
             .then(response => {              
@@ -169,7 +167,7 @@ import { method } from 'lodash';
           }         
        },
        sendItem() {           
-            if(this.form.item_id){ 
+            if(this.form.item_id){                            
                 this.$emit('add-item', this.form);
                 this.cleanForm();
                 this.$emit('update:showDialog', false);
@@ -193,9 +191,8 @@ import { method } from 'lodash';
             .then(() => {
                 this.loading_submit = false;
             }); 
-          },
-          store(){            
           }
+          
     }
   }
   </script>

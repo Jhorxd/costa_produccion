@@ -6,17 +6,9 @@
           </a></h2>
           <ol class="breadcrumbs">
               <li class="active"><span>{{ title }}</span></li>
-          </ol>
-          <div class="right-wrapper pull-right">
-                <el-select v-model="seleccionado" placeholder="Seleccione una opción">
-                  <el-option label="Captura de inventario físico" value="inventario"></el-option>
-                  <el-option label="Reportes" value="reportes"></el-option>
-                </el-select>
-                <!--  <a href="/dashboard" class="btn btn-custom btn-sm mt-2 mr-2">
-                    <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>-->
-          </div> 
+          </ol>          
           <el-checkbox v-model="checked"  @change="handleChangeChecked">Inventario selectivo</el-checkbox>        
-          <el-select v-if="!checked" v-model="selectedCategory" placeholder="Seleccione una categoría">
+          <el-select v-if="!checked" @change="handleGlobalCategory"  v-model="selectedCategory" placeholder="Seleccione una categoría">
             <el-option
               v-for="category in categories"
               :key="category.id"
@@ -89,7 +81,7 @@
     </div>
   </div>
 </div>
-<form-add-product  @add-item="addItem" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>
+<form-add-product  @add-item="addItem" :warehouse_id="form.warehouse_id" :establishment_id="form.establishment_id" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>
 <br>
 <div class="col-md-12">
   <div class="table-responsive table-responsive-new">
@@ -102,6 +94,7 @@
           <th>Cantidad-2</th>
           <th>Costo</th>
           <th>Importe Costo</th>
+          <th>Categoria</th>
         </tr>
       </thead>
       <tbody>
@@ -112,6 +105,7 @@
           <td>{{ item.counted_quantity}}</td>
           <td>{{ item.sale_unit_price}}</td>
           <td>{{ item.system_quantity * item.sale_unit_price }}</td>
+          <td>{{ getCategoryName(item.category_id) }}</td>
           <!-- <td>
             <button type="button" class="btn btn-danger btn-sm" @click.prevent="removeItem(index)">
               <i class="fa fa-trash"></i>
@@ -204,7 +198,15 @@
           this.getEstablishments()
       },
       methods: { 
-          clickCreate() {            
+          clickCreate() {
+            if(this.form.establishment_id==null){
+              this.$message.error('Debe seleccionar una sucursal');
+              return;
+            }  
+            if(this.form.warehouse_id==null){
+              this.$message.error('Debe seleccionar un almacén');
+              return;
+            }          
             this.showDialog = true          
           }, 
           clickDelete(id) {                
@@ -287,9 +289,19 @@
               this.form.adjustment_type_id = 1;
             }else{
               this.form.adjustment_type_id = 2;
-            }                               
+            }                                           
           },
           sendForm(){
+            if(this.checked==false){
+               if(this.selectedCategory==null){
+                this.$message.error('Seleccione una categoria global');
+                return;
+               }
+            }
+            if (this.form.details.length <= 0) {
+               this.$message.error('Debe tener productos seleccionados');
+            }
+            //selectedCategory
             let url = '/physicalInventory/store';           
             return this.$http
             .post(url,this.form)
@@ -297,14 +309,13 @@
               this.$message.success(response.data.message);
               setTimeout(() => {
                 window.location.href = "/physicalInventory";
-              }, 1000); // 1000 milisegundos = 1 segundo     
+              }, 1000); 
             })
             .catch(error => {
-                // Manejar el error aquí
+                
             })
             .then(() => {
-              this.cleanForm();
-                //this.loading_submit = false;
+              this.cleanForm();               
             });
                       
           },
@@ -320,6 +331,16 @@
             this.totalCantidad1 = 0;
             this.totalCantidad2 = 0;
             this.importeTotal = 0;
+          },
+          handleGlobalCategory(value){                      
+            // Actualizar category_id de todos los elementos en details
+            this.form.details.forEach(item => {
+                item.category_id = value;
+            });            
+          },
+          getCategoryName(category_id) {
+            const category = this.categories.find(cat => cat.id === category_id);
+            return category ? category.name : " "; // Retorna el nombre o "Desconocido" si no encuentra
           }
       }
   }

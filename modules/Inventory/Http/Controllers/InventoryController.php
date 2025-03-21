@@ -198,13 +198,10 @@ class InventoryController extends Controller
         return response()->json(['error' => $e->getMessage()], 500);
     }
     }
-    public function getProductsByEstablishmentAndWarehouse(Request $request){ 
-        //$establishment_id = $request->input('establishment_id');
-        //$warehouse_id = $request->input('warehouse_id');
-
-        //return PhysicalInventoryCategory::all();
-        $establishment_id = 1;
-        $warehouse_id = 1;  
+    public function getProductsByEstablishmentAndWarehouse(Request $request){         
+        $establishment_id = $request->input('establishment_id');
+        $warehouse_id = $request->input('warehouse_id');
+         
         
         $searchValue = $request->input('value'); // Puede ser nulo
         //$searchValue=null;       
