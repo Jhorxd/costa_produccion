@@ -137,7 +137,8 @@ if ($hostname) {
                 Route::get('getProductsByEstablishmentAndWarehouse', 'InventoryController@getProductsByEstablishmentAndWarehouse');
                 Route::get('getAllPhysicalInventoryCategories', 'InventoryController@getAllPhysicalInventoryCategories');
                 Route::post('store', 'InventoryController@store3');
-                Route::get('getAllPhysicalInventories', 'InventoryController@getAllPhysicalInventories');                
+                Route::get('getAllPhysicalInventories', 'InventoryController@getAllPhysicalInventories');
+                Route::get('pdf/{id}', 'InventoryController@getPdfInventory');                            
                         
             });
             

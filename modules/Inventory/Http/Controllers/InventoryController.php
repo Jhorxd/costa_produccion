@@ -4,7 +4,7 @@ namespace Modules\Inventory\Http\Controllers;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Series;
-use Barryvdh\DomPDF\PDF;
+use Barryvdh\DomPDF\Facade as PDF;
 use Exception;
 
 //use App\Models\Tenant\Item;
@@ -69,6 +69,36 @@ class InventoryController extends Controller
             'warehouse' => 'Almacén',
         ];
     }
+    public function getPdfInventory($id)
+    {   
+        $data = PhysicalInventory::join('establishments', 'physical_inventories.establishment_id', '=', 'establishments.id')
+        ->join('warehouses', 'physical_inventories.warehouse_id', '=', 'warehouses.id')
+        ->join('physical_inventory_adjustment_types', 'physical_inventories.adjustment_type_id', '=', 'physical_inventory_adjustment_types.id')
+        ->select(
+            'physical_inventories.*', 
+            'establishments.description as establishment_description', 
+            'warehouses.description as warehouse_description',
+            'physical_inventory_adjustment_types.name as adjustment_type_name'
+        )->where('physical_inventories.id','=',$id)->first();
+
+        $details = PhysicalInventoryDetail::join('items', 'inventory_physical_details.item_id', '=', 'items.id')
+        ->join('physical_inventory_categories', 'inventory_physical_details.category_id', '=', 'physical_inventory_categories.id')
+        ->select(
+            'inventory_physical_details.*',            
+            'items.description as item_description',
+            'physical_inventory_categories.name as category_name'
+        )
+        ->where('inventory_physical_details.physical_inventory_id', '=', $id) 
+        ->get();
+               
+        
+        // Renderizar la vista Blade con los datos
+        $pdf = PDF::loadView('inventory::inventory.pdfPhysicalIventory', compact('data','details'));
+
+        // Descargar el PDF o mostrarlo en el navegador
+        return $pdf->stream('reporte.pdf');
+    }
+
 
     public function records(Request $request)
     {
@@ -104,7 +134,7 @@ class InventoryController extends Controller
     {
         return PhysicalInventoryCategory::all();
     }
-    public function getAllPhysicalInventories(){
+    public function getAllPhysicalInventories(Request $request){
         $query = PhysicalInventory::join('establishments', 'physical_inventories.establishment_id', '=', 'establishments.id')
         ->join('warehouses', 'physical_inventories.warehouse_id', '=', 'warehouses.id')
         ->join('physical_inventory_adjustment_types', 'physical_inventories.adjustment_type_id', '=', 'physical_inventory_adjustment_types.id')
@@ -113,8 +143,8 @@ class InventoryController extends Controller
             'establishments.description as establishment_description', 
             'warehouses.description as warehouse_description',
             'physical_inventory_adjustment_types.name as adjustment_type_name'
-        )->orderBy('physical_inventories.id')
-        ->get();
+        )->orderBy('physical_inventories.id');
+        $query = $query->paginate(config('tenant.items_per_page'));    
         return $query;
     }
     public function store3(Request $request){
