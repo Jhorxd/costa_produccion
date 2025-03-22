@@ -179,7 +179,7 @@
                     adjustment_type_id: 1,
                     date: null ,
                     series:"Fo-",
-                    number:null,
+                    number:1,
                     details: []                               
               },
               establishments: [],
