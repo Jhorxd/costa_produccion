@@ -259,11 +259,14 @@ class DispatchController extends Controller
                 'date_delivery_to_transport' => $document->date_delivery_to_transport?$document->date_delivery_to_transport->format('Y-m-d'):null,
             ];
         }elseif( $parentTable === 'inventories_transfer'){
-            // dd($document);
+            $establishment_id = auth()->user()->establishment->id;
+            $dispatch = Dispatch::where('establishment_id', $establishment_id)->firstOrFail();
             $data = [
                 'establishment_id' => $document->warehouse->establishment_id,
                 'transfer_reason_type_id' => '04',
                 'items' => $items,
+                'series' => $dispatch->series,
+                'transfer_reason_description' => $document->transfer_reason_description,
             ];
         }else {
             $data = [

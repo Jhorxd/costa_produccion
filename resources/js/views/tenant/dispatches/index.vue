@@ -137,14 +137,18 @@
                             </button>
                         </td>
                         <td class="text-center">
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info"
-                                @click.prevent="onGenerateDocument(row.id)"
-                                v-if="row.btn_generate_document"
-                            >
+                            <template v-if="!row.customer_id">
+                            </template>
+                            <template v-else>
+                                <button
+                                    type="button"
+                                    class="btn waves-effect waves-light btn-xs btn-info"
+                                    @click.prevent="onGenerateDocument(row.id)"
+                                    v-if="row.btn_generate_document"
+                                >
                                 Generar comprobante
                             </button>
+                            </template>
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info"

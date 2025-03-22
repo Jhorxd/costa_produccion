@@ -53,12 +53,17 @@ class InventoryTransfer extends ModelTenant
         'series',
         'number',
         'description',
+        'transfer_reason_description',
+        'date_of_transfer',
+        'item',
+        'state',
         'warehouse_id',
         'warehouse_destination_id',
         'quantity',
         'filename'
     ];
     protected $casts = [
+        'date_of_transfer' => 'date',
         'warehouse_id' => 'int',
         'warehouse_destination_id' => 'int',
         'user_id' => 'int',
@@ -126,6 +131,16 @@ class InventoryTransfer extends ModelTenant
     public function inventory_transfer_item()
     {
         return $this->hasMany(InventoryTransferItem::class);
+    }
+
+    public function getItemAttribute($value)
+    {
+        return (is_null($value)) ? null : (object)json_decode($value);
+    }
+
+    public function setItemAttribute($value)
+    {
+        $this->attributes['item'] = (is_null($value)) ? null : json_encode($value);
     }
 
 

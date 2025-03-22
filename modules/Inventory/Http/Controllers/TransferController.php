@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Exports\InventoryTransferExport;
 use Modules\Inventory\Http\Resources\TransferCollection;
 use Modules\Inventory\Http\Resources\TransferResource;
+use Modules\Inventory\Http\Resources\TransferResource2;
 use Modules\Inventory\Traits\InventoryTrait;
 use Modules\Inventory\Models\Inventory;
 use Modules\Inventory\Models\ItemWarehouse;
@@ -41,6 +42,12 @@ class TransferController extends Controller
         //$current_warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
         return view('inventory::transfers.form');
 
+    }
+
+    public function approve_transfer($id)
+    {
+        $resourceId = $id;
+        return view('inventory::transfers.approve_transfer', compact('resourceId'));
     }
 
     public function columns()
@@ -95,6 +102,11 @@ class TransferController extends Controller
         return $record;
     }
 
+    public function record_approve_transfer($id)
+    {
+        $record = new TransferResource2(InventoryTransfer::findOrFail($id));
+        return $record;
+    }
 
     /* public function store(Request $request)
      {
@@ -266,6 +278,8 @@ class TransferController extends Controller
             $row = InventoryTransfer::query()
                 ->create([
                     'description' => $request->description,
+                    'transfer_reason_description' => $request->transfer_reason_description,
+                    'date_of_transfer' => $request->date_of_transfer,
                     'warehouse_id' => $request->warehouse_id,
                     'warehouse_destination_id' => $request->warehouse_destination_id,
                     'quantity' => count($request->items),
@@ -273,30 +287,31 @@ class TransferController extends Controller
                     'series' => $series->number,
                     'number' => '#',
                 ]);
-
+            $products = [];
             foreach ($request->items as $it) {
-                $inventory = new Inventory();
-                $inventory->type = 2;
-                $inventory->description = 'Traslado';
-                $inventory->item_id = $it['id'];
-                $inventory->warehouse_id = $request->warehouse_id;
-                $inventory->warehouse_destination_id = $request->warehouse_destination_id;
-                $inventory->quantity = $it['quantity'];
-                $inventory->inventories_transfer_id = $row->id;
-                $inventory->save();
+
+                $products[] = [
+                    'id' => $it['id'],
+                    'quantity' => $it['quantity'],
+                    'description' => $it['description'],
+                    'barcode' => $it['barcode'],
+                    'lots' => $it['lots'],
+                ];
+
+                $row->update(['item' => $products]);
 
                 foreach ($it['lots'] as $lot) {
-                    if ($lot['has_sale']) {
-                        $item_lot = ItemLot::findOrFail($lot['id']);
-                        $item_lot->warehouse_id = $inventory->warehouse_destination_id;
-                        $item_lot->update();
+                    // if ($lot['has_sale']) {
+                    //     $item_lot = ItemLot::findOrFail($lot['id']);
+                    //     $item_lot->warehouse_id = $inventory->warehouse_destination_id;
+                    //     $item_lot->update();
 
                         // historico de item para traslado
                         InventoryTransferItem::query()->create([
                             'inventory_transfer_id' => $row->id,
                             'item_lot_id' => $lot['id'],
                         ]);
-                    }
+                    // }
                 }
             }
 
@@ -316,6 +331,47 @@ class TransferController extends Controller
                 'message' => 'Traslado creado con éxito'
             ];
         } catch (\Exception $e) {
+            DB::connection('tenant')->rollBack();
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function store_approve(TransferRequest $request)
+    {
+        DB::connection('tenant')->beginTransaction();
+        try{
+
+            $inventory_transfer = InventoryTransfer::firstOrNew(['id' => $request['id']]);
+            $items = is_string($request->items) ? json_decode($request->items, true) : $request->items;
+            foreach ($items as $it){
+                $inventory = new Inventory();
+                $inventory->type = 2;
+                $inventory->description = 'Traslado';
+                $inventory->item_id = $it['id'];
+                $inventory->warehouse_id = $request->warehouse_id;
+                $inventory->warehouse_destination_id = $request->warehouse_destination_id;
+                $inventory->quantity = $it['quantity'];
+                $inventory->inventories_transfer_id = $inventory_transfer->id;
+                $inventory->save();
+            }
+
+            if(!$inventory_transfer->state)
+            {
+                $inventory_transfer->state = true;
+                $inventory_transfer->save();
+            }
+
+            DB::connection('tenant')->commit();
+            return [
+                'success' => true,
+                'message' => 'Traslado aprobado con éxito'
+            ];
+
+        }catch (\Exception $e){
             DB::connection('tenant')->rollBack();
 
             return [
