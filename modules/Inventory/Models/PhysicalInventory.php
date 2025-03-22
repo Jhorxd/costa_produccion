@@ -18,7 +18,9 @@ class PhysicalInventory extends ModelTenant
         'adjustment_type_id',
         'establishment_id',
         'warehouse_id',
-        'comment'
+        'comment',
+        'series',
+        'number'
     ];
 
     // Relación con el tipo de ajuste

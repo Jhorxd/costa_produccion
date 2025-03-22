@@ -8,7 +8,70 @@
                 </a>
         </div>
         <br>
-      
+        <br>
+        <div class="container">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="control-label">Serie FO</label>
+            <el-input v-model="form.number" type="number" clearable></el-input>
+          </div>
+          <div class="col-md-6">
+            <label class="control-label">Fecha</label>
+            <el-date-picker type="date" v-model="form.date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" placeholder="Selecciona una fecha" clearable></el-date-picker>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-4">
+            <label class="control-label">Sucursal</label>
+              <div class="input-group">
+                <el-select
+                  v-model="form.establishment_id"
+                  filterable
+                  placeholder="Selecciona un establecimiento"
+                  @change="handleEstablishmentChange"
+                  :filter-method="handleFilter"
+                  class="form-select"
+                  clearable
+                >
+                  <el-option
+                    v-for="option in establishments"
+                    :key="option.id"
+                    :label="option.description"
+                    :value="option.id"
+                  ></el-option>
+                </el-select>
+          </div>
+          </div>
+          <div class="col-md-4">
+            <label class="control-label">Almacén</label>
+            <div class="input-group">
+              <el-select
+                v-model="form.warehouse_id"
+                filterable
+                placeholder="Selecciona un almacén"
+                class="form-select"
+                clearable
+              >
+                <el-option
+                  v-for="option in warehouses"
+                  :key="option.id"
+                  :label="option.description"
+                  :value="option.id"
+                ></el-option>
+              </el-select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <a class="btn btn-custom btn-sm mt-2 mr-2"
+              href="#"
+              @click.prevent="findPhysicalInventory()">
+                <i class="fa fa-plus-circle"></i> Buscar
+            </a>
+          </div>
+        </div>
+      </div>
+  <br> 
   <div v-loading="loading_submit" class="col-md-12">
   <div class="table-responsive table-responsive-new">
     <table class="table">
@@ -68,11 +131,20 @@
                 value: null,
                 list_value: 'all',
         },
+        form:{
+          establishment_id: null,
+          warehouse_id: null,
+          date: null,
+          number:null
+        },
+        establishments: [],
+        warehouses: [],
         loading_submit: false
       };
     },
     created(){
       this.getRecords();
+      this.getEstablishments()
       /*this.$http.get('/physicalInventory/getAllPhysicalInventories')
       .then(response => {
         this.records=response.data.data;                  
@@ -115,11 +187,51 @@
       return queryString.stringify({
           page: this.pagination.current_page,
           limit: this.limit,          
-          ...this.search
+          ...this.search,
+          ...this.form
       });
       },
       clickDownload(id) {
             window.open(`/physicalInventory/pdf/${id}`, "_blank");
+      },
+      getEstablishments(Establishment=null){            
+            let url = '/physicalInventory/getEstablishments';
+            if (Establishment !== null) {
+               url += `?value=${Establishment}`;
+            }
+            return this.$http
+            .get(url)
+            .then(response => {               
+              this.establishments = response.data.data;             
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+                this.loading_submit = false;
+            });            
+      },
+      handleEstablishmentChange(value) {                        
+            this.getWarehousesByEstablishment(value);          
+      },
+      getWarehousesByEstablishment(id=null){
+            let url = `/physicalInventory/getWarehousesByEstablishment/${id}`;            
+            return this.$http
+            .get(url)
+            .then(response => { 
+              this.warehouses = response.data.data;              
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+                this.loading_submit = false;
+            });  
+      },
+      findPhysicalInventory(){
+          this.getRecords();
       }
    }
  };

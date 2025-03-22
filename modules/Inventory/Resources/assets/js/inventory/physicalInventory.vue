@@ -178,6 +178,8 @@
                     comment: null ,
                     adjustment_type_id: 1,
                     date: null ,
+                    series:"Fo-",
+                    number:null,
                     details: []                               
               },
               establishments: [],

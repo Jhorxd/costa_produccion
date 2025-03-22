@@ -134,7 +134,12 @@ class InventoryController extends Controller
     {
         return PhysicalInventoryCategory::all();
     }
-    public function getAllPhysicalInventories(Request $request){
+    public function getAllPhysicalInventories(Request $request){        
+        $establishment_id = $request->input('establishment_id');
+        $warehouse_id = $request->input('warehouse_id');
+        $number = $request->input('number');
+        $date = $request->input('date');
+        
         $query = PhysicalInventory::join('establishments', 'physical_inventories.establishment_id', '=', 'establishments.id')
         ->join('warehouses', 'physical_inventories.warehouse_id', '=', 'warehouses.id')
         ->join('physical_inventory_adjustment_types', 'physical_inventories.adjustment_type_id', '=', 'physical_inventory_adjustment_types.id')
@@ -143,11 +148,24 @@ class InventoryController extends Controller
             'establishments.description as establishment_description', 
             'warehouses.description as warehouse_description',
             'physical_inventory_adjustment_types.name as adjustment_type_name'
-        )->orderBy('physical_inventories.id');
+        );
+        if (!empty($establishment_id)) {
+            $query->where('physical_inventories.establishment_id', '=',$establishment_id);
+        }
+        if (!empty($warehouse_id)) {
+            $query->where('physical_inventories.warehouse_id', '=',$warehouse_id);
+        }
+        if (!empty($number)) {
+            $query->where('physical_inventories.number', '=',$number);
+        }
+        if (!empty($date)) {
+            $query->where('physical_inventories.date', '=',$date);
+        }
+        $query=$query->orderBy('physical_inventories.id');
         $query = $query->paginate(config('tenant.items_per_page'));    
         return $query;
     }
-    public function store3(Request $request){
+    public function store3(Request $request){        
         DB::beginTransaction(); 
             try {        
             $physicalInventory = PhysicalInventory::create($request->except('details'));
@@ -193,7 +211,7 @@ class InventoryController extends Controller
 
         DB::commit(); 
         return response()->json(['message' => 'Inventario y detalle guardado satisfactoriamente'], 201);
-    } catch (\Exception $e) {
+    } catch (\Exception $e) {        
         DB::rollBack(); 
         return response()->json(['error' => $e->getMessage()], 500);
     }
