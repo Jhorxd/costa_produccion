@@ -34,6 +34,8 @@
                         <th>Detalle</th>
                         <th>Detalle Productos</th>
                         <th class="text-center">Cantidad Total Productos</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">PDF</th>
                         <th class="text-center">Acciones</th>
                     </tr>
                     <tr></tr>
@@ -47,7 +49,8 @@
                         <td>
                             <el-popover placement="right"
                                         trigger="click"
-                                        width="500">
+                                        width="500"
+                                        v-if="row.state === 'Aprobado'">
                                 <el-table :data="row.inventory">
                                     <el-table-column label="Producto"
                                                      property="description"
@@ -77,8 +80,10 @@
                             </el-popover>
                         </td>
                         <td class="text-center">{{ row.quantity }}</td>
+                        <td class="text-center">{{ row.state }}</td>
                         <td class="text-center">
                             <button
+                                v-if="row.state === 'Aprobado'"
                                 class="btn waves-effect waves-light btn-xs btn-info"
                                 type="button"
                                 @click.prevent="clickDownload('pdf',row.id)"
@@ -87,35 +92,24 @@
                                 PDF
                             </button>
                         </td>
-                        <td class="text-right" v-if="typeUser != 'integrator'">
-                            <div class="dropdown">
-                                <button
-                                    class="btn btn-default btn-sm"
-                                    type="button"
-                                    id="dropdownMenuButton"
-                                    data-toggle="dropdown"
-                                    aria-haspopup="true"
-                                    aria-expanded="false"
-                                >
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <div
-                                    class="dropdown-menu"
-                                    aria-labelledby="dropdownMenuButton"
-                                >
-                                    <a
-                                        :href="
-                                            `/dispatches/create_new/inventories_transfer/${
-                                                row.id
-                                            }`
-                                        "
-                                        class="dropdown-item"
-                                        v-if="row.btn_guide"
-                                    >
-                                        Guía
-                                    </a>
-                                </div>
-                            </div>
+                        <td class="text-center">
+                            <a  v-if="row.state === 'Aprobado'"
+                                class="btn waves-effect waves-light btn-xs btn-info"
+                                type="button"
+                                :href="
+                                    `/dispatches/create_new/inventories_transfer/${
+                                        row.id
+                                    }`
+                                "
+                            >
+                                Generar Guía
+                            </a>
+                            <a v-if="row.state === 'Pendiente'"
+                                class="btn waves-effect waves-light btn-xs btn-success"
+                                :href="`/${resource}/approve_transfer/${row.id}`"
+                            >
+                                Aprobar Traslado
+                            </a>
                         </td>
                         <!--<td class="text-right">
                                          <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
@@ -165,8 +159,8 @@ export default {
         this.title = "Traslados";
     },
     methods: {
-        clickCreate(recordId = null) {
-            location.href = `/${this.resource}/create`;
+        clickCreate(recordId = "") {
+            location.href = `/${this.resource}/create/${recordId}`;
             //this.recordId = recordId
             //this.showDialog = true
         },

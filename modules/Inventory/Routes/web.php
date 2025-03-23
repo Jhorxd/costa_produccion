@@ -321,9 +321,12 @@ if ($hostname) {
                 Route::get('columns', 'TransferController@columns');
                 Route::get('tables', 'TransferController@tables');
                 Route::get('record/{inventory}', 'TransferController@record');
+                Route::get('record2/{inventoryTransfer}','TransferController@record_approve_transfer');
                 Route::post('/', 'TransferController@store');
+                Route::post('/approve_transfer','TransferController@store_approve');
                 Route::delete('{inventory}', 'TransferController@destroy');
                 Route::get('create', 'TransferController@create')->name('transfer.create');
+                Route::get('approve_transfer/{inventory}', 'TransferController@approve_transfer');
                 Route::get('stock/{item_id}/{warehouse_id}', 'TransferController@stock');
                 Route::get('items/{warehouse_id}', 'TransferController@items');
                 Route::post('search-items', 'TransferController@searchItems');
