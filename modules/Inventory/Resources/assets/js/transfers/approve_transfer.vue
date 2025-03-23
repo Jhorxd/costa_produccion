@@ -5,7 +5,7 @@
                 <svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-building-warehouse"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21v-13l9 -4l9 4v13" /><path d="M13 13h4v8h-10v-6h6" /><path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" /></svg>
             </a></h2>
             <ol class="breadcrumbs">
-                <li class="active"><span> Nuevo Traslado </span></li>
+                <li class="active"><span> Aprobar Traslado </span></li>
             </ol>
         </div>
         <div class="card tab-content-default row-new mb-0 pt-md-0">
@@ -30,7 +30,8 @@
                             <div class="form-group">
                                 <label class="control-label">Almacén Inicial</label>
                                 <el-select v-model="form.warehouse_id"
-                                           @change="changeWarehouseInit">
+                                           @change="changeWarehouseInit"
+                                           disabled>
                                     <el-option
                                         v-for="option in warehouses"
                                         :key="option.id"
@@ -49,7 +50,7 @@
                             <div :class="{'has-danger': errors.warehouse_destination_id}"
                                  class="form-group">
                                 <label class="control-label">Almacén Final</label>
-                                <el-select v-model="form.warehouse_destination_id">
+                                <el-select v-model="form.warehouse_destination_id" disabled>
                                     <el-option
                                         v-for="option in warehouses"
                                         :key="option.id"
@@ -71,7 +72,8 @@
                                 <label class="control-label">Motivo de Traslado</label>
                                 <el-input v-model="form.description"
                                           :rows="3"
-                                          type="textarea"></el-input>
+                                          type="textarea"
+                                          disabled></el-input>
                                 <small
                                     v-if="errors.description"
                                     class="form-control-feedback"
@@ -85,7 +87,8 @@
                                 <label class="control-label">Comentario</label>
                                 <el-input v-model="form.transfer_reason_description"
                                           :rows="3"
-                                          type="textarea"></el-input>
+                                          type="textarea"
+                                          disabled></el-input>
                                 <small
                                     v-if="errors.transfer_reason_description"
                                     class="form-control-feedback"
@@ -95,7 +98,7 @@
                         </div>
                     </div>
                     <br/>
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="control-label">
@@ -109,7 +112,7 @@
                                         </el-tooltip>
                                     </template>
                                 </label>
-                                <!-- <el-input v-model="form.item_description" :readonly="true"></el-input> -->
+                                <el-input v-model="form.item_description" :readonly="true"></el-input>
                                 <template v-if="search_item_by_barcode">
                                     <el-input
                                         ref="inputSearchByBarcode"
@@ -150,23 +153,23 @@
                                                 :value="option.id"
                                             ></el-option>
                                         </el-tooltip>
-                                        <!--
+                                        
                                             <el-option
                                                 v-for="option in items"
                                                 :key="option.id"
                                                 :label="ItemOptionDescriptionView(option)"
                                             :value="option.id"
                                         ></el-option>
-                                        -->
+                                       
     
-                                        <!--
+                                        
                                         <el-option
                                             v-for="option in items"
                                             :key="option.id"
                                             :label="option.description"
                                             :value="option.id"
                                         ></el-option>
-                                        -->
+                                       
                                     </el-select>
                                     <a
                                         v-if="form_add.item_id  && form_add.series_enabled"
@@ -214,7 +217,7 @@
                                 </el-button>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <br/>
                     <div class="row">
                         <div class="col-lg-12 col-md-12">
@@ -245,8 +248,6 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
-                                    <td>{{ row.purchase_unit_price }}</td>
-                                    <td>
     
                                     <td class="series-table-actions text-center">
                                         <button
@@ -268,7 +269,7 @@
                     <el-button :loading="loading_submit"
                                @click.prevent="submit"
                                class="btn btn-primary btn-submit-default"
-                               type="primary">Guardar
+                               type="primary">Confirmar Traslado
                     </el-button>
                 </div>
                 <!-- </form> -->
@@ -302,7 +303,7 @@ import {ItemOptionDescription, ItemSlotTooltip} from "../../../../../../resource
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
 
 export default {
-    props: [],
+    props: ['resourceId'],
     components: {OutputLotsForm, OutputLotsGroupForm},
     data() {
         return {
@@ -329,6 +330,7 @@ export default {
             this.warehouses = response.data.warehouses;
             this.items = response.data.items;
             this.all_items = this.items
+            this.initRecord()
         });
 
         await this.initForm();
@@ -369,6 +371,7 @@ export default {
                 });
 
             let row = this.items.find(x => x.id == this.form_add.item_id);
+            console.log(row);
 
             // this.form = _.clone(data);
             // this.form.lots = []; //Object.values(response.data.data.lots)
@@ -527,19 +530,21 @@ export default {
             }
 
             let dup = this.form.items.find(x => x.id == this.form_add.item_id);
+            console.log(dup)
             if (dup) {
                 return this.$message.error("Este producto ya esta agregado.");
             }
 
             let row = this.items.find(x => x.id == this.form_add.item_id);
+            console.log("Click:" +row);
             this.form.items.push({
                 id: row.id,
                 description: row.description,
                 barcode: row.barcode,
-                purchase_unit_price: row.purchase_unit_price,
                 current_stock: parseFloat(this.form_add.stock),
                 quantity: this.form_add.quantity,
-                lots: this.form_add.lots
+                lots: this.form_add.lots,
+                purchase_unit_price: row.purchase_unit_price,
             });
 
             // cargamos lotes seleccionados previamentes
@@ -547,13 +552,25 @@ export default {
                 console.log(this.form.selected_lots_group)
                 this.form.selected_lots_group.forEach(element => {
                     console.log(element)
-                    this.form.lot_groups_total.push(element)
+                    this.form.lot_group_total.push(element)
                 });
             }
 
             this.initFormAdd();
         },
-
+        initRecord(){
+            this.$http.get(`/${this.resource}/record2/${this.resourceId}`)
+                .then(response => {
+                    let dato = response.data.data.inventory_transfer
+                    let items = response.data.data.inventory_items
+                    this.form.id = dato.id
+                    this.form.description = dato.description
+                    this.form.transfer_reason_description = dato.transfer_reason_description
+                    this.form.warehouse_id = dato.warehouse_id
+                    this.form.warehouse_destination_id = dato.warehouse_destination_id
+                    this.form.items = items
+                })
+        },
         clickLotcodeOutput() {
             this.showDialogLotsOutput = true;
         },
@@ -582,7 +599,7 @@ export default {
 
             this.loading_submit = true;
             await this.$http
-                .post(`/${this.resource}`, this.form)
+                .post(`/${this.resource}/approve_transfer`, this.form)
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message);
