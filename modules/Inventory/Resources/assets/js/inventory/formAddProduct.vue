@@ -20,7 +20,7 @@
                   <el-option
                     v-for="product in products"
                     :key="product.item_id"
-                    :label="`${product.description} | ${product.code} | ${product.category}`"
+                    :label="`${product.description}${product.code ? ' | ' + product.code : ''}${product.category ? ' | ' + product.category : ''}`"
                     :value="product.item_id"
                   ></el-option>
                 </el-select>

@@ -1,145 +1,143 @@
 <template>
   <div>
-      <div class="page-header pr-0">
-          <h2><a href="/inventory/warehouses">
-              <svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-category-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 4h6v6h-6z" /><path d="M4 14h6v6h-6z" /><path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>
-          </a></h2>
-          <ol class="breadcrumbs">
-              <li class="active"><span>{{ title }}</span></li>
-          </ol>          
-          <el-checkbox v-model="checked"  @change="handleChangeChecked">Inventario selectivo</el-checkbox>        
-          <el-select v-if="!checked" @change="handleGlobalCategory"  v-model="selectedCategory" placeholder="Seleccione una categoría">
-            <el-option
-              v-for="category in categories"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            ></el-option>
+    <div class="page-header pr-0">
+        <h2><a href="/inventory/warehouses">
+            <svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-category-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 4h6v6h-6z" /><path d="M4 14h6v6h-6z" /><path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>
+        </a></h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span>{{ title }}</span></li>
+        </ol>
+        
+        
+    </div>      
+    <div class="container">
+      <div class="row">
+        <div :class="checked ? 'col-md-6' : 'col-md-4'">
+          <el-checkbox v-model="checked" @change="handleChangeChecked">Inventario selectivo</el-checkbox>
+        </div>
+        <div class="col-md-4" v-if="!checked">
+          <el-select @change="handleGlobalCategory" v-model="selectedCategory" placeholder="Seleccione una categoría">
+            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
           </el-select>
-          <el-date-picker
-            v-model="form.date"
-            type="date"
-            format="yyyy-MM-dd"
-            value-format="yyyy-MM-dd"
-            placeholder="Selecciona una fecha">            
-          </el-date-picker>
-      </div>      
-      <div class="container">
-  <div class="row">
-    <!-- Sucursal -->
-    <div class="col-md-6">
-      <label class="control-label">Sucursal</label>
-      <div class="input-group">
-        <el-select
-          v-model="form.establishment_id"
-          filterable
-          placeholder="Selecciona un establecimiento"
-          @change="handleEstablishmentChange"
-          :filter-method="handleFilter"
-          class="form-select"
-        >
-          <el-option
-            v-for="option in establishments"
-            :key="option.id"
-            :label="option.description"
-            :value="option.id"
-          ></el-option>
-        </el-select>
+        </div>
+        <div :class="checked ? 'col-md-6' : 'col-md-4'">
+          <el-date-picker v-model="form.date" type="date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" placeholder="Selecciona una fecha"></el-date-picker>
+        </div>
+      </div>
+      <div class="row">
+        <!-- Sucursal -->
+        <div class="col-md-6">
+          <label class="control-label">Sucursal</label>
+          <div class="input-group">
+            <el-select
+              v-model="form.establishment_id"
+              filterable
+              placeholder="Selecciona un establecimiento"
+              @change="handleEstablishmentChange"
+              :filter-method="handleFilter"
+              class="form-select"
+            >
+              <el-option
+                v-for="option in establishments"
+                :key="option.id"
+                :label="option.description"
+                :value="option.id"
+              ></el-option>
+            </el-select>
+          </div>
+        </div>
+
+        <!-- Almacén -->
+        <div class="col-md-6">
+          <label class="control-label">Almacén</label>
+          <div class="input-group">
+            <el-select
+              v-model="form.warehouse_id"
+              filterable
+              placeholder="Selecciona un almacén"
+              class="form-select"
+            >
+              <el-option
+                v-for="option in warehouses"
+                :key="option.id"
+                :label="option.description"
+                :value="option.id"
+              ></el-option>
+            </el-select>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <!-- Comentario -->
+        <div class="col-md-6">
+          <label class="control-label">Comentario</label>
+          <input type="text" v-model="form.comment" class="form-control" placeholder="N/A">
+        </div>
+        
+        <!-- Botón Agregar Producto -->
+        <div class="col-md-6 d-flex align-items-end">
+          <button type="button" class="btn btn-custom w-75" @click.prevent="clickCreate()">Agregar Producto</button>
+        </div>
       </div>
     </div>
+    <form-add-product  @add-item="addItem" :warehouse_id="form.warehouse_id" :establishment_id="form.establishment_id" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>
+    <br>
+    <div class="col-md-12">
+      <div class="table-responsive table-responsive-new">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Descripción</th>
+              <th>Cantidad-1</th>
+              <th>Cantidad-2</th>
+              <th>Costo</th>
+              <th>Importe Costo</th>
+              <th>Categoria</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in form.details" :key="index">
+              <td>{{ item.item_id}}</td>
+              <td>{{ item.description }}</td>
+              <td>{{ item.system_quantity}}</td>
+              <td>{{ item.counted_quantity}}</td>
+              <td>{{ item.sale_unit_price}}</td>
+              <td>{{ item.counted_quantity * item.sale_unit_price }}</td>
+              <td>{{ getCategoryName(item.category_id) }}</td>
+              <!-- <td>
+                <button type="button" class="btn btn-danger btn-sm" @click.prevent="removeItem(index)">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>-->
+            </tr>        
+          </tbody>
+        </table>
+        <div>
+          <slot name="jacksito"></slot>
+          <p>..</p>
+        </div>
+      </div>
+    </div> 
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-auto">
+          <label for="cantidad1" class="form-label">Cantidad-1</label>
+          <input type="number" v-model="totalCantidad1" id="cantidad1" class="form-control w-75 mb-2" />
+          
+          <label for="cantidad2" class="form-label">Cantidad-2</label>
+          <input type="number" v-model="totalCantidad2" id="cantidad2" class="form-control w-75 mb-2" />
+          
+          <label for="importe" class="form-label">Importe</label>
+          <input type="number" v-model="importeTotal" id="importe" class="form-control w-75" />
+        </div>
 
-    <!-- Almacén -->
-    <div class="col-md-6">
-      <label class="control-label">Almacén</label>
-      <div class="input-group">
-        <el-select
-          v-model="form.warehouse_id"
-          filterable
-          placeholder="Selecciona un almacén"
-          class="form-select"
-        >
-          <el-option
-            v-for="option in warehouses"
-            :key="option.id"
-            :label="option.description"
-            :value="option.id"
-          ></el-option>
-        </el-select>
+        <!-- Cambiar col-auto por col -->
+        <div class="col d-flex align-items-center justify-content-center ">
+          <button type="button" @click.prevent="sendForm()" class="btn btn-primary w-75">Confirmar</button>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="row mt-2">
-    <!-- Comentario -->
-    <div class="col-md-6">
-      <label class="control-label">Comentario</label>
-      <input type="text" v-model="form.comment" class="form-control" placeholder="N/A">
-    </div>
-    
-    <!-- Botón Agregar Producto -->
-    <div class="col-md-6 d-flex align-items-end">
-      <button type="button" class="btn btn-custom w-75" @click.prevent="clickCreate()">Agregar Producto</button>
-    </div>
-  </div>
-</div>
-<form-add-product  @add-item="addItem" :warehouse_id="form.warehouse_id" :establishment_id="form.establishment_id" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>
-<br>
-<div class="col-md-12">
-  <div class="table-responsive table-responsive-new">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Clave</th>
-          <th>Descripción</th>
-          <th>Cantidad-1</th>
-          <th>Cantidad-2</th>
-          <th>Costo</th>
-          <th>Importe Costo</th>
-          <th>Categoria</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(item, index) in form.details" :key="index">
-          <td>{{ item.item_id}}</td>
-          <td>{{ item.description }}</td>
-          <td>{{ item.system_quantity}}</td>
-          <td>{{ item.counted_quantity}}</td>
-          <td>{{ item.sale_unit_price}}</td>
-          <td>{{ item.system_quantity * item.sale_unit_price }}</td>
-          <td>{{ getCategoryName(item.category_id) }}</td>
-          <!-- <td>
-            <button type="button" class="btn btn-danger btn-sm" @click.prevent="removeItem(index)">
-              <i class="fa fa-trash"></i>
-            </button>
-          </td>-->
-        </tr>        
-      </tbody>
-    </table>
-    <div>
-      <slot name="jacksito"></slot>
-      <p>..</p>
-    </div>
-  </div>
-</div> 
-<div class="container">
-  <div class="row align-items-center">
-    <div class="col-auto">
-      <label for="cantidad1" class="form-label">Cantidad-1</label>
-      <input type="number" v-model="totalCantidad1" id="cantidad1" class="form-control w-75 mb-2" />
-      
-      <label for="cantidad2" class="form-label">Cantidad-2</label>
-      <input type="number" v-model="totalCantidad2" id="cantidad2" class="form-control w-75 mb-2" />
-      
-      <label for="importe" class="form-label">Importe</label>
-      <input type="number" v-model="importeTotal" id="importe" class="form-control w-75" />
-    </div>
-
-    <!-- Cambiar col-auto por col -->
-    <div class="col d-flex align-items-center justify-content-center ">
-      <button type="button" @click.prevent="sendForm()" class="btn btn-primary w-75">Confirmar</button>
-    </div>
-  </div>
-</div>
-
   </div>
 </template>
 <style>
@@ -168,7 +166,7 @@
       components: {formAddProduct},
       data() {
           return {
-              title: null,
+              title: 'Nuevo Inventario Físico',
               showDialog: false, 
               resource: 'warehouses',
               recordId: null,
@@ -267,8 +265,9 @@
           addItem(newItem) {
             this.totalCantidad1+= Number(newItem.system_quantity);
             this.totalCantidad2 += Number(newItem.counted_quantity);
-            this.importeTotal += (this.totalCantidad2 - this.totalCantidad1) * newItem.sale_unit_price;
-            this.form.details.push(newItem);          
+            const individualAmount = (Number(newItem.counted_quantity) - Number(newItem.system_quantity)) * newItem.sale_unit_price;
+            this.importeTotal += individualAmount;
+            this.form.details.push(newItem);
             //this.items.push(newItem);
           },
           getAllPhysicalInventoryCategories(){
