@@ -215,7 +215,7 @@
                 ) */            
           },         
           getEstablishments(Establishment=null){            
-            let url = '/physicalInventory/getEstablishments';
+            let url = '/physical-inventory/getEstablishments';
             if (Establishment !== null) {
                url += `?value=${Establishment}`;
             }
@@ -233,7 +233,7 @@
             });            
           },          
           getWarehousesByEstablishment(id=null){
-            let url = `/physicalInventory/getWarehousesByEstablishment/${id}`;            
+            let url = `/physical-inventory/getWarehousesByEstablishment/${id}`;            
             return this.$http
             .get(url)
             .then(response => { 
@@ -271,7 +271,7 @@
             //this.items.push(newItem);
           },
           getAllPhysicalInventoryCategories(){
-            let url = '/physicalInventory/getAllPhysicalInventoryCategories';           
+            let url = '/physical-inventory/getAllPhysicalInventoryCategories';           
             return this.$http
             .get(url)
             .then(response => {              
@@ -303,13 +303,13 @@
                this.$message.error('Debe tener productos seleccionados');
             }
             //selectedCategory
-            let url = '/physicalInventory/store';           
+            let url = '/physical-inventory/store';           
             return this.$http
             .post(url,this.form)
             .then(response => { 
               this.$message.success(response.data.message);
               setTimeout(() => {
-                window.location.href = "/physicalInventory";
+                window.location.href = "/physical-inventory";
               }, 1000); 
             })
             .catch(error => {

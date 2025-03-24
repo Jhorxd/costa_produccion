@@ -171,6 +171,7 @@ class DispatchController extends Controller
 
     public function createNew($parentTable, $parentId)
     {
+        
         $query = null;
         $reference_document_id = null;
         $reference_quotation_id = null;
@@ -232,7 +233,7 @@ class DispatchController extends Controller
                 ];
             }
         }
-
+        
         if ($parentTable === 'dispatch') {
             $data = [
                 'id' => $document->id,
@@ -260,12 +261,12 @@ class DispatchController extends Controller
             ];
         }elseif( $parentTable === 'inventories_transfer'){
             $establishment_id = auth()->user()->establishment->id;
-            $dispatch = Dispatch::where('establishment_id', $establishment_id)->firstOrFail();
+            $serie = Series::where('establishment_id', $establishment_id)->where('document_type_id', '09')->first();
             $data = [
                 'establishment_id' => $document->warehouse->establishment_id,
                 'transfer_reason_type_id' => '04',
                 'items' => $items,
-                'series' => $dispatch->series,
+                'series' => $serie->number ?? null,
                 'transfer_reason_description' => $document->transfer_reason_description,
             ];
         }else {
@@ -281,7 +282,6 @@ class DispatchController extends Controller
                 'reference_transfer_id' => $reference_transfer_id,
             ];
         }
-
         return view('tenant.dispatches.form', [
             'document' => $data,
             'parentTable' => $parentTable,

@@ -43,7 +43,6 @@
                   filterable
                   placeholder="Selecciona un establecimiento"
                   @change="handleEstablishmentChange"
-                  :filter-method="handleFilter"
                   class="form-select"
                   clearable
                 >
@@ -168,11 +167,11 @@
      },
     methods: {
     clickCreate(recordId = null) {
-      location.href = "physicalInventory/insertInventory"      
+      location.href = "physical-inventory/insertInventory"      
     },
     getRecords(){
       this.loading_submit = true;            
-      this.$http.get(`/physicalInventory/getAllPhysicalInventories?${this.getQueryParameters()}`)
+      this.$http.get(`/physical-inventory/getAllPhysicalInventories?${this.getQueryParameters()}`)
       .then(response => {
         this.records = response.data.data;
         this.pagination = {
@@ -184,7 +183,6 @@
         to: response.data.to,
         total: response.data.total
         };
-        console.log( this.pagination);
         //this.pagination = response.data.meta;
         //console.log(JSON.stringify(response.data.meta))
         this.pagination.per_page = parseInt(
@@ -205,10 +203,10 @@
       });
       },
       clickDownload(id) {
-            window.open(`/physicalInventory/pdf/${id}`, "_blank");
+            window.open(`/physical-inventory/pdf/${id}`, "_blank");
       },
       getEstablishments(Establishment=null){            
-            let url = '/physicalInventory/getEstablishments';
+            let url = '/physical-inventory/getEstablishments';
             if (Establishment !== null) {
                url += `?value=${Establishment}`;
             }
@@ -229,7 +227,7 @@
             this.getWarehousesByEstablishment(value);          
       },
       getWarehousesByEstablishment(id=null){
-            let url = `/physicalInventory/getWarehousesByEstablishment/${id}`;            
+            let url = `/physical-inventory/getWarehousesByEstablishment/${id}`;            
             return this.$http
             .get(url)
             .then(response => { 

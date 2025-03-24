@@ -38,19 +38,18 @@
             >
             @if($pdf == true)
                 <!-- Logo aqui -->
-                    @if(!empty($company->logo))
-                        <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
-                             alt="{{$company->name}}"
-                             class="company_logo_ticket contain"
-                             style="max-width: 300px; height: auto;"
-                             >
-                    @endif
-                @else
-                    <h3>
-                        {{$company->name}}
-                    </h3>
+                @if(!empty($company->logo))
+                    <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
+                            alt="{{$company->name}}"
+                            class="company_logo_ticket contain"
+                            style="max-width: 300px; height: auto;"
+                            >
                 @endif
-
+            @else
+                <h3>
+                    {{$company->name}}
+                </h3>
+            @endif
             </td>
 
             <td

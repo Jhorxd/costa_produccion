@@ -126,7 +126,7 @@ import { method } from 'lodash';
       submit() {        
       },
       getProductsByEstablishmentAndWarehouse(){
-            let url = '/physicalInventory/getProductsByEstablishmentAndWarehouse';
+            let url = '/physical-inventory/getProductsByEstablishmentAndWarehouse';
             url+=`?establishment_id=${this.establishment_id}&warehouse_id=${this.warehouse_id}`;              
             return this.$http
             .get(url)
@@ -177,7 +177,7 @@ import { method } from 'lodash';
             }
         },
         getAllPhysicalInventoryCategories(){
-            let url = '/physicalInventory/getAllPhysicalInventoryCategories';           
+            let url = '/physical-inventory/getAllPhysicalInventoryCategories';           
             return this.$http
             .get(url)
             .then(response => {              

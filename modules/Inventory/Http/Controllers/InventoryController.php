@@ -39,6 +39,7 @@ use Modules\Inventory\Models\WarehouseLocationType;
 use App\Models\Tenant\Establishment;
 use Modules\Inventory\Models\PhysicalInventory; 
 use Modules\Inventory\Models\PhysicalInventoryDetail;
+use App\Models\Tenant\Company;
 
 class InventoryController extends Controller
 {
@@ -90,10 +91,11 @@ class InventoryController extends Controller
         )
         ->where('inventory_physical_details.physical_inventory_id', '=', $id) 
         ->get();
-               
+
+        $company = Company::active();
         
         // Renderizar la vista Blade con los datos
-        $pdf = PDF::loadView('inventory::inventory.pdfPhysicalIventory', compact('data','details'));
+        $pdf = PDF::loadView('inventory::inventory.pdfPhysicalIventory', compact('data','details','company'));
 
         // Descargar el PDF o mostrarlo en el navegador
         return $pdf->stream('reporte.pdf');
