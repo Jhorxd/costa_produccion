@@ -166,7 +166,11 @@ import { method } from 'lodash';
             category_id: null
           }         
        },
-       sendItem() {           
+       sendItem() {
+            if(this.checked && this.form.category_id==null){
+              this.$message.error('Debe seleccionar una categoría');
+              return;              
+            }       
             if(this.form.item_id){                            
                 this.$emit('add-item', this.form);
                 this.cleanForm();

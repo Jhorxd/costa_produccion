@@ -167,7 +167,8 @@ class InventoryController extends Controller
         $query = $query->paginate(config('tenant.items_per_page'));    
         return $query;
     }
-    public function store3(Request $request){        
+    public function store3(Request $request){
+                
         DB::beginTransaction(); 
             try {        
             $physicalInventory = PhysicalInventory::create($request->except('details'));
@@ -187,7 +188,12 @@ class InventoryController extends Controller
             if ($detail['counted_quantity'] < $detail['system_quantity']) {
                 $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
                 $type = null;
-            }           
+            }
+            $Item = Item::find($detail['item_id']);
+            if ($Item->sale_unit_price != $detail['sale_unit_price']) {
+                $Item->sale_unit_price = $detail['sale_unit_price'];
+                $Item->save();                
+            }                  
             $inventory = new Inventory();
             $inventory->type = $type;
             $inventory->description = 'Stock Real';
@@ -206,7 +212,8 @@ class InventoryController extends Controller
                 'counted_quantity' => $detail['counted_quantity'],
                 'system_quantity' => $detail['system_quantity'],
                 'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
-                'category_id' => $detail['category_id'] ?? null, 
+                'category_id' => $detail['category_id'] ?? null,
+                'cost'=>$detail['sale_unit_price']
             ]);
         }
     }

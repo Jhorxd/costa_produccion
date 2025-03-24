@@ -56,6 +56,7 @@
               filterable
               placeholder="Selecciona un almacén"
               class="form-select"
+              @change="handleWarehouse"
             >
               <el-option
                 v-for="option in warehouses"
@@ -89,8 +90,8 @@
             <tr>
               <th>ID</th>
               <th>Descripción</th>
-              <th>Cantidad-1</th>
-              <th>Cantidad-2</th>
+              <th>Stock Sistema</th>
+              <th>Stock Real</th>
               <th>Costo</th>
               <th>Importe Costo</th>
               <th>Categoria</th>
@@ -123,13 +124,13 @@
       <div class="row align-items-center">
         <div class="col-auto">
           <label for="cantidad1" class="form-label">Cantidad-1</label>
-          <input type="number" v-model="totalCantidad1" id="cantidad1" class="form-control w-75 mb-2" />
+          <input type="number" readonly  v-model="totalCantidad1" id="cantidad1" class="form-control w-75 mb-2" />
           
           <label for="cantidad2" class="form-label">Cantidad-2</label>
-          <input type="number" v-model="totalCantidad2" id="cantidad2" class="form-control w-75 mb-2" />
+          <input type="number" readonly v-model="totalCantidad2" id="cantidad2" class="form-control w-75 mb-2" />
           
           <label for="importe" class="form-label">Importe</label>
-          <input type="number" v-model="importeTotal" id="importe" class="form-control w-75" />
+          <input type="number" readonly  v-model="importeTotal" id="importe" class="form-control w-75" />
         </div>
 
         <!-- Cambiar col-auto por col -->
@@ -247,7 +248,10 @@
                 this.loading_submit = false;
             });  
           },        
-          handleEstablishmentChange(value) {                        
+          handleEstablishmentChange(value) {
+            if(this.form.details.length>0){
+              this.cleanForm(true);
+            }                       
             this.getWarehousesByEstablishment(value);          
           },
           handleFilter(value) {
@@ -266,9 +270,13 @@
             this.totalCantidad1+= Number(newItem.system_quantity);
             this.totalCantidad2 += Number(newItem.counted_quantity);
             const individualAmount = (Number(newItem.counted_quantity) - Number(newItem.system_quantity)) * newItem.sale_unit_price;
-            this.importeTotal += individualAmount;
-            this.form.details.push(newItem);
-            //this.items.push(newItem);
+            this.importeTotal += individualAmount;              
+            const index = this.form.details.findIndex(item => item.item_id === newItem.item_id);
+            if (index !== -1) {                
+                this.form.details.splice(index, 1, newItem);
+            } else {                
+                this.form.details.push(newItem);
+            }
           },
           getAllPhysicalInventoryCategories(){
             let url = '/physical-inventory/getAllPhysicalInventoryCategories';           
@@ -301,6 +309,7 @@
             }
             if (this.form.details.length <= 0) {
                this.$message.error('Debe tener productos seleccionados');
+               return;
             }
             //selectedCategory
             let url = '/physical-inventory/store';           
@@ -320,18 +329,21 @@
             });
                       
           },
-          cleanForm(){
-            this.form = {
-                    establishment_id: null,
-                    warehouse_id: null,
-                    comment: null ,
-                    adjustment_type_id: 1,
-                    date: null ,
-                    details: []                            
-              }
+          cleanForm(cleanALL=false){
+          if (!cleanALL) {
+              this.form.establishment_id = null;
+              this.form.warehouse_id = null;
+              this.form.comment = null;
+              this.form.adjustment_type_id = 1;
+              this.form.date = null;                
+            } else {
+                // Solo limpiar `details` sin afectar otras propiedades de `this.form`
+                this.form.details = [];
+            }
             this.totalCantidad1 = 0;
             this.totalCantidad2 = 0;
             this.importeTotal = 0;
+            
           },
           handleGlobalCategory(value){                      
             // Actualizar category_id de todos los elementos en details
@@ -342,6 +354,9 @@
           getCategoryName(category_id) {
             const category = this.categories.find(cat => cat.id === category_id);
             return category ? category.name : " "; // Retorna el nombre o "Desconocido" si no encuentra
+          },
+          handleWarehouse(){
+            this.cleanForm(true);
           }
       }
   }

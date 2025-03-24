@@ -74,12 +74,12 @@
               </el-select>
             </div>
           </div>
-          <div class="col-md-4">
-            <a class="btn btn-custom btn-sm mt-2 mr-2"
-              href="#"
-              @click.prevent="findPhysicalInventory()">
-                <i class="fa fa-plus-circle"></i> Buscar
-            </a>
+          <div class="col-md-4 d-flex align-items-end">
+            <a class="btn btn-custom btn-sm mr-2"
+             href="#"
+             @click.prevent="findPhysicalInventory()">
+             <i class="fa fa-plus-circle"></i> Buscar
+             </a>
           </div>
         </div>
       </div>
