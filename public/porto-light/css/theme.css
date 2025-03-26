@@ -20950,3 +20950,36 @@ ul.nav-main li.nav-description{
 html.dark ul.nav-main li.nav-description{
     color: #d0d2d6;
 }
+
+    data-table.TablaCustom {
+    background: #ffffff;
+    width: 100%;
+    margin: 23px auto;
+    max-width: 97% !important;
+    border-radius: 4px;
+}
+data-table.TablaCustom tr[slot="heading"] {
+    text-align: left !important;
+    vertical-align: middle;
+    background: #46b2ff !important;
+    color: #fff !important;
+    font-weight: 900;
+    line-height: 1;
+}
+data-table.TablaCustom tr[slot="heading"] th {
+    padding: 10px;
+}
+data-table.TablaCustom tr td {
+    padding: 4px 7px 5px;
+}
+data-table.TablaCustom tr:nth-child(odd) {
+    background: #ebeced;
+}
+.TablaCustom button.el-button {
+    background: transparent;
+    border: 1px solid #6d7183 !important;
+    padding: 10px !important;
+}
+.TablaCustom button.el-button:active {
+    background: #46b2ff;
+}

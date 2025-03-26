@@ -1040,6 +1040,14 @@ class Item extends ModelTenant
             'restrict_sale_cpe' => $this->restrict_sale_cpe,
             'image_url' => $this->getImageUrl(),
             'name' => $this->name,
+            // Nuevos valores agregados por el equipo de George
+            'cod_digemid' => 'D1023M2D0',
+            'concentracion' => '500 mg',
+            'condicion_venta' => 'Venta libre',
+            'forma_farmaceutica' => 'Tabletas',
+            'principio_activo' => 'Paracetamol',
+            'estado' => 'Activo',
+            'accion' => 'Alergías'
         ];
 
         // El nombre de producto, por defecto, sera la misma descripcion.
