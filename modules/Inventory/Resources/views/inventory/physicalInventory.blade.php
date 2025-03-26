@@ -2,6 +2,6 @@
 
 @section('content')
 
-    <physical-inventory></physical-inventory>
+<physical-inventory :inventory="{{ json_encode($inventory) }}"></physical-inventory>
 
 @endsection

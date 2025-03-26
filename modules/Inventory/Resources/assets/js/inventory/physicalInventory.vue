@@ -13,15 +13,17 @@
     <div class="container">
       <div class="row">
         <div :class="checked ? 'col-md-6' : 'col-md-4'">
-          <el-checkbox v-model="checked" @change="handleChangeChecked">Inventario selectivo</el-checkbox>
+          <el-checkbox v-model="checked" :disabled="isDisabled" @change="handleChangeChecked">Inventario selectivo</el-checkbox>
         </div>
         <div class="col-md-4" v-if="!checked">
-          <el-select @change="handleGlobalCategory" v-model="selectedCategory" placeholder="Seleccione una categoría">
-            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
+          <label class="control-label">Categoria Global</label>
+          <el-select @change="handleGlobalCategory"  :disabled="isDisabled"  v-model="selectedCategory" placeholder="Seleccione una categoría">
+            <el-option v-for="category in categories"  :key="category.id" :label="category.name" :value="category.id"></el-option>
           </el-select>
         </div>
         <div :class="checked ? 'col-md-6' : 'col-md-4'">
-          <el-date-picker v-model="form.date" type="date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" placeholder="Selecciona una fecha"></el-date-picker>
+          <label class="control-label">Fecha</label>
+          <el-date-picker    :disabled="isDisabled" v-model="form.date" type="date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" placeholder="Selecciona una fecha"></el-date-picker>
         </div>
       </div>
       <div class="row">
@@ -30,6 +32,7 @@
           <label class="control-label">Sucursal</label>
           <div class="input-group">
             <el-select
+              :disabled="isDisabled" 
               v-model="form.establishment_id"
               filterable
               placeholder="Selecciona un establecimiento"
@@ -56,6 +59,7 @@
               filterable
               placeholder="Selecciona un almacén"
               class="form-select"
+              :disabled="isDisabled" 
               @change="handleWarehouse"
             >
               <el-option
@@ -72,12 +76,12 @@
         <!-- Comentario -->
         <div class="col-md-6">
           <label class="control-label">Comentario</label>
-          <input type="text" v-model="form.comment" class="form-control" placeholder="N/A">
+          <input   :disabled="isDisabled" ad type="text" v-model="form.comment" class="form-control" placeholder="N/A">
         </div>
         
         <!-- Botón Agregar Producto -->
         <div class="col-md-6 d-flex align-items-end">
-          <button type="button" class="btn btn-custom w-75" @click.prevent="clickCreate()">Agregar Producto</button>
+          <button type="button"  :disabled="isDisabled" class="btn btn-custom w-75"  @click.prevent="clickCreate()">Agregar Producto</button>
         </div>
       </div>
     </div>
@@ -163,10 +167,12 @@
    import formAddProduct from './formAddProduct.vue'
 
   export default {
+      props: ['inventory'],
       mixins: [],
       components: {formAddProduct},
       data() {
           return {
+              isDisabled: false, 
               title: 'Nuevo Inventario Físico',
               showDialog: false, 
               resource: 'warehouses',
@@ -179,6 +185,7 @@
                     date: null ,
                     series:"Fo-",
                     number:1,
+                    confirmed:null,
                     details: []                               
               },
               establishments: [],
@@ -193,10 +200,30 @@
               selectedCategory: null    
           }
       },
-      created() {                    
+      created() {
+        alert(JSON.stringify(this.inventory));
           this.title = 'Inventario Fisicos'
           this.getAllPhysicalInventoryCategories()
-          this.getEstablishments()
+          this.getEstablishments()          
+          if(this.inventory){
+            this.isDisabled=true;
+            this.getWarehousesByEstablishment(this.inventory.establishment_id);
+            this.form.date=this.inventory.date;
+            this.form.establishment_id=this.inventory.establishment_id;
+            this.form.warehouse_id=this.inventory.warehouse_id;
+            this.form.comment=this.inventory.comment;
+            this.form.details=this.inventory.details;
+            this.form.details.description=this.inventory.details.item_description;
+            this.form.confirmed=this.inventory.confirmed;
+            if(this.inventory.adjustment_type_id==1){
+              this.handleChangeChecked(true);
+            }else{
+              this.handleChangeChecked(false);
+              this.selectedCategory=this.form.details[0].category_id;
+              this.checked=false;
+            }                    
+            this.calculateTotals();           
+          }         
       },
       methods: { 
           clickCreate() {
@@ -267,16 +294,17 @@
              }
           },
           addItem(newItem) {
-            this.totalCantidad1+= Number(newItem.system_quantity);
-            this.totalCantidad2 += Number(newItem.counted_quantity);
-            const individualAmount = (Number(newItem.counted_quantity) - Number(newItem.system_quantity)) * newItem.sale_unit_price;
-            this.importeTotal += individualAmount;              
+            //this.totalCantidad1+= Number(newItem.system_quantity);
+            //this.totalCantidad2 += Number(newItem.counted_quantity);
+            //const individualAmount = (Number(newItem.counted_quantity) - Number(newItem.system_quantity)) * newItem.sale_unit_price;
+            //this.importeTotal += individualAmount;                       
             const index = this.form.details.findIndex(item => item.item_id === newItem.item_id);
             if (index !== -1) {                
                 this.form.details.splice(index, 1, newItem);
             } else {                
                 this.form.details.push(newItem);
             }
+            this.calculateTotals();
           },
           getAllPhysicalInventoryCategories(){
             let url = '/physical-inventory/getAllPhysicalInventoryCategories';           
@@ -295,9 +323,9 @@
           },
           handleChangeChecked(value){
             if(value==true){
-              this.form.adjustment_type_id = 1;
+              this.form.adjustment_type_id = 1;             
             }else{
-              this.form.adjustment_type_id = 2;
+              this.form.adjustment_type_id = 2;              
             }                                           
           },
           sendForm(){
@@ -345,7 +373,8 @@
             this.importeTotal = 0;
             
           },
-          handleGlobalCategory(value){                      
+          handleGlobalCategory(value){
+            alert(value);                    
             // Actualizar category_id de todos los elementos en details
             this.form.details.forEach(item => {
                 item.category_id = value;
@@ -357,7 +386,22 @@
           },
           handleWarehouse(){
             this.cleanForm(true);
-          }
+          },
+          calculateTotals() {
+          // Reiniciar los valores
+          this.totalCantidad1 = 0;
+          this.totalCantidad2 = 0;
+          this.importeTotal = 0;
+
+          // Recorrer los detalles y calcular los totales
+          this.form.details.forEach((item) => {
+              this.totalCantidad1 += Number(item.system_quantity);
+              this.totalCantidad2 += Number(item.counted_quantity);
+
+              const individualAmount = (Number(item.counted_quantity) - Number(item.system_quantity)) * item.sale_unit_price;
+              this.importeTotal += individualAmount;r
+          });
+        }
       }
   }
 </script>
