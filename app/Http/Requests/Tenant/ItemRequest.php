@@ -73,6 +73,14 @@ class ItemRequest extends FormRequest
             'purchase_affectation_igv_type_id' => [
                 'required'
             ],
+            'pharmaceutical_unit_type_id' => [
+                'required'
+            ],
+            'sale_price' => [
+                'required',
+                'numeric',
+                'gt:0'
+            ],
             // 'category_id' => [
             //     'required_if:is_set,false',
             // ],
@@ -104,8 +112,10 @@ class ItemRequest extends FormRequest
     {
         return [
             'description.required' => 'El campo nombre es obligatorio.',
+            'pharmaceutical_unit_type_id.required' => 'El campo forma farmaceútica es obligatorio.',
+            'sale_price.gt' => 'El precio de venta debe ser mayor a 0.',
             'name.max' => 'La descripción debe ser inferior a 600 caracteres.',
-            'sale_unit_price.gt' => 'El precio unitario de venta debe ser mayor que 0.',
+            'sale_unit_price.gt' => 'El precio unitario debe ser mayor a 0.',
         ];
     }
 }

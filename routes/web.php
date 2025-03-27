@@ -201,6 +201,7 @@ if ($hostname) {
             Route::get('items/records', 'Tenant\ItemController@records');
             Route::get('items/tables', 'Tenant\ItemController@tables');
             Route::get('items/record/{item}', 'Tenant\ItemController@record');
+            Route::get('items/getPositionSelected/{item_id}', 'Tenant\ItemController@getPositionsSelected');
             Route::get('items/fileDownload/{id}', 'Tenant\ItemController@downloadDocument');
             Route::post('items', 'Tenant\ItemController@store');
             Route::delete('items/{item}', 'Tenant\ItemController@destroy');
@@ -235,6 +236,7 @@ if ($hostname) {
             Route::get('items/export/barcode/last', 'Tenant\ItemController@itemLast')->name('tenant.items.last');
             Route::post('get-items', 'Tenant\ItemController@getAllItems');
             
+            Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
             Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
 
             //Persons
