@@ -592,17 +592,20 @@ class ItemController extends Controller
         if(isset($request->positions_selected)){
             foreach ($request->positions_selected as $position) {
                 $itemsPositionCurrent = ItemPosition::with('position')->where('item_id',$item->id)->get();
-                $row = $position['row'];
-                $column = $position['column'];
-                $positionToDelete = $itemsPositionCurrent->first(function($itemPosition) use ($row, $column) {
-                    return $itemPosition->position->row == $row && $itemPosition->position->column == $column;
+                $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($request) {
+                    foreach ($request->positions_selected as $position) {
+                        if ($itemPosition->position->row == $position['row'] && $itemPosition->position->column == $position['column']) {
+                            return false;
+                        }
+                    }
+                    return true;
                 });
 
-                if ($positionToDelete) {
+                foreach ($positionsToDelete as $positionToDelete) {
                     $itemWarehouse = ItemWarehouse::where('item_id', $item->id)
-                        ->where('warehouse_id', $positionToDelete->warehouse_id)
-                        ->first();
-                        
+                    ->where('warehouse_id', $positionToDelete->warehouse_id)
+                    ->first();
+                    
                     if ($itemWarehouse) {
                         $itemWarehouse->stock -= $positionToDelete->stock;
                         $itemWarehouse->save();
