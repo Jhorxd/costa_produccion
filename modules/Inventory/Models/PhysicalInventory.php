@@ -20,7 +20,9 @@ class PhysicalInventory extends ModelTenant
         'warehouse_id',
         'comment',
         'series',
-        'number'
+        'number',
+        'confirmed',
+        'json_positions'
     ];
 
     // Relación con el tipo de ajuste
@@ -39,5 +41,9 @@ class PhysicalInventory extends ModelTenant
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
+    }
+    public function details()
+    {
+        return $this->hasMany(PhysicalInventoryDetail::class, 'physical_inventory_id');
     }
 }

@@ -321,7 +321,10 @@ class ItemController extends Controller
             'suppliers'
         );
     }
-
+    
+    public function getLocations($id){
+        return InventoryWarehouseLocation::all()->where('warehouse_id','=',$id); 
+    }
     public function positions($location_id, $item_id = null)
     {
         $location = InventoryWarehouseLocation::find($location_id);

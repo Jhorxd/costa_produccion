@@ -192,6 +192,7 @@
                 <th>Categoría</th>
                 <th>Stock Sistema</th>
                 <th>Stock Real</th>
+                <th>Costo</th>
             </tr>
         </thead>
         <tbody>
@@ -202,6 +203,7 @@
                 <td class="celda">{{ $detail->category_name }}</td>
                 <td class="celda">{{ $detail->system_quantity }}</td>
                 <td class="celda">{{ $detail->counted_quantity}}</td>
+                <td class="celda">{{ $detail->cost}}</td>
             </tr>
             @endforeach
         </tbody>

@@ -131,7 +131,7 @@ if ($hostname) {
             });
             Route::prefix('physical-inventory')->group(function () {
                 Route::get('/', 'InventoryController@indexPhysicalInventoryList')->name('inventory.physicalList'); 
-                Route::get('insertInventory', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
+                Route::get('insertInventory/{id?}', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
                 Route::get('getEstablishments', 'InventoryController@getEstablishmentsByName');
                 Route::get('getWarehousesByEstablishment/{id}', 'InventoryController@getWarehousesByEstablishment');
                 Route::get('getProductsByEstablishmentAndWarehouse', 'InventoryController@getProductsByEstablishmentAndWarehouse');

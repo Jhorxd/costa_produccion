@@ -200,7 +200,9 @@ if ($hostname) {
             Route::get('items/columns', 'Tenant\ItemController@columns');
             Route::get('items/records', 'Tenant\ItemController@records');
             Route::get('items/tables', 'Tenant\ItemController@tables');
+            Route::get('items/getLocations/{id}', 'Tenant\ItemController@getLocations');        
             Route::get('items/record/{item}', 'Tenant\ItemController@record');
+            Route::get('items/record2Jack', 'Tenant\ItemController@record2Jack');
             Route::get('items/getPositionSelected/{item_id}', 'Tenant\ItemController@getPositionsSelected');
             Route::get('items/fileDownload/{id}', 'Tenant\ItemController@downloadDocument');
             Route::post('items', 'Tenant\ItemController@store');
