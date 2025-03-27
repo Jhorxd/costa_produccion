@@ -8,6 +8,7 @@ use App\Models\Tenant\ItemSupply;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Inventory\Models\WarehouseLocationPosition;
+use Modules\Item\Models\ItemLotsGroup;
 
     /**
      * Class ItemResource
@@ -83,8 +84,8 @@ use Modules\Inventory\Models\WarehouseLocationPosition;
                         array_push($item_positions, $item_position);
                     }
                 }
-                
             }
+            $lots = ItemLotsGroup::where('item_id', $this->id)->get();
 
             return [
                 'id' => $this->id,
@@ -153,19 +154,14 @@ use Modules\Inventory\Models\WarehouseLocationPosition;
                 'commission_amount' => $this->commission_amount,
                 'lot_code' => $this->lot_code,
                 'line' => $this->line,
-                'lots' => $this->lots->transform(function ($row, $key) {
+                'lots' => $lots->transform(function ($row, $key) {
                     return [
                         'id' => $row->id,
-                        'series' => $row->series,
-                        'date' => $row->date,
+                        'code' => $row->code,
+                        'quantity' => $row->quantity,
                         'item_id' => $row->item_id,
-                        'warehouse_id' => $row->warehouse_id,
-                        'item_loteable_type' => $row->item_loteable_type,
-                        'item_loteable_id' => $row->item_loteable_id,
-                        'has_sale' => $row->has_sale,
-                        'state' => $row->state,
-                        'created_at' => $row->created_at,
-                        'updated_at' => $row->updated_at,
+                        'date_of_due' => $row->date_of_due,
+                        'status' => $row->status,
                         'deleted' => false
                     ];
                 }),

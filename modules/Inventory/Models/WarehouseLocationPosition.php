@@ -3,6 +3,7 @@
 namespace Modules\Inventory\Models;
 
 use App\Models\Tenant\Item;
+use App\Models\Tenant\ItemPosition;
 use App\Models\Tenant\ModelTenant;
 use Modules\Inventory\Models\InventoryKardex;
 use Carbon\Carbon;
@@ -69,4 +70,9 @@ class WarehouseLocationPosition extends ModelTenant
         'location_id',
     ];
 
+    public function lots()
+    {
+        return $this->hasMany(ItemPosition::class, 'position_id')
+            ->whereNotNull('lots_group_id')->select('id','stock','lots_group_id','position_id');
+    }
 }

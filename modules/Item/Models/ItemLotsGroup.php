@@ -26,7 +26,7 @@ class ItemLotsGroup extends ModelTenant
         'quantity',
         'date_of_due',
         'item_id',
-        'old_quantity'
+        'status'
     ];
 
     public function item()
@@ -112,6 +112,17 @@ class ItemLotsGroup extends ModelTenant
     public function setItemId($item_id)
     {
         $this->item_id = $item_id;
+        return $this;
+    }
+
+    /**
+     * @param mixed $status
+     *
+     * @return ItemLotsGroup
+     */
+    public function setStatus($status)
+    {
+        $this->status = $status;
         return $this;
     }
 

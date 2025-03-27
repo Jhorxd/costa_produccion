@@ -6,6 +6,7 @@ use App\Models\Tenant\Item;
 use Hyn\Tenancy\Traits\UsesTenantConnection;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
 use Modules\Inventory\Models\WarehouseLocationPosition;
+use Modules\Item\Models\ItemLotsGroup;
 
 class ItemPosition extends ModelTenant
 {
@@ -14,6 +15,7 @@ class ItemPosition extends ModelTenant
     protected $fillable = [
         'id',
         'item_id',
+        'lots_group_id',
         'stock',
         'position_id',
         'location_id',
@@ -34,5 +36,10 @@ class ItemPosition extends ModelTenant
     
     public function warehouse(){
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function lots_group()
+    {
+        return $this->belongsTo(ItemLotsGroup::class, 'lots_group_id');
     }
 }
