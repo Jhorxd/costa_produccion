@@ -21,7 +21,8 @@ class PhysicalInventory extends ModelTenant
         'comment',
         'series',
         'number',
-        'confirmed'
+        'confirmed',
+        'json_positions'
     ];
 
     // Relación con el tipo de ajuste

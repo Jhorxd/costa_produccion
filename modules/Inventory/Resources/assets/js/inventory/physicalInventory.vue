@@ -85,7 +85,7 @@
         </div>
       </div>
     </div>
-    <form-add-product  @add-item="addItem" :warehouse_id="form.warehouse_id" :establishment_id="form.establishment_id" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>
+    <form-add-product  @add-item="addItem" :warehouse_id="form.warehouse_id" :establishment_id="form.establishment_id" :showDialog.sync="showDialog" :checked.sync="checked" ></form-add-product>  
     <br>
     <div class="col-md-12">
       <div class="table-responsive table-responsive-new">
@@ -177,6 +177,10 @@
               showDialog: false, 
               resource: 'warehouses',
               recordId: null,
+              location_id: null,
+              locations: [],
+              positions: [],
+              positions_selected: [],
               form: {
                     establishment_id: null,
                     warehouse_id: null,
@@ -186,6 +190,7 @@
                     series:"Fo-",
                     number:1,
                     confirmed:null,
+                    json_positions:{},
                     details: []                               
               },
               establishments: [],
@@ -201,10 +206,9 @@
           }
       },
       created() {
-        alert(JSON.stringify(this.inventory));
           this.title = 'Inventario Fisicos'
-          this.getAllPhysicalInventoryCategories()
-          this.getEstablishments()          
+          this.getAllPhysicalInventoryCategories();
+          this.getEstablishments();
           if(this.inventory){
             this.isDisabled=true;
             this.getWarehousesByEstablishment(this.inventory.establishment_id);
@@ -329,6 +333,11 @@
             }                                           
           },
           sendForm(){
+            //alert(JSON.stringify(this.positions_selected));
+            //this.form.json_positions.location_id=this.location_id;
+            //this.form.json_positions.positions_selected=this.positions_selected;
+            //alert(JSON.stringify(this.form.json_positions));
+            //deareturn ;
             if(this.checked==false){
                if(this.selectedCategory==null){
                 this.$message.error('Seleccione una categoria global');

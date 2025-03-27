@@ -321,7 +321,10 @@ class ItemController extends Controller
             'suppliers'
         );
     }
-
+    
+    public function getLocations($id){
+        return InventoryWarehouseLocation::all()->where('warehouse_id','=',$id); 
+    }
     public function positions($location_id){
         $positions = WarehouseLocationPosition::where('location_id',$location_id)->get();
         $location = InventoryWarehouseLocation::find($location_id);
@@ -344,7 +347,8 @@ class ItemController extends Controller
     }
 
     public function record($id)
-    {
+    {   
+        
         $record = new ItemResource(Item::findOrFail($id));
 
         return $record;

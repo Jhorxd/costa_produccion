@@ -66,6 +66,27 @@
                </el-button>
              </div>
           </div>
+          <div class="form-group">
+          <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+          <el-select
+              v-model="location_id"
+              filterable>
+              <el-option
+                  v-for="option in locations"
+                  :key="option.id"
+                  :label="option.name"
+                  :value="option.id"
+              ></el-option>
+          </el-select>
+        </div>
+        <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
+        <item-location
+                :showDialog.sync="showDialogLocation"
+                :location_id="location_id"
+                :positions_selected="positions_selected"
+                :positions="positions"
+                @positions-save="saveDataPosition">
+        </item-location> 
         </div>
       </form>
     </el-dialog>
@@ -89,13 +110,20 @@
   
   <script>
 import { method } from 'lodash';
+import ItemLocation from './../../../../../../resources/js/views/tenant/items/locations.vue'
 
   export default {
     props: ['showDialog', 'recordId','checked','establishment_id','warehouse_id'],
+    components: {ItemLocation},
     data() {
       return {
         titleDialog: "Agregar Producto",
         message: "Hola Mundo",
+        showDialogLocation: false,
+        location_id: null,
+        locations: [],
+        positions: [],
+        positions_selected: [],
         form: {
             item_id: null,
             stock: 0,
@@ -112,7 +140,7 @@ import { method } from 'lodash';
         selectedCategory: null
       };
     },
-    created() {                       
+    created() {                                   
         this.getAllPhysicalInventoryCategories();      
     },
     methods: {
@@ -120,7 +148,8 @@ import { method } from 'lodash';
         this.cleanForm();
         this.$emit('update:showDialog', false);        
       },
-      create() {        
+      create() {
+        this.getLocations();     
         this.getProductsByEstablishmentAndWarehouse();        
       },
       submit() {        
@@ -196,6 +225,51 @@ import { method } from 'lodash';
                 this.loading_submit = false;
             }); 
           }
+        ,
+        getLocations(){
+          return this.$http
+            .get(`/items/getLocations/${this.warehouse_id}`)
+            .then(response => {              
+              this.locations =response.data;                     
+                // Procesar la respuesta aquí
+            })
+            .catch(error => {
+                // Manejar el error aquí
+            })
+            .then(() => {
+                this.loading_submit = false;
+            }); 
+        },
+        clickItemLocation() {
+            if(!this.location_id){
+                this.$message.error("Seleccione una ubicación");
+            }else{
+                this.$http.get(`/items/positions/${this.location_id}`)
+                .then(response => {
+                    if (response.data.success) {
+                        this.positions = response.data.data;
+                        this.positions_selected.forEach(element => {
+                            const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
+                            if(position_finded){
+                                position_finded.stock = parseInt(element.stock);
+                            }else{
+                                position_finded.stock = 0;
+                            }
+                        });
+                    }
+                });
+                console.log(this.positions);
+                
+                this.showDialogLocation = true;
+            }
+        },
+        saveDataPosition(data) {
+            if(data.length>0){
+                this.position_selected = [];
+                this.positions_selected = data;
+            }
+            console.log(this.positions_selected);
+        }
           
     }
   }

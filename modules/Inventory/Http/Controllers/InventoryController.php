@@ -52,6 +52,15 @@ class InventoryController extends Controller
     }
     public function indexPhysicalInventory($id=null)
     {   
+
+        if($id){
+          $isConfirmed=PhysicalInventory::find($id);
+          if($isConfirmed!=null){
+              if($isConfirmed->confirmed==1){
+                return redirect()->route('inventory.physicalList');
+              }
+          }
+        }                
         $inventory = $id ? PhysicalInventory::with(['details' => function ($query) {
             $query->join('items', 'inventory_physical_details.item_id', '=', 'items.id')
                 ->join('physical_inventory_categories', 'inventory_physical_details.category_id', '=', 'physical_inventory_categories.id')
@@ -209,7 +218,11 @@ class InventoryController extends Controller
                             $Item->sale_unit_price = $detail['sale_unit_price'];
                             $Item->save();                
                         }
-        
+                        
+                        $physicalInventory = PhysicalInventory::find($detail['physical_inventory_id']);
+                        $physicalInventory->confirmed=1;
+                        $physicalInventory->save();
+
                         $inventory = new Inventory();
                         $inventory->type = $type;
                         $inventory->description = 'Stock Real';
@@ -225,7 +238,7 @@ class InventoryController extends Controller
                     }
                 } else {
                     $physicalInventory = PhysicalInventory::create(
-                        array_merge($request->except('details'), ['confirmed' => false])
+                        array_merge($request->except('details'), ['confirmed' => false],['json_positions'=>json_encode($request->json_positions)])
                     );                
                     foreach ($request->details as $detail) {
                         PhysicalInventoryDetail::create([
