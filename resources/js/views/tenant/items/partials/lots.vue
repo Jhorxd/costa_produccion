@@ -1,6 +1,6 @@
 <template>
     <el-dialog :title="titleDialog"
-               width="40%"
+               width="30%"
                :visible="showDialog"
                @open="create"
                :close-on-click-modal="false"

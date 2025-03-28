@@ -5,27 +5,36 @@
           @close="close"
           @open="create"
         >
-        <h3>Lotes</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Código</th>
-                    <th>Stock</th>
-                    <th>Opciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(lot,index) in lots_temp" :key="lot.id">
-                    <td>{{ index+1 }}</td>
-                    <td>{{ lot.lots_group?lot.lots_group.code:'---' }}</td>
-                    <td>{{ lot.lots_group?lot.lots_group.quantity:'---' }}</td>
-                    <td>
-                        <el-button type="primary" @click="LotSelected(lot)" >Seleccionar</el-button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="form-body">
+            <div class="row" >
+                <div class="col-lg-12 col-md-12">
+                    <table width="100%" class="text-center table-padding">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Código</th>
+                                <th>Stock</th>
+                                <th>Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(lot,index) in lots_temp" :key="lot.id">
+                                <td>{{ index+1 }}</td>
+                                <td>{{ lot?lot.code:'---' }}</td>
+                                <td>{{ lot?lot.quantity:'---' }}</td>
+                                <td>
+                                    <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions text-right pt-2">
+            <el-button @click.prevent="clickCancelSubmit()">Cancelar</el-button>
+            <el-button type="primary" @click="submit">Guardar</el-button>
+        </div>
     </el-dialog>
 </template>
 
@@ -45,26 +54,55 @@
             }
         },
         methods: {
-            close() {
-                this.$emit('update:showDialog', false);
-            },
             async create() {
-                console.log(this.box_selected);
-                console.log(this.lots);
+                this.lots_temp = this.lots;
                 
-                this.lots_temp = Array.from(this.lots);
-                console.log(this.lots_temp);
+                this.lots_temp.forEach(element => {
+                    if(element.selected==undefined) 
+                        element.selected = false;
+                });
                 
                 if(this.box_selected.lots.length>0){
                     this.lots_selected = [...this.box_selected.lots];
-                    console.log(this.lots_selected);
                     
+                    this.lots_selected.forEach(element => {
+                        const lots_finded = this.lots_temp.find(lot => lot.id == element.id);
+                        if(lots_finded){
+                            lots_finded.selected = true;
+                        }
+                    });
                 }
             },
-            LotSelected(lot){
-                console.log(lot);
+            LotSelected(lot, index){
+                const updatedLot = { ...lot, selected: !lot.selected };
                 
-            }
+                if(lot.selected){
+                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.id === updatedLot.id);
+                    if (lotIndex !== -1) {
+                        this.lots_selected.splice(lotIndex, 1);
+                    }
+                }else{
+                    const lotExists = this.box_selected.lots.find(existingLot => existingLot.id === updatedLot.id);
+                    if (!lotExists)
+                    this.lots_selected.push(updatedLot);
+                }
+                this.lots_temp.splice(index, 1, updatedLot);
+            },
+            submit(){
+                this.$emit('update-box-selected',this.lots_selected);
+                this.close();
+            },
+            async clickCancelSubmit() {
+                await this.$emit('update:showDialog', false)
+            },
+            close() {
+                this.$emit('update:showDialog', false);
+            },
         }
     }
 </script>
+<style>
+.table-padding{
+    padding: 0 10px;
+}
+</style>

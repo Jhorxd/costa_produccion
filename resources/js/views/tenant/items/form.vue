@@ -1813,13 +1813,10 @@ export default {
                 })
         },
         changeLotsEnabled() {
-
             if(!this.form.lots_enabled){
                 this.form.lot_code = null;
                 this.form.lots = [];
             }
-            console.log(this.form.lots);
-            
         },
         changeProductioTab(){
 
@@ -1834,8 +1831,6 @@ export default {
                 });
                 this.form.stock = stock_total;
             }
-            console.log(this.form);
-            
         },
         async clickItemLocation() {
             if (!this.location_id) {
@@ -1848,10 +1843,7 @@ export default {
                 .then(response => {
                     if (response.data.success) {
                         const data = response.data.data;
-                        console.log(response.data.data);
-                        
                         this.positions_selected = data.item_positions;
-                        
                         this.positions = data.positions;
                         
                         this.positions_selected.forEach(element => {
@@ -2177,7 +2169,6 @@ export default {
             if (this.form.has_perception && !this.form.percentage_perception) return this.$message.error('Ingrese un porcentaje');
 
             if (this.form.lots_enabled) {
-                console.log(this.form);
                 
                 if(this.form.lots.length==0){
                     return this.$message.error('Ingrese los lotes correctamente');
@@ -2211,11 +2202,11 @@ export default {
 
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(async response => {
-                    console.log(response.data)
                     if (response.data.success) {
                         this.$message.success(response.data.message)
                         const item_id = response.data.id;
-                        
+                        this.positions_selected=[];
+                        this.initForm();
                         if (this.form.item_files.length > 0 || this.recordId)  {
                             let formData = new FormData();
                             
@@ -2228,7 +2219,6 @@ export default {
                             if (this.item_files_deleted && this.item_files_deleted.length > 0) {
                                 formData.append('files_deleted', JSON.stringify(this.item_files_deleted));
                             }
-                            console.log(formData);
                             this.$http.post(`/${this.resource}/saveDocuments/${item_id}`, formData, {
                                 headers: {
                                     'Content-Type': 'multipart/form-data'

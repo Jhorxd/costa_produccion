@@ -36,6 +36,7 @@
         :showDialog.sync="showDialogLotsPosition"
         :box_selected="box_selected"
         :lots="lots"
+        @update-box-selected="updateBoxSelected"
       ></position_lot>
     </el-dialog>
   </template>
@@ -71,7 +72,6 @@ export default {
             this.$emit('update:showDialog', false);
         },
         async create() {
-          console.log(this.positions_selected);
             this.buildMatrix(this.positions);
             
             this.selects_temp = [...this.positions_selected];
@@ -92,7 +92,6 @@ export default {
                 position.is_selected = isSelected;
               }
             });
-            console.log(positions);
             
             const newPositions = [];
             for (let i = maxRow; i > 0; i--) {
@@ -146,22 +145,25 @@ export default {
                 row.forEach(element => {                  
                     stock_total += parseInt(element.stock); 
                     const item_finded = this.selects_temp.find(item_selected => {return item_selected.row == element.row && item_selected.column == element.column});
-                    if(item_finded){
+                    if(item_finded)
                         item_finded.stock = parseInt(element.stock);
-                    }
                 });
             });
-            console.log(stock_total);
-            console.log(this.stock);
-            
-            
             if(stock_total<=this.stock){
               this.$emit('positions-save', this.selects_temp);
-              //console.log(this.selects_temp);
               this.close();
             }else{
               this.$message.error("Stock excesivo. El stock total máximo para este producto es: "+this.stock);
             }
+        },
+        updateBoxSelected(data_updated_box_selected){
+          this.box_selected.lots = Array.from(data_updated_box_selected);
+          if(data_updated_box_selected.length>0){
+            this.box_selected.is_selected = true;
+          }else{
+            this.box_selected.is_selected = false;
+          }
+          this.$message.success("Guardado correctamente");
         }
     }
 };
