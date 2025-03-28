@@ -149,7 +149,10 @@ export default {
                         item_finded.stock = parseInt(element.stock);
                 });
             });
-            if(stock_total<=this.stock){
+            if(stock_total<this.stock){
+              this.$message.error("Aun falta colocar la siguiente cantidad de stock: "+(parseInt(this.stock)-parseInt(stock_total)));
+            }
+            else if(stock_total==this.stock){
               this.$emit('positions-save', this.selects_temp);
               this.close();
             }else{

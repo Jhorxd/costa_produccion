@@ -602,14 +602,6 @@ class ItemController extends Controller
                 });
 
                 foreach ($positionsToDelete as $positionToDelete) {
-                    $itemWarehouse = ItemWarehouse::where('item_id', $item->id)
-                    ->where('warehouse_id', $positionToDelete->warehouse_id)
-                    ->first();
-                    
-                    if ($itemWarehouse) {
-                        $itemWarehouse->stock -= $positionToDelete->stock;
-                        $itemWarehouse->save();
-                    }
                     
                     $positionToDelete->delete();
                     
@@ -626,13 +618,7 @@ class ItemController extends Controller
                     $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
                     if($inventoryWarehouseLocation){
                         $itemPositionFinded = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->first();
-                        $itemWarehouse = ItemWarehouse::where('item_id', $item->id)->where('warehouse_id', $inventoryWarehouseLocation->warehouse_id)->first();
                         if($itemPositionFinded){
-                            if($itemWarehouse){
-                                $differenceStock = $itemPositionFinded->stock-$position['stock'];
-                                $itemWarehouse->stock += $differenceStock;
-                                $itemWarehouse->save();
-                            }
                             $itemPositionFinded->update([
                                 'item_id' => $item->id,
                                 'position_id' => $warehouseLocationPosition->id,
@@ -641,10 +627,6 @@ class ItemController extends Controller
                                 'stock' => $position['stock'],
                             ]);
                         }else{
-                            if($itemWarehouse){
-                                $itemWarehouse->stock += $position['stock'];
-                                $itemWarehouse->save();
-                            }
                             ItemPosition::create([
                                 'item_id' => $item->id,
                                 'position_id' => $warehouseLocationPosition->id,
