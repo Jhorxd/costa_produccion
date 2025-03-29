@@ -126,6 +126,8 @@ export default {
         selectBox(box) {
           if(this.lots_enabled){
             this.box_selected = box;
+            console.log(this.box_selected);
+            
             this.showDialogLotsPosition = true;
           }else{
             if(box.stock_available>=1){
@@ -140,6 +142,15 @@ export default {
           }
         },
         saveChanges(){
+          if(this.lots_enabled){
+            if (this.positions.length > 0) {
+                const filteredPositions = this.positions.filter(position => {
+                    return Array.isArray(position.lots) && position.lots.length > 0;
+                });
+                this.$emit('positions-save', filteredPositions);
+            }
+            this.close();
+          }else{
             let stock_total = 0;
             this.matrix.forEach(row => {
                 row.forEach(element => {                  
@@ -158,14 +169,19 @@ export default {
             }else{
               this.$message.error("Stock excesivo. El stock total máximo para este producto es: "+this.stock);
             }
+          }
         },
         updateBoxSelected(data_updated_box_selected){
-          this.box_selected.lots = Array.from(data_updated_box_selected);
+          const position = this.positions.find(element => element.row== this.box_selected.row && element.column == this.box_selected.row);
+          
+          position.lots = Array.from(data_updated_box_selected);
           if(data_updated_box_selected.length>0){
             this.box_selected.is_selected = true;
           }else{
             this.box_selected.is_selected = false;
           }
+          console.log(this.positions);
+          
           this.$message.success("Guardado correctamente");
         }
     }

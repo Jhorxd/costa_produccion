@@ -241,6 +241,9 @@ if ($hostname) {
             Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
             Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
 
+            //InventoryStates
+            Route::get('inventoryStates', 'Tenant\InventoryStateController@getData');
+
             //Persons
             Route::prefix('persons')->group(function () {
                 /**

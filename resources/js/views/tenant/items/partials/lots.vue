@@ -82,9 +82,8 @@
                 loading: false,
                 errors: {},
                 form: {},
-                states: [{id:1, description:'Activo'}, {id:2, description:'Inactivo'}],
+                states: [],
                 lots_aux: [],
-
             }
         },
         async created() {
@@ -106,8 +105,14 @@
                     this.lots_aux[index].series = ''
                 }
             },
-            create(){
-
+            async create(){
+                await this.$http.get(`/inventoryStates`)
+                    .then(response => {
+                        const response_data = response.data; 
+                        if(response_data.success){
+                            this.states = response_data.data;
+                        }
+                    });
                 if(this.recordId){
                     this.lots_aux = JSON.parse(JSON.stringify(this.lots));
                     this.lots_aux.forEach(element => {

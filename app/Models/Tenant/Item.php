@@ -193,8 +193,11 @@ class Item extends ModelTenant
         'pharmaceutical_unit_type_id',
         'sale_price',
         'lot',
-        'supplier_id'
-
+        'supplier_id',
+        'inventory_state_id',
+        'stock_max',
+        'average_usage',
+        'days_to_alert'
         // 'warehouse_id'
     ];
 

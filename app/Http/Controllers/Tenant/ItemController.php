@@ -35,6 +35,7 @@ use App\Models\Tenant\CatItemSize;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Establishment;
+use App\Models\Tenant\InventoryState;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\ItemFile;
 use App\Models\Tenant\ItemImage;
@@ -286,6 +287,7 @@ class ItemController extends Controller
         $suppliers = Person::where('type','suppliers')->get();
         $pharmaceutical_item_unit_types = PharmaceuticalItemUnitType::where('active', 1)->get();
         $locations = InventoryWarehouseLocation::all();
+        $states = InventoryState::all();
         /*
         $configuration = Configuration::select(
             'affectation_igv_type_id',
@@ -296,6 +298,7 @@ class ItemController extends Controller
         return compact(
             'pharmaceutical_item_unit_types',
             'locations',
+            'states',
             'unit_types',
             'currency_types',
             'attribute_types',
@@ -515,13 +518,6 @@ class ItemController extends Controller
                 }
             }
         }
-        $current_lot = null;
-        if(!empty($item->id)){
-            $current_lot = ItemLotsGroup::where([
-                'code' => $item->lot_code,
-                'item_id'=>$item->id
-            ])->first();
-        }
 
         $item->fill($request->all());
 
@@ -588,78 +584,102 @@ class ItemController extends Controller
                 ]);
             }
         } */
+        if ($request->lots_enabled) {
+            ItemPosition::where('item_id', $item->id)
+                ->whereNull('lots_group_id')
+                ->delete();
+        }
 
         if(isset($request->positions_selected)){
             foreach ($request->positions_selected as $position) {
-                $itemsPositionCurrent = ItemPosition::with('position')->where('item_id',$item->id)->get();
-                $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($request) {
-                    foreach ($request->positions_selected as $position) {
-                        if ($itemPosition->position->row == $position['row'] && $itemPosition->position->column == $position['column']) {
-                            return false;
-                        }
-                    }
-                    return true;
-                });
-
-                foreach ($positionsToDelete as $positionToDelete) {
-                    
-                    $positionToDelete->delete();
-                    
-                    WarehouseLocationPosition::where('id', $positionToDelete->position_id)
-                        ->decrement('quantity_used');
-                }
-
                 $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $request->location_id)
-                    ->where('row', $position['row'])
-                    ->where('column', $position['column'])
-                    ->first();
-                
+                        ->where('row', $position['row'])
+                        ->where('column', $position['column'])
+                        ->first();
                 if ($warehouseLocationPosition) {
                     $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
                     if($inventoryWarehouseLocation){
-                        $itemPositionFinded = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->first();
-                        if($itemPositionFinded){
-                            $itemPositionFinded->update([
-                                'item_id' => $item->id,
-                                'position_id' => $warehouseLocationPosition->id,
-                                'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
-                                'location_id' => $inventoryWarehouseLocation->id,
-                                'stock' => $position['stock'],
-                            ]);
-                        }else{
-                            ItemPosition::create([
-                                'item_id' => $item->id,
-                                'position_id' => $warehouseLocationPosition->id,
-                                'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
-                                'location_id' => $inventoryWarehouseLocation->id,
-                                'stock' => $position['stock'],
-                            ]);
-                        }
-                        /* ItemPosition::updateOrCreate(
-                            [
-                                'item_id' => $item->id,
-                                'position_id' => $warehouseLocationPosition->id,
-                                'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
-                                'location_id' => $inventoryWarehouseLocation->id
-                            ],
-                            [
-                                'stock' => $position['stock'],
-                            ]
-                        ); */
-                    }
-                    
-                    /* $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
-                    if($inventoryWarehouseLocation){
-                        $warehouse = ModelsWarehouse::find($inventoryWarehouseLocation->warehouse_id);
-                        if($warehouse){
-                            $itemWarehouse = ItemWarehouse::where('item_id',$item->id)->where('warehouse_id', $warehouse->id)->first();
-                            if($itemWarehouse){
-                                $itemWarehouse->stock = $itemWarehouse->stock;
+                        if($request->lots_enabled){
+                            $itemsPositionCurrent = ItemPosition::with('position')->where('item_id',$item->id)->get();
+                            $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($request) {
+                                foreach ($request->positions_selected as $element) {
+                                    if ($itemPosition->position->row == $element['row'] && $itemPosition->position->column == $element['column'] && $itemPosition->lots_group_id == $element['id']) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            });
+            
+                            foreach ($positionsToDelete as $positionToDelete) {
+                                
+                                $positionToDelete->delete();
+                                
+                                WarehouseLocationPosition::where('id', $positionToDelete->position_id)
+                                    ->decrement('quantity_used');
                             }
+                            foreach ($position['lots'] as $lot) {
+                                $itemPositionFinded = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->where('lots_group_id', $lot['id'])->first();
+                                if($itemPositionFinded){
+                                    $itemPositionFinded->update([
+                                        'item_id' => $item->id,
+                                        'position_id' => $warehouseLocationPosition->id,
+                                        'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                        'location_id' => $request->location_id,
+                                        'stock' => $lot['stock'],
+                                        'lots_group_id' => $lot['lots_group_id'],
+                                    ]);
+                                }else{
+                                    ItemPosition::create([
+                                        'item_id' => $item->id,
+                                        'position_id' => $warehouseLocationPosition->id,
+                                        'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                        'location_id' => $request->location_id,
+                                        'stock' => $lot['stock'],
+                                        'lots_group_id' => $lot['lots_group_id'],
+                                    ]);
+                                }
+                            }
+                        }else{
+                            $itemsPositionCurrent = ItemPosition::with('position')->where('item_id',$item->id)->get();
+                            $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($request) {
+                                foreach ($request->positions_selected as $element) {
+                                    if ($itemPosition->position->row == $element['row'] && $itemPosition->position->column == $element['column']) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            });
+            
+                            foreach ($positionsToDelete as $positionToDelete) {
+                                
+                                $positionToDelete->delete();
+                                
+                                WarehouseLocationPosition::where('id', $positionToDelete->position_id)
+                                    ->decrement('quantity_used');
+                            }
+                            $itemPositionFinded = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->first();
+                            if($itemPositionFinded){
+                                $itemPositionFinded->update([
+                                    'item_id' => $item->id,
+                                    'position_id' => $warehouseLocationPosition->id,
+                                    'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                    'location_id' => $inventoryWarehouseLocation->id,
+                                    'stock' => $position['stock'],
+                                ]);
+                            }else{
+                                ItemPosition::create([
+                                    'item_id' => $item->id,
+                                    'position_id' => $warehouseLocationPosition->id,
+                                    'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                    'location_id' => $inventoryWarehouseLocation->id,
+                                    'stock' => $position['stock'],
+                                ]);
+                            }
+                            $warehouseLocationPosition->increment('quantity_used');
                         }
-                    } */
-                    $warehouseLocationPosition->increment('quantity_used');
+                    }
                 }
+                
             }
         }
 
@@ -803,6 +823,7 @@ class ItemController extends Controller
                 }
             }
         }
+
 
         $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
 

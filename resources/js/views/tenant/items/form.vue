@@ -204,6 +204,32 @@
                                        v-text="errors.stock[0]"></small>
                             </div>
                         </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.stock_min}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Stock mínimo
+                                </label>
+                                <el-input v-model="form.stock_min">
+                                </el-input>
+                                <small v-if="errors.stock_min"
+                                       class="form-control-feedback"
+                                       v-text="errors.stock_min[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.stock_max}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Stock máximo
+                                </label>
+                                <el-input v-model="form.stock_max">
+                                </el-input>
+                                <small v-if="errors.stock_max"
+                                       class="form-control-feedback"
+                                       v-text="errors.stock_max[0]"></small>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div :class="{'has-danger': errors.sanitary}"
                                  class="form-group">
@@ -224,6 +250,40 @@
                                        v-text="errors.sanitary[0]"></small>
                             </div>
                         </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.average_usage}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Consumo promedio
+                                </label>
+                                <el-input v-model="form.average_usage">
+                                </el-input>
+                                <small v-if="errors.average_usage"
+                                       class="form-control-feedback"
+                                       v-text="errors.average_usage[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.days_to_alert}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Días para alertar
+                                    <el-tooltip
+                                        class="item"
+                                        content="Días restantes para alertar sobre el stock"
+                                        effect="dark"
+                                        placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-input v-model="form.days_to_alert">
+                                </el-input>
+                                <small v-if="errors.days_to_alert"
+                                       class="form-control-feedback"
+                                       v-text="errors.days_to_alert[0]"></small>
+                            </div>
+                        </div>
+                        
                         <!-- <div :class="recordId?'col-md-6':'col-md-3'">
                             <div :class="{'has-danger': errors.lot}"
                                  class="form-group">
@@ -323,7 +383,7 @@
                                     v-text="errors.sales_condition_id[0]"></small>
                             </div>
                         </div>
-                        <div :class="recordId?'col-md-6':'col-md-3'">
+                        <div class="col-md-3">
                             <div :class="{'has-danger': errors.sale_unit_price}"
                                  class="form-group">
                                 <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
@@ -335,28 +395,24 @@
                                        v-text="errors.sale_unit_price[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-3" v-if="recordId">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+                                <label class="control-label">Estado<span class="text-danger">*</span></label>
                                 <el-select
-                                    v-model="location_id"
-                                    filterable
-                                    @change="changeLocation">
+                                    v-model="form.inventory_state_id"
+                                    filterable>
                                     <el-option
-                                        v-for="option in locations"
+                                        v-for="option in states"
                                         :key="option.id"
-                                        :label="option.name"
+                                        :label="option.description"
                                         :value="option.id"
                                     ></el-option>
                                 </el-select>
                             </div>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end" v-if="recordId">
-                            <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
-                        </div>
                         <div v-if="form.unit_type_id !='ZZ'"
                              v-show="recordId==null"
-                             class="col-md-3">
+                             class="col-md-6">
                             <div :class="{'has-danger': errors.warehouse_id}"
                                  class="form-group">
                                 <label class="control-label">
@@ -380,6 +436,26 @@
                                        v-text="errors.warehouse_id[0]"></small>
                             </div>
                         </div>
+                        <div class="col-md-3" v-if="recordId">
+                            <div class="form-group">
+                                <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+                                <el-select
+                                    v-model="location_id"
+                                    filterable
+                                    @change="changeLocation">
+                                    <el-option
+                                        v-for="option in locations"
+                                        :key="option.id"
+                                        :label="option.name"
+                                        :value="option.id"
+                                    ></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end" v-if="recordId">
+                            <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
+                        </div>
+                        
 
                         
 
@@ -1620,6 +1696,7 @@ export default {
             suppliers: [],
             sales_conditions: [],
             positions: [],
+            states: [],
             positions_selected: [],
             location_id: null,
             headers: {
@@ -1693,6 +1770,9 @@ export default {
                 this.brands = data.brands
                 this.attribute_types = data.attribute_types
                 this.locations = data.locations;
+                this.states = data.states;
+                if(response.data.states.length>0)
+                    this.form.inventory_state_id = response.data.states[0].id;
                 
                 // this.config = data.configuration
                 if (this.canShowExtraData) {
@@ -1731,6 +1811,7 @@ export default {
     methods: {
         changeLocation(){
             this.positions_selected = [];
+            this.form.positions_selected = [];
         },
         ...mapActions([
             'loadConfiguration',
@@ -1816,6 +1897,8 @@ export default {
             if(!this.form.lots_enabled){
                 this.form.lot_code = null;
                 this.form.lots = [];
+            }else{
+                this.position_selected = [];
             }
         },
         changeProductioTab(){
@@ -1964,6 +2047,10 @@ export default {
                 restrict_sale_cpe: false,
                 sales_condition_id: null,
                 supplier_id: null,
+                inventory_state_id: null,
+                stock_max: null,
+                average_usage: null,
+                days_to_alert: null
             }
 
             this.show_has_igv = true
@@ -2277,8 +2364,11 @@ export default {
             });
         },
         close() {
-            this.resetForm()
-            this.$emit('update:showDialog', false)
+            this.resetForm();
+            this.positions_selected = [];
+            this.positions = [];
+            this.location_id = null;
+            this.$emit('update:showDialog', false);
         },
         changeHasIsc() {
             this.form.system_isc_type_id = null
