@@ -5,9 +5,24 @@
     @include('tenant.auth.partials.side_left')
     <article class="auth__form">
         <form class="form-material" id="loginform" method="POST" action="{{ route('password.update') }}">
-            @include('tenant.auth.partials.form_logo')
-            <h1 class="auth__title">Bienvenido a<br>{{ $company->trade_name }}</h1>
-            <p>Su nueva contraseña debe ser diferente de las contraseñas utilizadas anteriormente</p>
+            <!-- @include('tenant.auth.partials.form_logo') -->
+            <div style="text-align: center;">
+                @if ($useLoginGlobal)
+                    @if ($login->logo ?? false)
+                        @if ($login->position_logo != 'none')
+                        <img class="auth__logo {{ $login->position_logo }}" src="{{ $login->logo }}" alt="Logo" />
+                        @endif
+                    @endif
+                @else
+                    @if($company->logo)
+                        <img class="auth__logo {{ $login->position_logo }}" src="{{ asset('storage/uploads/logos/' . $company->logo) }}" alt="Logo" />
+                    @else
+                        <img class="auth__logo {{ $login->position_logo }}" src="{{asset('logo/tulogo.png')}}" alt="Logo" />
+                    @endif
+                @endif
+                <h1 class="auth__title">Bienvenido a<br>{{ $company->trade_name }}</h1>
+                <p>Su nueva contraseña debe ser diferente de las contraseñas utilizadas anteriormente</p>
+            </div>
             @csrf
 
             <input type="hidden" name="token" value="{{ $token }}">

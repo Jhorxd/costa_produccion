@@ -8,7 +8,19 @@
             @csrf
             <div class="d-flex justify-content-center">
                 <div class="row">
-                    @include('tenant.auth.partials.form_logo')
+                    @if ($useLoginGlobal)
+                        @if ($login->logo ?? false)
+                            @if ($login->position_logo != 'none')
+                            <img class="auth__logo {{ $login->position_logo }}" src="{{ $login->logo }}" alt="Logo" />
+                            @endif
+                        @endif
+                    @else
+                        @if($company->logo)
+                            <img class="auth__logo {{ $login->position_logo }}" src="{{ asset('storage/uploads/logos/' . $company->logo) }}" alt="Logo" />
+                        @else
+                            <img class="auth__logo {{ $login->position_logo }}" src="{{asset('logo/tulogo.png')}}" alt="Logo" />
+                        @endif
+                    @endif
                 </div>
             </div>
             <div class="text-center">
