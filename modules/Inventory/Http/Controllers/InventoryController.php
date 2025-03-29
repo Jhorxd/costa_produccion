@@ -1172,7 +1172,9 @@ class InventoryController extends Controller
 
     public function list(Request $request)
     {
-        $query = InventoryWarehouseLocation::query();
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
+        $query = InventoryWarehouseLocation::where('warehouse_id', $warehouse_user_active->id);
 
         if ($request->has('column') && $request->has('value')) {
             $query->where($request->column, 'like', '%' . $request->value . '%');
@@ -1328,7 +1330,8 @@ class InventoryController extends Controller
     }
 
     public function warehouses(){
-        $warehouses = TenantWarehouse::all();
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouses = TenantWarehouse::where('establishment_id', $establishment_id)->get();
 
         if(!$warehouses->isEmpty()){
             return response()->json([

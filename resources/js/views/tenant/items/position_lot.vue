@@ -69,6 +69,9 @@
                     this.lots_selected = [...this.box_selected.lots];
                     
                     this.lots_selected.forEach(element => {
+                        if(element.lots_group){
+                            element.code = element.lots_group.code;
+                        }
                         const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group.id);
                         if(lots_finded){
                             lots_finded.selected = true;
@@ -80,7 +83,7 @@
                 const updatedLot = { ...lot, selected: !lot.selected };
                 
                 if(lot.selected){
-                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.id === updatedLot.id);
+                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
                     if (lotIndex !== -1)
                         this.lots_selected.splice(lotIndex, 1);
                 }else{
@@ -88,12 +91,13 @@
                     if (!lotExists){
                         updatedLot.lots_group_id = updatedLot.id;
                         updatedLot.stock = updatedLot.quantity;
+                        
                         this.lots_selected.push(updatedLot);
                     }
                 }
                 this.lots_temp.splice(index, 1, updatedLot);
             },
-            submit(){
+            submit(){                
                 this.$emit('update-box-selected',this.lots_selected);
                 this.close();
             },
@@ -102,7 +106,12 @@
             },
             close() {
                 this.$emit('update:showDialog', false);
+                this.resetData();
             },
+            resetData() {
+                this.lots_selected = [];
+                this.lots_temp = [];
+            }
         }
     }
 </script>

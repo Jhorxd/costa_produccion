@@ -51,7 +51,7 @@ export default {
         'positions_selected',
         'positions',
         'stock',
-        'lots_enabled',
+        'lots_enabled', //si usamos lotes(bool)
         'lots'
     ],
     data() {
@@ -68,8 +68,14 @@ export default {
         openModalLotsPosition(){
           this.showDialogLotsPosition = true;
         },
+        resetData() {
+            this.matrix = [];
+            this.selects_temp = [];
+            this.box_selected = [];
+        },
         close() {
             this.$emit('update:showDialog', false);
+            this.resetData();
         },
         async create() {
             this.buildMatrix(this.positions);
@@ -126,19 +132,22 @@ export default {
         selectBox(box) {
           if(this.lots_enabled){
             this.box_selected = box;
-            console.log(this.box_selected);
-            
             this.showDialogLotsPosition = true;
           }else{
-            if(box.stock_available>=1){
+            if(box.is_selected){
+              box.is_selected = false;
+              box.stock = 0;
+              const index_select = this.selects_temp.findIndex(element => element.row == box.row && element.column == box.column);
+              this.selects_temp.splice(index_select,1);
+            }else{
+              if(box.stock_available>=1){
                 box.is_selected = true;
                 this.selects_temp.push({ row: box.row, column: box.column, stock: box.stock });
-                
-                //this.$emit('box-selected', { row: box.row, column: box.column });
-                //this.close();
-            }else{
+              }else{
                 this.$message.error("No hay stock suficiente");
+              }
             }
+            
           }
         },
         saveChanges(){
@@ -180,7 +189,6 @@ export default {
           }else{
             this.box_selected.is_selected = false;
           }
-          console.log(this.positions);
           
           this.$message.success("Guardado correctamente");
         }

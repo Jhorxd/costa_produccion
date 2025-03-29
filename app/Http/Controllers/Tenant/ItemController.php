@@ -248,12 +248,15 @@ class ItemController extends Controller
 
     public function tables()
     {
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
+
         $unit_types = UnitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
         $system_isc_types = SystemIscType::whereActive()->orderByDescription()->get();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $warehouses = Warehouse::all();
+        $warehouses = Warehouse::where('establishment_id', $establishment_id)->get();
         $accounts = Account::all();
         $tags = Tag::all();
         $categories = Category::all();
@@ -286,7 +289,9 @@ class ItemController extends Controller
         $sales_conditions = ItemSalesCondition::all();
         $suppliers = Person::where('type','suppliers')->get();
         $pharmaceutical_item_unit_types = PharmaceuticalItemUnitType::where('active', 1)->get();
-        $locations = InventoryWarehouseLocation::all();
+
+        
+        $locations = InventoryWarehouseLocation::where('warehouse_id', $warehouse_user_active->id)->get();
         $states = InventoryState::all();
         /*
         $configuration = Configuration::select(
@@ -339,10 +344,21 @@ class ItemController extends Controller
             ], 404);
         }
 
-        $positions = WarehouseLocationPosition::with('lots.lots_group')
+        if($item_id!=null){
+            $positions = WarehouseLocationPosition::with(['lots' => function ($query) use ($item_id) {
+                if ($item_id) {
+                    $query->whereHas('lots_group', function ($query) use ($item_id) {
+                        $query->where('item_id', $item_id);
+                    });
+                }
+            }, 'lots.lots_group'])
+                ->where('location_id', $location_id)
+                ->get();
+        }else{
+            $positions = WarehouseLocationPosition::with('lots.lots_group')
             ->where('location_id', $location_id)
             ->get();
-
+        }
         foreach ($positions as $position) {
             $position->stock_available = $location->maximum_stock - $position->quantity_used;
             $position->code_location = $location->code;
@@ -584,11 +600,38 @@ class ItemController extends Controller
                 ]);
             }
         } */
+        $processedLots = [];
         if ($request->lots_enabled) {
             ItemPosition::where('item_id', $item->id)
                 ->whereNull('lots_group_id')
                 ->delete();
+            foreach ($request->lots as $lotData) {
+                if (isset($lotData['id'])) {
+                    // Lote existente - actualizar
+                    $lot = ItemLotsGroup::find($lotData['id']);
+                    if ($lot) {
+                        $lot->update([
+                            'code' => $lotData['code'],
+                            'quantity' => $lotData['quantity'],
+                            'date_of_due' => $lotData['date_of_due'],
+                            'status' => $lotData['status']
+                        ]);
+                        $processedLots[$lotData['code']] = $lot->id;
+                    }
+                } else {
+                    // Lote nuevo - crear
+                    $lot = ItemLotsGroup::create([
+                        'code' => $lotData['code'],
+                        'quantity' => $lotData['quantity'],
+                        'date_of_due' => $lotData['date_of_due'],
+                        'status' => $lotData['status'],
+                        'item_id' => $item->id
+                    ]);
+                    $processedLots[$lotData['code']] = $lot->id;
+                }
+            }
         }
+
 
         if(isset($request->positions_selected)){
             foreach ($request->positions_selected as $position) {
@@ -601,9 +644,15 @@ class ItemController extends Controller
                     if($inventoryWarehouseLocation){
                         if($request->lots_enabled){
                             $itemsPositionCurrent = ItemPosition::with('position')->where('item_id',$item->id)->get();
-                            $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($request) {
-                                foreach ($request->positions_selected as $element) {
-                                    if ($itemPosition->position->row == $element['row'] && $itemPosition->position->column == $element['column'] && $itemPosition->lots_group_id == $element['id']) {
+
+
+                            $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($position) {
+                                foreach ($position['lots'] as $element) {
+                                    if(isset($element['id']) && $element['id'] !== null){
+                                        if ($itemPosition->lots_group_id == $element['lots_group_id']) {
+                                            return false;
+                                        }
+                                    }else{
                                         return false;
                                     }
                                 }
@@ -618,7 +667,8 @@ class ItemController extends Controller
                                     ->decrement('quantity_used');
                             }
                             foreach ($position['lots'] as $lot) {
-                                $itemPositionFinded = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->where('lots_group_id', $lot['id'])->first();
+                                $lotId = $processedLots[$lot['code']] ?? null;
+                                $itemPositionFinded = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->where('lots_group_id', $lotId)->first();
                                 if($itemPositionFinded){
                                     $itemPositionFinded->update([
                                         'item_id' => $item->id,
@@ -626,7 +676,7 @@ class ItemController extends Controller
                                         'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
                                         'location_id' => $request->location_id,
                                         'stock' => $lot['stock'],
-                                        'lots_group_id' => $lot['lots_group_id'],
+                                        'lots_group_id' => $lotId,
                                     ]);
                                 }else{
                                     ItemPosition::create([
@@ -635,7 +685,7 @@ class ItemController extends Controller
                                         'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
                                         'location_id' => $request->location_id,
                                         'stock' => $lot['stock'],
-                                        'lots_group_id' => $lot['lots_group_id'],
+                                        'lots_group_id' => $lotId,
                                     ]);
                                 }
                             }
@@ -788,28 +838,28 @@ class ItemController extends Controller
             /****************************** SECCION PARA EDITAR ITEM_LOTS_GROUP **********************************************/
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
             $warehouse = Warehouse::where('establishment_id',$establishment->id)->first();
+            //Eliminar lotes que ya no estan
             $v_lots = isset($request->lots) ? $request->lots:[];
+            $lots = ItemLotsGroup::where('item_id', $item->id)->get();
+            $v_lot_ids = array_column($v_lots, 'id');
+            foreach ($lots as $lot) {
+                if (!in_array($lot->id, $v_lot_ids)){
+                    ItemPosition::where('lots_group_id', $lot->id)->delete();
+                    $lot->delete();
+                }
+            }
+
             foreach ($v_lots as $lot) {
-                /**
-                 * @var  ItemLot $temp_lot
-                 * @var Int $lot_id
-                 * @var Bool $delete
-                 */
                 $lot_id = isset($lot['id'])? (int) $lot['id']:0;
-                $delete = isset($lot['deleted'])?(boolean)$lot['deleted']:false;
                 if($lot_id != 0){
                     $temp_lot = ItemLotsGroup::find($lot_id);
                     if(!empty($temp_lot)){
-                        if($delete == true){
-                            $temp_lot->delete();
-                        }else{
-                            $temp_lot
-                                ->setDateOfDue($lot['date_of_due'])
-                                ->setCode($lot['code'])
-                                ->setStatus($lot['status'])
-                                ->setQuantity($lot['quantity'])
-                                ->push();
-                        }
+                        $temp_lot
+                            ->setDateOfDue($lot['date_of_due'])
+                            ->setCode($lot['code'])
+                            ->setStatus($lot['status'])
+                            ->setQuantity($lot['quantity'])
+                            ->push();
                     }
                 }else{
                     $temp_lot = new ItemLotsGroup([

@@ -1,6 +1,6 @@
 <template>
     <el-dialog :title="titleDialog"
-               width="30%"
+               width="50%"
                :visible="showDialog"
                @open="create"
                :close-on-click-modal="false"
@@ -22,7 +22,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(row, index) in lots_aux.filter(row => row.deleted == false)" :key="index" width="100%">
+                            <tr v-for="(row, index) in lots_aux" :key="index" width="100%">
                                 <td>
                                     <div class="form-group mb-2 mr-2"  >
                                         <el-input @blur="duplicateSerie(row.code, index)" v-model="row.code"></el-input>
@@ -67,7 +67,7 @@
         </div>
 
         <div class="form-actions text-right pt-2">
-            <el-button @click.prevent="clickCancelSubmit()">Cancelar</el-button>
+            <el-button @click.prevent="close()">Cancelar</el-button>
             <el-button type="primary" @click="submit" >Guardar</el-button>
         </div>
     </el-dialog>
@@ -87,13 +87,6 @@
             }
         },
         async created() {
-            
-            // await this.$http.get(`/pos/payment_tables`)
-            //     .then(response => {
-            //         this.payment_method_types = response.data.payment_method_types
-            //         this.cards_brand = response.data.cards_brand
-            //         this.clickAddLot()
-            //     })
         },
         methods: {
             async duplicateSerie(data, index)
@@ -106,57 +99,35 @@
                 }
             },
             async create(){
-                await this.$http.get(`/inventoryStates`)
-                    .then(response => {
-                        const response_data = response.data; 
-                        if(response_data.success){
+                if(this.recordId){
+                    this.lots_aux = JSON.parse(JSON.stringify(this.lots));
+                }
+                if(this.lots_aux.length==0){
+                    this.lots_aux.push({
+                        item_id: null,
+                        code: null,
+                        quantity: this.stock,
+                        date_of_due:  moment().format('YYYY-MM-DD'),
+                        status: 1
+                    });
+                }
+                if (this.states.length === 0) { // Carga solo si states está vacío
+                    await this.$http.get(`/inventoryStates`).then((response) => {
+                        const response_data = response.data;
+                        if (response_data.success) {
                             this.states = response_data.data;
                         }
                     });
-                if(this.recordId){
-                    this.lots_aux = JSON.parse(JSON.stringify(this.lots));
-                    this.lots_aux.forEach(element => {
-                        element.deleted=false;
-                    });                    
-                    console.log(this.lots_aux);
-                    
-                }else{
-                    if(this.lots_aux.length==0){
-                        this.lots_aux.push({
-                            item_id: null,
-                            code: null,
-                            quantity: this.stock,
-                            date_of_due:  moment().format('YYYY-MM-DD'),
-                            status: 1,
-                            deleted: false
-                        });
-                    }
                 }
             },
-            /* addMoreLots(number){
-
-                for (let i = 0; i < number; i++) {
-                    this.clickAddLot()
-                }
-
-            }, */
             clickAddLot() {
-                /* if(!this.recordId){
-                    if(this.lots_aux.length >= this.stock)
-                        return this.$message.error('La cantidad de registros es superior al stock o cantidad');
-                } */
-
-
                 this.lots_aux.push({
                     item_id: null,
                     code: null,
                     quantity: 0,
                     date_of_due:  moment().format('YYYY-MM-DD'),
-                    status: 1,
-                    deleted: false
+                    status: 1
                 });
-
-                //this.$emit('addRowLot', this.lots_aux);
             },
             deleteMoreLots(number){
 
@@ -184,28 +155,27 @@
 
                 this.$emit('addRowLot', this.lots_aux);
                 this.close();
-
             },
             
             clickCancel(index) {
-                if(this.recordId){
+                /* if(this.recordId){
                     if(this.lots_aux[index].id!=undefined){
                         this.lots_aux[index].deleted = true;
                     }else{
-                        this.lots_aux.splice(index, 1);
+                        
                     }
                 }else{
                     this.lots_aux.splice(index, 1);
-                }
-               // item.deleted = true
-                //this.$emit('addRowLot', this.lots_aux);
-            },
-
-            async clickCancelSubmit() {
-                await this.$emit('update:showDialog', false)
+                } */
+                this.lots_aux.splice(index, 1);
             },
             close() {
-                this.$emit('update:showDialog', false)
+                this.$emit('update:showDialog', false);
+                this.resetData();
+            },
+            resetData() {
+                this.lots_aux = [];
+                this.states = [];
             },
         }
     }
