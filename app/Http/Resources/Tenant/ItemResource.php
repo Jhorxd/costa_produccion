@@ -89,6 +89,7 @@ use Modules\Item\Models\ItemLotsGroup;
 
             return [
                 'id' => $this->id,
+                'inventory_state_id' => $this->inventory_state_id,
                 'positions_selected' => $item_positions,
                 'location_id' => $item_positions!= [] ? $item_positions[0]->location_id:null,
                 'is_for_production'=>$this->isIsForProduction(),
@@ -129,9 +130,11 @@ use Modules\Item\Models\ItemLotsGroup;
                 'system_isc_type_id' => $this->system_isc_type_id,
                 'percentage_isc' => $this->percentage_isc,
                 'suggested_price' => $this->suggested_price,
-                //'stock' => $this->getStockByWarehouse(),
-                'stock' => $this->stock,
+                'stock' => $this->getStockByWarehouse(),
                 'stock_min' => $this->stock_min,
+                'stock_max' => $this->stock_max,
+                'average_usage' => $this->average_usage,
+                'days_to_alert' => $this->days_to_alert,
                 'percentage_of_profit' => $this->percentage_of_profit,
                 'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
                 'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,

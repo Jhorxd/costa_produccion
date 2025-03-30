@@ -5,16 +5,16 @@
           @close="close"
           @open="create"
         >
-        <div class="form-body">
+        <div class="form-body box-padding">
             <div class="row" >
                 <div class="col-lg-12 col-md-12">
-                    <table width="100%" class="text-center table-padding">
+                    <table width="100%" class="text-center">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>Código</th>
-                                <th>Stock</th>
-                                <th>Opciones</th>
+                                <th width="15%">#</th>
+                                <th width="30%">Código</th>
+                                <th width="30%">Stock</th>
+                                <th width="25%">Opciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -23,7 +23,10 @@
                                 <td>{{ lot?lot.code:'---' }}</td>
                                 <td>{{ lot?lot.quantity:'---' }}</td>
                                 <td>
-                                    <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button>
+                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)">
+                                        <i class="fa fa-check"></i>
+                                    </button>
+                                    <!-- <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button> -->
                                 </td>
                             </tr>
                         </tbody>
@@ -66,7 +69,10 @@
                     this.lots_selected = [...this.box_selected.lots];
                     
                     this.lots_selected.forEach(element => {
-                        const lots_finded = this.lots_temp.find(lot => lot.id == element.id);
+                        if(element.lots_group){
+                            element.code = element.lots_group.code;
+                        }
+                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group.id);
                         if(lots_finded){
                             lots_finded.selected = true;
                         }
@@ -77,18 +83,21 @@
                 const updatedLot = { ...lot, selected: !lot.selected };
                 
                 if(lot.selected){
-                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.id === updatedLot.id);
-                    if (lotIndex !== -1) {
+                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
+                    if (lotIndex !== -1)
                         this.lots_selected.splice(lotIndex, 1);
-                    }
                 }else{
-                    const lotExists = this.box_selected.lots.find(existingLot => existingLot.id === updatedLot.id);
-                    if (!lotExists)
-                    this.lots_selected.push(updatedLot);
+                    const lotExists = this.lots_selected.find(existingLot => existingLot.id === updatedLot.id);
+                    if (!lotExists){
+                        updatedLot.lots_group_id = updatedLot.id;
+                        updatedLot.stock = updatedLot.quantity;
+                        
+                        this.lots_selected.push(updatedLot);
+                    }
                 }
                 this.lots_temp.splice(index, 1, updatedLot);
             },
-            submit(){
+            submit(){                
                 this.$emit('update-box-selected',this.lots_selected);
                 this.close();
             },
@@ -97,12 +106,17 @@
             },
             close() {
                 this.$emit('update:showDialog', false);
+                this.resetData();
             },
+            resetData() {
+                this.lots_selected = [];
+                this.lots_temp = [];
+            }
         }
     }
 </script>
 <style>
-.table-padding{
+.box-padding{
     padding: 0 10px;
 }
 </style>

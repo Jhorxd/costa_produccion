@@ -51,7 +51,7 @@ export default {
         'positions_selected',
         'positions',
         'stock',
-        'lots_enabled',
+        'lots_enabled', //si usamos lotes(bool)
         'lots'
     ],
     data() {
@@ -68,8 +68,14 @@ export default {
         openModalLotsPosition(){
           this.showDialogLotsPosition = true;
         },
+        resetData() {
+            this.matrix = [];
+            this.selects_temp = [];
+            this.box_selected = [];
+        },
         close() {
             this.$emit('update:showDialog', false);
+            this.resetData();
         },
         async create() {
             this.buildMatrix(this.positions);
@@ -128,18 +134,32 @@ export default {
             this.box_selected = box;
             this.showDialogLotsPosition = true;
           }else{
-            if(box.stock_available>=1){
+            if(box.is_selected){
+              box.is_selected = false;
+              box.stock = 0;
+              const index_select = this.selects_temp.findIndex(element => element.row == box.row && element.column == box.column);
+              this.selects_temp.splice(index_select,1);
+            }else{
+              if(box.stock_available>=1){
                 box.is_selected = true;
                 this.selects_temp.push({ row: box.row, column: box.column, stock: box.stock });
-                
-                //this.$emit('box-selected', { row: box.row, column: box.column });
-                //this.close();
-            }else{
+              }else{
                 this.$message.error("No hay stock suficiente");
+              }
             }
+            
           }
         },
         saveChanges(){
+          if(this.lots_enabled){
+            if (this.positions.length > 0) {
+                const filteredPositions = this.positions.filter(position => {
+                    return Array.isArray(position.lots) && position.lots.length > 0;
+                });
+                this.$emit('positions-save', filteredPositions);
+            }
+            this.close();
+          }else{
             let stock_total = 0;
             this.matrix.forEach(row => {
                 row.forEach(element => {                  
@@ -158,14 +178,18 @@ export default {
             }else{
               this.$message.error("Stock excesivo. El stock total máximo para este producto es: "+this.stock);
             }
+          }
         },
         updateBoxSelected(data_updated_box_selected){
-          this.box_selected.lots = Array.from(data_updated_box_selected);
+          const position = this.positions.find(element => element.row== this.box_selected.row && element.column == this.box_selected.row);
+          
+          position.lots = Array.from(data_updated_box_selected);
           if(data_updated_box_selected.length>0){
             this.box_selected.is_selected = true;
           }else{
             this.box_selected.is_selected = false;
           }
+          
           this.$message.success("Guardado correctamente");
         }
     }
