@@ -5,7 +5,8 @@
                :visible="showDialog"
                top="7vh"
                @close="close"
-               @open="create">
+               @open="create"
+               width="85%">
         <Keypress
             key-event="keyup"
             @success="checkKey"
@@ -251,11 +252,14 @@
                         </div>
                     </div>
                     <!-- DATA TABLE -->
-                    <data-table :resource="resource" class="TablaCustom" style="overflow-x: auto; max-width: 100%;">
+                    <data-table :resource="resource" class="TablaCustom" style="overflow-x: auto; 
+                            max-height: 300px;
+                            overflow-y: auto;"
+                        >
                         <tr slot="heading">
                             <th class="text-left" style="min-width: 95px;">Acciones</th>
-                            <th class="text-left" style="min-width: 80px;">Código</th>
-                            <th class="text-left" style="min-width: 130px;">Producto</th>
+                            <th class="text-left" style="min-width: 75px;">Código</th>
+                            <th class="text-left" style="min-width: 120px;">Producto</th>
                             <th class="text-left" style="min-width: 95px;">Categoria</th>
                             <th class="text-left" style="min-width: 95px;">Precio</th>
                             <th class="text-left" style="min-width: 95px;">Stock</th>
@@ -285,12 +289,12 @@
                             <td class="text-left">{{ row.category }}</td>
                             <td class="text-left">{{ row.sale_unit_price }}</td>
                             <td class="text-left">{{ row.stock }}</td>
-                            <td class="text-left">{{ row.warehouses[0].warehouse_description }}</td>
+                            <td class="text-left">{{ row.locations }}</td>
                             <td class="text-left">{{ row.cod_digemid }}</td>
-                            <td class="text-left">{{ row.concentracion }}</td>
-                            <td class="text-left">{{ row.condicion_venta }}</td>
-                            <td class="text-left">{{ row.forma_farmaceutica }}</td>
-                            <td class="text-left">{{ row.principio_activo }}</td>
+                            <td class="text-left">{{ row.concentration }}</td>
+                            <td class="text-center">{{ row.sales_condition ? row.sales_condition.description : ''  }}</td>
+                            <td class="text-left">{{ row.pharmaceutical_unit_type ? row.pharmaceutical_unit_type.description : '' }}</td>
+                            <td class="text-left">{{ row.active_principle }}</td>
                             <td class="text-left">{{ row.estado }}</td>
                             <td class="text-left">{{ row.accion }}</td>
                         </tr>
@@ -690,7 +694,7 @@
                         <el-button slot="reference"
                                     class="second-buton"
                                    @click.prevent="close()">
-                            Cerrar
+                            Cerrar2
                         </el-button>
                     </el-popover>
                 </div>
@@ -776,6 +780,12 @@
 
 .el-select-currency {
     width: 59px;
+}
+
+.slide-bar-top{
+    overflow-x: auto;
+    max-width: 100%;
+    height: 20px;
 }
 
 </style>
@@ -1037,7 +1047,9 @@ export default {
             return _.has(this.configuration, 'show_last_price_sale') ? this.configuration.show_last_price_sale : false
         },
         uniqueCategories() {
-            const categories = [...new Set(this.items.map(item => item.category))];
+            const categories = [...new Set(this.items.map(item => item.category)
+                .filter(cat => cat && cat.trim() !== "")
+            )];
             return ['Todos', ...categories]; // Agrega 'Todos' al inicio
         }
     },
@@ -1315,6 +1327,7 @@ export default {
             this.form = {
                 // category_id: [1],
                 // edit: false,
+                description: '',
                 item_id: null,
                 item: {},
                 affectation_igv_type_id: null,
@@ -1548,7 +1561,8 @@ export default {
         },
         close() {
             this.selectedRow = null
-            this.initForm()
+            // this.initForm()
+            this.filterItems()
             this.$emit('update:showDialog', false)
         },
         async changeItem() {
@@ -1767,7 +1781,7 @@ export default {
             }
 
             // this.row.edit = false;
-            this.initForm();
+            // this.initForm();
             this.row.item.extra = extra;
             //this.initializeFields()
 
@@ -1781,6 +1795,9 @@ export default {
             this.showMessageDetraction()
 
             this.$emit('add', this.row);
+
+            this.form.description = ''
+            this.form.item_id = null
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()

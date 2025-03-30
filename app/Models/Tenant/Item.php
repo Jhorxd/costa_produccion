@@ -14,6 +14,9 @@ use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\UnitType;
 use App\Models\Tenant\ItemSalesCondition;
+use App\Models\Tenant\ItemPosition;
+use Modules\Inventory\Models\WarehouseLocationPosition;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -300,12 +303,12 @@ class Item extends ModelTenant
 
     public function item_sales_condition()
     {
-        return $this->belongsTo(ItemSalesCondition::class);
+        return $this->belongsTo(ItemSalesCondition::class, 'sales_condition_id');
     }
 
     public function pharmaceutical_item_unit_type()
     {
-        return $this->belongsTo(PharmaceuticalItemUnitType::class);
+        return $this->belongsTo(PharmaceuticalItemUnitType::class, 'pharmaceutical_unit_type_id');
     }
 
     public function item_files()
@@ -842,6 +845,20 @@ class Item extends ModelTenant
         return $lots;
     }
 
+    private function getPositions($location_id, $item_id = null)
+    {
+        $location = InventoryWarehouseLocation::find($location_id);
+
+        $positions = WarehouseLocationPosition::with('lots.lots_group')
+            ->where('location_id', $location_id)
+            ->get();
+
+        foreach ($positions as $position) {
+            $position->stock_available = $location->maximum_stock - $position->quantity_used;
+            $position->code_location = $location->code;
+        }
+    }
+
     /**
      * Devuelve un estandar de estructura para items.
      * Es utilizado en :
@@ -960,6 +977,23 @@ class Item extends ModelTenant
             $purchase_unit_price = $purchase_unit_value * 1.18;
         }
 
+        //Posiciones
+        $location_id = ItemPosition::where('item_id', $this->id)->value('location_id');
+        $name_location = '';
+        if ($location_id) {
+            $location = InventoryWarehouseLocation::find($location_id);
+
+            if ($location) {
+                $position = WarehouseLocationPosition::with('lots.lots_group')
+                    ->where('location_id', $location_id)
+                    ->first();
+        
+                if ($position) {
+                    $name_location = $location->name; 
+                }
+            }
+        }
+
         $data = [
             'id'                               => $this->id,
             'item_code'                    => $this->item_code,
@@ -1070,11 +1104,18 @@ class Item extends ModelTenant
             'image_url' => $this->getImageUrl(),
             'name' => $this->name,
             // Nuevos valores agregados por el equipo de George
-            'cod_digemid' => 'D1023M2D0',
-            'concentracion' => '500 mg',
-            'condicion_venta' => 'Venta libre',
-            'forma_farmaceutica' => 'Tabletas',
-            'principio_activo' => 'Paracetamol',
+            'cod_digemid' => $this->cod_digemid,
+            'concentration' => $this->concentration,
+            'sales_condition' => $this->item_sales_condition ? [
+                'id' => $this->item_sales_condition->id,
+                'description' => $this->item_sales_condition->description,
+            ] : null,
+            'pharmaceutical_unit_type' => $this->pharmaceutical_item_unit_type ? [
+                'id' => $this->pharmaceutical_item_unit_type->id,
+                'description' => $this->pharmaceutical_item_unit_type->description,
+            ] : null,
+            'active_principle' => $this->active_principle,
+            'locations' => $name_location,
             'estado' => 'Activo',
             'accion' => 'Alergías'
         ];
