@@ -330,8 +330,14 @@ class ItemController extends Controller
         );
     }
     
-    public function getLocations($id){
-        return InventoryWarehouseLocation::all()->where('warehouse_id','=',$id); 
+    public function getLocations(Request $request){        
+        $locations = ItemPosition::where('warehouse_id', $request->warehouse_id)
+            ->where('item_id', $request->item_id)
+            ->groupBy('location_id')
+            ->pluck('location_id');
+
+        $datos= InventoryWarehouseLocation::whereIn('id', $locations)->get();        
+        return $datos;        
     }
     public function positions($location_id, $item_id = null)
     {
@@ -644,8 +650,6 @@ class ItemController extends Controller
                     if($inventoryWarehouseLocation){
                         if($request->lots_enabled){
                             $itemsPositionCurrent = ItemPosition::with('position')->where('item_id',$item->id)->get();
-
-
                             $positionsToDelete = $itemsPositionCurrent->filter(function ($itemPosition) use ($position) {
                                 foreach ($position['lots'] as $element) {
                                     if(isset($element['id']) && $element['id'] !== null){

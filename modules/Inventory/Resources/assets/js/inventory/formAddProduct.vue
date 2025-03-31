@@ -110,7 +110,7 @@
   
   <script>
 import { method } from 'lodash';
-import ItemLocation from './../../../../../../resources/js/views/tenant/items/locations.vue'
+import ItemLocation from './../../../../../../resources/js/views/tenant/items/locations2.vue'
 
   export default {
     props: ['showDialog', 'recordId','checked','establishment_id','warehouse_id'],
@@ -124,6 +124,7 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
         locations: [],
         positions: [],
         positions_selected: [],
+        temp_positions:[],
         form: {
             item_id: null,
             stock: 0,
@@ -148,8 +149,7 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
         this.cleanForm();
         this.$emit('update:showDialog', false);        
       },
-      create() {
-        this.getLocations();     
+      create() {             
         this.getProductsByEstablishmentAndWarehouse();        
       },
       submit() {        
@@ -180,7 +180,11 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
         this.form.item_id = product.item_id;
         this.form.system_quantity = product.stock;
         this.form.counted_quantity=product.stock;
-        this.form.difference=this.form.system_quantity-this.form.counted_quantity;        
+        this.form.difference=this.form.system_quantity-this.form.counted_quantity;
+        this.getLocations();
+        if(this.locations.length>0){
+          this.location_id=null;
+        }
         },
         cleanForm(){
           this.form={
@@ -193,7 +197,10 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
             counted_quantity: 0,
             difference: 0,
             category_id: null
-          }         
+          }
+          this.locations=[];
+          this.positions_selected = [];
+          this.location_id=null;
        },
        sendItem() {
             if(this.checked && this.form.category_id==null){
@@ -227,8 +234,9 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
           }
         ,
         getLocations(){
+          //url+=`?establishment_id=${this.establishment_id}&warehouse_id=${this.warehouse_id}`;              
           return this.$http
-            .get(`/items/getLocations/${this.warehouse_id}`)
+            .get(`/items/getLocations?warehouse_id=${this.warehouse_id}&item_id=${this.form.item_id}`)
             .then(response => {              
               this.locations =response.data;                     
                 // Procesar la respuesta aquí
@@ -241,13 +249,21 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
             }); 
         },
         clickItemLocation() {
-            if(!this.location_id){
+          if (!this.location_id) {
                 this.$message.error("Seleccione una ubicación");
-            }else{
-                this.$http.get(`/items/positions/${this.location_id}`)
+                return;
+            }
+            this.positions_selected = [];
+            this.positions = [];
+            this.$http.get(`/items/positions/${this.location_id}/${this.form.item_id}`)
                 .then(response => {
                     if (response.data.success) {
-                        this.positions = response.data.data;
+                        const data = response.data.data;
+                        this.positions_selected = data.item_positions;
+                        this.temp_positions = JSON.parse(JSON.stringify(this.positions_selected));                     
+                        this.positions = data.positions;
+                        console.log( JSON.stringify(this.positions_selected));
+                        console.log( JSON.stringify(this.positions));
                         this.positions_selected.forEach(element => {
                             const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
                             if(position_finded){
@@ -256,21 +272,63 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
                                 position_finded.stock = 0;
                             }
                         });
+                        //if(this.form.location_id!=this.location_id){
+                          ///  this.positions_selected = [];
+                        //}
+                        this.showDialogLocation = true;
                     }
                 });
-                console.log(this.positions);
-                
-                this.showDialogLocation = true;
-            }
         },
-        saveDataPosition(data) {
+        /*saveDataPosition(data) {
             if(data.length>0){
                 this.position_selected = [];
                 this.positions_selected = data;
             }
             console.log(this.positions_selected);
-        }
+        },*/
+        saveDataPosition(data) {
           
+          //alert(JSON.stringify(this.positions_selected));
+          let totalStockAssigned = 0;
+              this.temp_positions.forEach(position => {
+                  totalStockAssigned += position.stock; // Sumamos los valores de stock de cada posición seleccionada
+          });
+          //total de stock del data
+          const totalStock = data.reduce((total, item) => total + item.stock, 0);
+          console.log(JSON.stringify(this.temp_positions));
+          console.log(totalStock);
+          console.log(totalStockAssigned);
+          alert(totalStock>totalStockAssigned);
+          if(data.length==0){
+            //alert(totalStockAssigned);
+            this.form.counted_quantity -= totalStockAssigned;            
+          }else if(totalStock>totalStockAssigned){
+              const result=totalStock-totalStockAssigned;
+              this.form.counted_quantity+=result;
+          }else{
+              const result2=totalStockAssigned-totalStock;
+              alert(result2);
+              this.form.counted_quantity-=result2;
+          }
+          // Si hay posiciones seleccionadas
+          /*if (data.length > 0) {
+              this.positions_selected = data; // Actualizas las posiciones seleccionadas
+              
+              // Calculamos el stock total basado en las posiciones seleccionadas
+              let totalStockAssigned = 0;
+              this.positions_selected.forEach(position => {
+                  totalStockAssigned += position.stock; // Sumamos los valores de stock de cada posición seleccionada
+              });
+
+              // En lugar de restar, asignamos el stock basado en lo seleccionado
+              this.form.counted_quantity = totalStockAssigned;
+
+              console.log("Stock actualizado después de seleccionar posiciones: ", this.form.counted_quantity);
+          } else {
+              // Si no se seleccionaron posiciones, el stock sigue igual
+              console.log("No positions selected. Stock remains: ", this.form.counted_quantity);
+          }*/
+      }              
     }
   }
   </script>
