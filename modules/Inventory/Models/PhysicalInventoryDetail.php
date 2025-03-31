@@ -20,7 +20,8 @@ class PhysicalInventoryDetail extends ModelTenant
         'system_quantity',
         'difference',
         'category_id',
-        'cost'
+        'cost',
+        'json_position'
     ];
 
     public function physicalInventory()

@@ -134,7 +134,8 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
             system_quantity: 0,
             counted_quantity: 0,
             difference: 0,
-            category_id: null            
+            category_id: null,
+            json_position:null         
         },
         products: [],
         categories: [],
@@ -295,10 +296,13 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
           });
           //total de stock del data
           const totalStock = data.reduce((total, item) => total + item.stock, 0);
+          this.form.json_position=data;
+          
           console.log(JSON.stringify(this.temp_positions));
           console.log(totalStock);
           console.log(totalStockAssigned);
-          alert(totalStock>totalStockAssigned);
+          console.log(JSON.stringify(data));
+          //alert(totalStock>totalStockAssigned);
           if(data.length==0){
             //alert(totalStockAssigned);
             this.form.counted_quantity -= totalStockAssigned;            
