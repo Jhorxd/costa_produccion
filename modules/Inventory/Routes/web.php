@@ -213,6 +213,12 @@ if ($hostname) {
 
             Route::get('/listWarehouses', 'InventoryController@warehouses')->name('locations.warehouses');
 
+            Route::prefix('transfers')->group(function () {
+                Route::get('locations/{warehouse_id}', 'PositionController@getLocations');
+                Route::get('positions/{location_id}', 'PositionController@getPositions');
+                Route::get('positions/{location_id}/{item_id}', 'PositionController@getPositions');
+            });
+
             Route::prefix('reports')->group(function () {
                 Route::get('inventory', 'ReportInventoryController@index')->name('reports.inventory.index');
                 Route::post('inventory/search', 'ReportInventoryController@search')->name('reports.inventory.search');
