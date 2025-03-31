@@ -193,7 +193,6 @@ class InventoryController extends Controller
     }
     public function store3(Request $request){
         Log::debug($request->all());        
-        DB::beginTransaction(); 
         try {                    
             if ($request->has('details')) {
                 if (!is_null($request->input('confirmed'))) {
@@ -202,7 +201,7 @@ class InventoryController extends Controller
                             DB::rollBack();
                             return response()->json([
                                 'success' => false,
-                                'message' => 'La cantidad de stock real debe ser mayor o igual a 0'
+                                'message' => 'La cantidad de stock real  debeser mayor o igual a 0'
                             ], 400);
                         }
         
@@ -248,7 +247,8 @@ class InventoryController extends Controller
                             'system_quantity' => $detail['system_quantity'],
                             'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
                             'category_id' => $detail['category_id'] ?? null,
-                            'cost' => $detail['sale_unit_price']
+                            'cost' => $detail['sale_unit_price'],
+                            'json_position' => json_encode($detail['json_position'])
                         ]);
                     }
                 }

@@ -301,7 +301,8 @@
             //this.totalCantidad1+= Number(newItem.system_quantity);
             //this.totalCantidad2 += Number(newItem.counted_quantity);
             //const individualAmount = (Number(newItem.counted_quantity) - Number(newItem.system_quantity)) * newItem.sale_unit_price;
-            //this.importeTotal += individualAmount;                       
+            //this.importeTotal += individualAmount; 
+            alert("desde el origin "+JSON.stringify(newItem));                      
             const index = this.form.details.findIndex(item => item.item_id === newItem.item_id);
             if (index !== -1) {                
                 this.form.details.splice(index, 1, newItem);

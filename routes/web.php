@@ -200,7 +200,7 @@ if ($hostname) {
             Route::get('items/columns', 'Tenant\ItemController@columns');
             Route::get('items/records', 'Tenant\ItemController@records');
             Route::get('items/tables', 'Tenant\ItemController@tables');
-            Route::get('items/getLocations/{id}', 'Tenant\ItemController@getLocations');        
+            Route::get('items/getLocations', 'Tenant\ItemController@getLocations');        
             Route::get('items/record/{item}', 'Tenant\ItemController@record');
             Route::get('items/record2Jack', 'Tenant\ItemController@record2Jack');
             Route::get('items/getPositionSelected/{item_id}', 'Tenant\ItemController@getPositionsSelected');
@@ -239,7 +239,7 @@ if ($hostname) {
             Route::post('get-items', 'Tenant\ItemController@getAllItems');
             
             Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
-            Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
+            //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
 
             //InventoryStates
             Route::get('inventoryStates', 'Tenant\InventoryStateController@getData');
