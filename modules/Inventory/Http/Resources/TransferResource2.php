@@ -2,9 +2,11 @@
 
 namespace Modules\Inventory\Http\Resources;
 
+use App\Models\Tenant\ItemPosition;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Inventory\Models\InventoryTransfer;
 use Modules\Inventory\Models\ItemWarehouse;
+use Modules\Item\Models\ItemLotsGroup;
 
 class TransferResource2 extends JsonResource
 {
@@ -21,11 +23,16 @@ class TransferResource2 extends JsonResource
         $items = [];
         foreach($inventory_transfer->item as $i)
         {
+            $item_positions=ItemPosition::where('item_id',$i->id)->get();
+            $item_lots=ItemLotsGroup::where('item_id',$i->id)->count();
             $items [] = [
                 'id' => $i->id,
                 'quantity' => $i->quantity,
                 'description' => $i->description,
                 'barcode' => $i->barcode,
+                'has_position' => $item_positions->count()>0,
+                'has_lots' => $item_lots>0,
+                'location_id' => $item_positions->count()>0?$item_positions->first()->location_id:null
             ];
         }
         return [

@@ -26,7 +26,7 @@
                                     v-text="errors.date_of_transfer[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div :class="form.warehouse_destination_id!=null?'col-md-3':'col-md-4'">
                             <div class="form-group">
                                 <label class="control-label">Almacén Inicial</label>
                                 <el-select v-model="form.warehouse_id"
@@ -45,15 +45,16 @@
                                 ></small>
                             </div>
                         </div>
-                        <div class="col-md-5">
-                            <div :class="{'has-danger': errors.warehouse_destination_id}"
-                                 class="form-group">
-                                <label class="control-label">Almacén Final</label>
-                                <el-select v-model="form.warehouse_destination_id">
+                        <div :class="form.warehouse_destination_id!=null?'col-md-4':'col-md-5'">
+                            <div :class="{'has-danger': errors.warehouse_destination_id}" class="form-group">
+                                <label class="control-label">Almacén Final (otra sucursal)</label>
+                                <el-select 
+                                    v-model="form.warehouse_destination_id"
+                                    :disabled="!form.warehouse_id"
+                                >
                                     <el-option
-                                        v-for="option in warehouses"
+                                        v-for="option in getDestinationWarehouses()"
                                         :key="option.id"
-                                        :disabled="option.id == form.warehouse_id"
                                         :label="option.description"
                                         :value="option.id"
                                     ></el-option>
@@ -63,6 +64,15 @@
                                     class="form-control-feedback"
                                     v-text="errors.warehouse_destination_id[0]"
                                 ></small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end" v-if="form.warehouse_destination_id!=null">
+                            <div class="form-group">
+                                <el-button
+                                    type="primary"
+                                    @click.prevent="clickSelectPosition"
+                                >Mostrar ubicaciones
+                                </el-button>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -96,7 +106,7 @@
                     </div>
                     <br/>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div :class="form_add.item_id!=null?'col-md-4':'col-md-6'">
                             <div class="form-group">
                                 <label class="control-label">
                                     Producto
@@ -202,6 +212,12 @@
                                           type="number"></el-input>
                             </div>
                         </div>
+                        <div class="col-md-2" v-if="form_add.item_id!=null">
+                            <div class="form-group">
+                                <label class="control-label">Unidad</label>
+                                <el-input :value="getIsUsesLots()" readonly></el-input>
+                            </div>
+                        </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <el-button
@@ -246,7 +262,6 @@
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
                                     <td>{{ row.purchase_unit_price }}</td>
-                                    <td>
     
                                     <td class="series-table-actions text-center">
                                         <button
@@ -290,6 +305,13 @@
                 @addRowLotGroup="addRowLotGroup"
                 :compromise-all-quantity="true">
             </output-lots-group-form>
+
+            <positions 
+                :showDialog.sync="showDialogPositions" 
+                :dataModal="dataModalPosition"
+                :warehouse_id="form.warehouse_destination_id"
+                @positions-save="saveDataModalPositions">
+            </positions>
         </div>
     </div>
 </template>
@@ -300,10 +322,11 @@ import OutputLotsForm from '../../../../../../resources/js/views/tenant/document
 import OutputLotsGroupForm from '../../../../../../resources/js/views/tenant/documents/partials/lots_group'
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../../../../resources/js/helpers/modal_item";
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
+import positions from './partials/positions.vue';
 
 export default {
     props: [],
-    components: {OutputLotsForm, OutputLotsGroupForm},
+    components: {OutputLotsForm, OutputLotsGroupForm, positions},
     data() {
         return {
             loading_item: false,
@@ -321,13 +344,17 @@ export default {
             search_item_by_barcode: false,
             all_items: [],
             lotsAll: [],
-            lotsGroupAll: []
+            lotsGroupAll: [],
+            //modal positions: 
+            showDialogPositions: false,
+            dataModalPosition: {location_id: null, positions: []}
         };
     },
     async created() {
         await this.$http.get(`/${this.resource}/tables`).then(response => {
             this.warehouses = response.data.warehouses;
             this.items = response.data.items;
+            
             this.all_items = this.items
         });
 
@@ -335,20 +362,48 @@ export default {
         this.initFormAdd();
     },
     methods: {
-        addRowLotGroup(id) {
-            this.form.selected_lots_group = id
+        getIsUsesLots(){
+            const elementFinded = this.items.find(element => element.id == this.form_add.item_id)
+            
+            if(elementFinded){
+                return elementFinded.lots_enabled?'Lotes':'Unidades';
+            }
+            return 'Unidades';
         },
+        getDestinationWarehouses() {
+            if (!this.form.warehouse_id) return [];
+            
+            const originWarehouse = this.warehouses.find(w => w.id === this.form.warehouse_id);
+            if (!originWarehouse) return [];
+            
+            // Filtrar almacenes que no sean del mismo establishment (sucursal)
+            // y que no sea el mismo almacén
+            return this.warehouses.filter(w => 
+                w.id !== this.form.warehouse_id && 
+                w.establishment_id !== originWarehouse.establishment_id
+            );
+        },
+
+        // Cambiar almacén inicial
         changeWarehouseInit() {
             this.form.warehouse_destination_id = null;
-            this.form_add.item_id = null
+            this.form_add.item_id = null;
             this.form.items = [];
 
-            this.$http
-                .get(`/${this.resource}/items/${this.form.warehouse_id}`)
-                .then(response => {
-                    this.items = response.data.items;
-                    this.all_items = this.items
-                });
+            if (this.form.warehouse_id) {
+                this.$http
+                    .get(`/${this.resource}/items/${this.form.warehouse_id}`)
+                    .then(response => {
+                        this.items = response.data.items;
+                        this.all_items = this.items;                        
+                    });
+            }
+        },
+        saveDataModalPositions(data){
+            this.dataModalPosition = data;
+        },
+        addRowLotGroup(id) {
+            this.form.selected_lots_group = id
         },
         addRowOutputLot(lots) {
             let row = this.items.find(x => x.id == this.form_add.item_id);
@@ -544,9 +599,7 @@ export default {
 
             // cargamos lotes seleccionados previamentes
             if(this.form.selected_lots_group.length > 0){
-                console.log(this.form.selected_lots_group)
                 this.form.selected_lots_group.forEach(element => {
-                    console.log(element)
                     this.form.lot_groups_total.push(element)
                 });
             }
@@ -651,8 +704,10 @@ export default {
         focusSelectItem() {
             this.$refs.selectSearchNormal.$el.getElementsByTagName('input')[0].focus()
         },
-
-
+        clickSelectPosition(){
+            this.showDialogPositions = true;
+        },
+        
     }
 };
 </script>
