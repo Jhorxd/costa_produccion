@@ -138,7 +138,9 @@ Vue.component('location-form-edit', require('../../modules/Inventory/Resources/a
 Vue.component('inventory-index', require('../../modules/Inventory/Resources/assets/js/inventory/index.vue'));
 Vue.component('physical-inventory', require('../../modules/Inventory/Resources/assets/js/inventory/physicalInventory.vue'));
 Vue.component('physical-inventory-list', require('../../modules/Inventory/Resources/assets/js/inventory/physicalInventoryList.vue'));
+Vue.component('position_lot', require('./views/tenant/items/position_lot.vue'));
 
+Vue.component('inventory-approve-transfer', require('../../modules/Inventory/Resources/assets/js/transfers/approve_transfer.vue'));
 Vue.component('inventory-transfers-index', require('../../modules/Inventory/Resources/assets/js/transfers/index.vue'));
 Vue.component('warehouses-index', require('../../modules/Inventory/Resources/assets/js/warehouses/index.vue'));
 Vue.component('tenant-report-kardex-index', require('../../modules/Inventory/Resources/assets/js/kardex/index.vue'));

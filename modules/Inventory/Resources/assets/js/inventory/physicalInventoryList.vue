@@ -43,7 +43,6 @@
                   filterable
                   placeholder="Selecciona un establecimiento"
                   @change="handleEstablishmentChange"
-                  :filter-method="handleFilter"
                   class="form-select"
                   clearable
                 >
@@ -75,12 +74,12 @@
               </el-select>
             </div>
           </div>
-          <div class="col-md-4">
-            <a class="btn btn-custom btn-sm mt-2 mr-2"
-              href="#"
-              @click.prevent="findPhysicalInventory()">
-                <i class="fa fa-plus-circle"></i> Buscar
-            </a>
+          <div class="col-md-4 d-flex align-items-end">
+            <a class="btn btn-custom btn-sm mr-2"
+             href="#"
+             @click.prevent="findPhysicalInventory()">
+             <i class="fa fa-plus-circle"></i> Buscar
+             </a>
           </div>
         </div>
       </div>
@@ -96,6 +95,7 @@
           <th>Sucursal</th>
           <th>Almacen</th>
           <th>Tipo de ajuste</th>
+          <th>Estado</th>
           <th>Acciones</th>     
         </tr>
       </thead>
@@ -106,6 +106,16 @@
           <td>{{ item.date}}</td>
           <td>{{ item.establishment_description}}</td>
           <td>{{ item.warehouse_description}}</td>
+          <td>
+            <span 
+              :class="{
+                'badge bg-warning text-dark': item.confirmed === 0 || item.confirmed === null,
+                'badge bg-success text-light': item.confirmed === 1
+              }"
+            >
+              {{ item.confirmed === 0 || item.confirmed === null ? 'Por confirmar' : 'Confirmado' }}
+            </span>
+          </td>      
           <td>{{ item.adjustment_type_name}}</td>
           <td>
             <button
@@ -115,6 +125,24 @@
             <i class="fa fa-file-pdf"></i>
             PDF
             </button>
+            <div class="dropdown">
+              <button id="dropdownMenuButton"
+                                        aria-expanded="false"
+                                        aria-haspopup="true"
+                                        class="btn btn-default btn-sm"
+                                        data-toggle="dropdown"
+                                        type="button">
+                                    <i class="fas fa-ellipsis-v"></i>
+               </button>
+               <div aria-labelledby="dropdownMenuButton"   class="dropdown-menu">
+                <button
+                                            class="dropdown-item"
+                                            @click.prevent="clickCreate(item.id)"
+                                        >
+                                            Confirmar
+                </button>
+               </div>
+            </div>
           </td>            
         </tr>        
       </tbody>
@@ -167,12 +195,16 @@
       });*/
      },
     methods: {
-    clickCreate(recordId = null) {
-      location.href = "physicalInventory/insertInventory"      
+     clickCreate(recordId = null) {
+      if(recordId){
+        location.href = `physical-inventory/insertInventory/${recordId}`;
+      }else{
+        location.href = "physical-inventory/insertInventory"
+      }               
     },
     getRecords(){
       this.loading_submit = true;            
-      this.$http.get(`/physicalInventory/getAllPhysicalInventories?${this.getQueryParameters()}`)
+      this.$http.get(`/physical-inventory/getAllPhysicalInventories?${this.getQueryParameters()}`)
       .then(response => {
         this.records = response.data.data;
         this.pagination = {
@@ -184,7 +216,6 @@
         to: response.data.to,
         total: response.data.total
         };
-        console.log( this.pagination);
         //this.pagination = response.data.meta;
         //console.log(JSON.stringify(response.data.meta))
         this.pagination.per_page = parseInt(
@@ -205,10 +236,10 @@
       });
       },
       clickDownload(id) {
-            window.open(`/physicalInventory/pdf/${id}`, "_blank");
+            window.open(`/physical-inventory/pdf/${id}`, "_blank");
       },
       getEstablishments(Establishment=null){            
-            let url = '/physicalInventory/getEstablishments';
+            let url = '/physical-inventory/getEstablishments';
             if (Establishment !== null) {
                url += `?value=${Establishment}`;
             }
@@ -229,7 +260,7 @@
             this.getWarehousesByEstablishment(value);          
       },
       getWarehousesByEstablishment(id=null){
-            let url = `/physicalInventory/getWarehousesByEstablishment/${id}`;            
+            let url = `/physical-inventory/getWarehousesByEstablishment/${id}`;            
             return this.$http
             .get(url)
             .then(response => { 

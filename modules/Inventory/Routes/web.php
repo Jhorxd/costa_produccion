@@ -129,9 +129,9 @@ if ($hostname) {
                 });
 
             });
-            Route::prefix('physicalInventory')->group(function () {
+            Route::prefix('physical-inventory')->group(function () {
                 Route::get('/', 'InventoryController@indexPhysicalInventoryList')->name('inventory.physicalList'); 
-                Route::get('insertInventory', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
+                Route::get('insertInventory/{id?}', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
                 Route::get('getEstablishments', 'InventoryController@getEstablishmentsByName');
                 Route::get('getWarehousesByEstablishment/{id}', 'InventoryController@getWarehousesByEstablishment');
                 Route::get('getProductsByEstablishmentAndWarehouse', 'InventoryController@getProductsByEstablishmentAndWarehouse');
@@ -142,7 +142,7 @@ if ($hostname) {
                         
             });
             
-            Route::get('inventoryWarehouses', 'InventoryController@indexWarehouses')->name('inventory.index2');
+            Route::get('inventory-warehouses', 'InventoryController@indexWarehouses')->name('inventory.index2');
             Route::prefix('inventory')->group(function () {
                 /**
                  * inventory/
@@ -212,6 +212,12 @@ if ($hostname) {
             });
 
             Route::get('/listWarehouses', 'InventoryController@warehouses')->name('locations.warehouses');
+
+            Route::prefix('transfers')->group(function () {
+                Route::get('locations/{warehouse_id}', 'PositionController@getLocations');
+                Route::get('positions/{location_id}', 'PositionController@getPositions');
+                Route::get('positions/{location_id}/{item_id}', 'PositionController@getPositions');
+            });
 
             Route::prefix('reports')->group(function () {
                 Route::get('inventory', 'ReportInventoryController@index')->name('reports.inventory.index');

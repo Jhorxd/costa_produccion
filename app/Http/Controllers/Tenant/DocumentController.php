@@ -316,7 +316,7 @@ class DocumentController extends Controller
     {
         // $items = $this->table('items');
         $items = SearchItemController::getItemsToDocuments();
-        $categories = [];
+        $categories = Category::all();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $system_isc_types = SystemIscType::whereActive()->get();
         $price_types = PriceType::whereActive()->get();

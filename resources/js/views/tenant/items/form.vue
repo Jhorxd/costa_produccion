@@ -58,6 +58,42 @@
                                 </div>
                             </div>
                         </div> -->
+                        <div class="col-12">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0 table-borderless">
+                                    <thead>
+                                    <tr>
+                                        <th width="25%">
+                                            <div v-show="form.unit_type_id !='ZZ'">
+                                                <el-checkbox v-model="form.lots_enabled"
+                                                             @change="changeLotsEnabled">¿Maneja lotes?
+                                                </el-checkbox>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                                                        </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>
+                                            <div v-show="form.unit_type_id !='ZZ' && form.lots_enabled">
+                                                <div :class="{'has-danger': errors.lot_code}"
+                                                     class="form-group">
+                                                    <el-button icon="el-icon-edit-outline"
+                                                               size="small"
+                                                               type="primary"
+                                                               @click.prevent="clickLotcode">Ingrese lotes
+                                                    </el-button>
+                                                    <small v-if="errors.lot_code"
+                                                           class="form-control-feedback"
+                                                           v-text="errors.lot_code[0]"></small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div :class="{'has-danger': errors.internal_id}"
                             class="form-group">
@@ -130,7 +166,7 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div :class="{'has-danger': errors.unit_type_id}"
+                            <div :class="{'has-danger': errors.pharmaceutical_unit_type_id}"
                                  class="form-group">
                                 <label class="control-label">Presentación / Forma Farmaceútica <span class="text-danger">*</span></label>
                                 <el-select v-model="form.pharmaceutical_unit_type_id"
@@ -140,12 +176,12 @@
                                                :label="option.description"
                                                :value="option.id"></el-option>
                                 </el-select>
-                                <small v-if="errors.unit_type_id"
+                                <small v-if="errors.pharmaceutical_unit_type_id"
                                        class="form-control-feedback"
-                                       v-text="errors.unit_type_id[0]"></small>
+                                       v-text="errors.pharmaceutical_unit_type_id[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div :class="{'has-danger': errors.sale_price}"
                                  class="form-group">
                                 <label class="control-label">Precio de venta <span class="text-danger">*</span></label>
@@ -155,6 +191,43 @@
                                 <small v-if="errors.sale_price"
                                        class="form-control-feedback"
                                        v-text="errors.sale_price[0]"></small>
+                            </div>
+                        </div>
+                        <div v-show="form.unit_type_id !='ZZ'"
+                             class="col-md-3">
+                            <div :class="{'has-danger': errors.stock}"
+                                 class="form-group">
+                                <label class="control-label">{{recordId?'Stock':'Stock Inicial'}}</label>
+                                <el-input v-model="form.stock" :disabled="form.series_enabled || recordId!=null"></el-input>
+                                <small v-if="errors.stock"
+                                       class="form-control-feedback"
+                                       v-text="errors.stock[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.stock_min}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Stock mínimo
+                                </label>
+                                <el-input v-model="form.stock_min">
+                                </el-input>
+                                <small v-if="errors.stock_min"
+                                       class="form-control-feedback"
+                                       v-text="errors.stock_min[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.stock_max}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Stock máximo
+                                </label>
+                                <el-input v-model="form.stock_max">
+                                </el-input>
+                                <small v-if="errors.stock_max"
+                                       class="form-control-feedback"
+                                       v-text="errors.stock_max[0]"></small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -177,7 +250,41 @@
                                        v-text="errors.sanitary[0]"></small>
                             </div>
                         </div>
-                        <div :class="recordId?'col-md-6':'col-md-3'">
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.average_usage}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Consumo promedio
+                                </label>
+                                <el-input v-model="form.average_usage">
+                                </el-input>
+                                <small v-if="errors.average_usage"
+                                       class="form-control-feedback"
+                                       v-text="errors.average_usage[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.days_to_alert}"
+                                 class="form-group">
+                                <label class="control-label">
+                                    Días para alertar
+                                    <el-tooltip
+                                        class="item"
+                                        content="Días restantes para alertar sobre el stock"
+                                        effect="dark"
+                                        placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-input v-model="form.days_to_alert">
+                                </el-input>
+                                <small v-if="errors.days_to_alert"
+                                       class="form-control-feedback"
+                                       v-text="errors.days_to_alert[0]"></small>
+                            </div>
+                        </div>
+                        
+                        <!-- <div :class="recordId?'col-md-6':'col-md-3'">
                             <div :class="{'has-danger': errors.lot}"
                                  class="form-group">
                                 <label class="control-label">
@@ -196,18 +303,7 @@
                                        class="form-control-feedback"
                                        v-text="errors.lot[0]"></small>
                             </div>
-                        </div>
-                        <div v-show="recordId==null && form.unit_type_id !='ZZ'"
-                             class="col-md-3">
-                            <div :class="{'has-danger': errors.stock}"
-                                 class="form-group">
-                                <label class="control-label">Stock Inicial</label>
-                                <el-input v-model="form.stock"></el-input>
-                                <small v-if="errors.stock"
-                                       class="form-control-feedback"
-                                       v-text="errors.stock[0]"></small>
-                            </div>
-                        </div>
+                        </div> -->
                         <div class="col-md-6">
                             <div :class="{'has-danger': errors.sale_affectation_igv_type_id}"
                                  class="form-group">
@@ -287,7 +383,7 @@
                                     v-text="errors.sales_condition_id[0]"></small>
                             </div>
                         </div>
-                        <div :class="recordId?'col-md-6':'col-md-3'">
+                        <div class="col-md-3">
                             <div :class="{'has-danger': errors.sale_unit_price}"
                                  class="form-group">
                                 <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
@@ -299,27 +395,24 @@
                                        v-text="errors.sale_unit_price[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-6" v-if="recordId">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+                                <label class="control-label">Estado<span class="text-danger">*</span></label>
                                 <el-select
-                                    v-model="location_id"
+                                    v-model="form.inventory_state_id"
                                     filterable>
                                     <el-option
-                                        v-for="option in locations"
+                                        v-for="option in states"
                                         :key="option.id"
-                                        :label="option.name"
+                                        :label="option.description"
                                         :value="option.id"
                                     ></el-option>
                                 </el-select>
                             </div>
                         </div>
-                        <div class="col-md-6 d-flex align-items-end" v-if="recordId">
-                            <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
-                        </div>
                         <div v-if="form.unit_type_id !='ZZ'"
                              v-show="recordId==null"
-                             class="col-md-3">
+                             class="col-md-6">
                             <div :class="{'has-danger': errors.warehouse_id}"
                                  class="form-group">
                                 <label class="control-label">
@@ -343,8 +436,28 @@
                                        v-text="errors.warehouse_id[0]"></small>
                             </div>
                         </div>
+                        <div class="col-md-3" v-if="recordId">
+                            <div class="form-group">
+                                <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+                                <el-select
+                                    v-model="location_id"
+                                    filterable
+                                    @change="changeLocation">
+                                    <el-option
+                                        v-for="option in locations"
+                                        :key="option.id"
+                                        :label="option.name"
+                                        :value="option.id"
+                                    ></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end" v-if="recordId">
+                            <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
+                        </div>
+                        
 
-
+                        
 
 
 
@@ -1465,6 +1578,9 @@
             :location_id="location_id"
             :positions_selected="positions_selected"
             :positions="positions"
+            :stock="form.stock"
+            :lots_enabled="form.lots_enabled"
+            :lots="form.lots"
             @positions-save="saveDataPosition">
         </item-location>
 
@@ -1580,6 +1696,7 @@ export default {
             suppliers: [],
             sales_conditions: [],
             positions: [],
+            states: [],
             positions_selected: [],
             location_id: null,
             headers: {
@@ -1653,6 +1770,9 @@ export default {
                 this.brands = data.brands
                 this.attribute_types = data.attribute_types
                 this.locations = data.locations;
+                this.states = data.states;
+                if(response.data.states.length>0)
+                    this.form.inventory_state_id = response.data.states[0].id;
                 
                 // this.config = data.configuration
                 if (this.canShowExtraData) {
@@ -1685,11 +1805,14 @@ export default {
         })
 
         await this.setDefaultConfiguration()
-
+        
     },
 
     methods: {
-
+        changeLocation(){
+            this.positions_selected = [];
+            this.form.positions_selected = [];
+        },
         ...mapActions([
             'loadConfiguration',
         ]),
@@ -1713,10 +1836,9 @@ export default {
         },
         saveDataPosition(data) {
             if(data.length>0){
-                this.position_selected = [];
+                this.positions_selected = [];
                 this.positions_selected = data;
             }
-            console.log(this.positions_selected);
         },
         setDefaultConfiguration() {
             this.form.sale_affectation_igv_type_id = (this.config) ? this.config.affectation_igv_type_id : '10'
@@ -1772,27 +1894,41 @@ export default {
                 })
         },
         changeLotsEnabled() {
-
-            // if(!this.form.lots_enabled){
-            //     this.form.lot_code = null
-            //     this.form.lots = []
-            // }
-
+            if(!this.form.lots_enabled){
+                this.form.lot_code = null;
+                this.form.lots = [];
+            }else{
+                this.position_selected = [];
+            }
         },
         changeProductioTab(){
 
         },
         addRowLot(lots) {
-            this.form.lots = lots
+            if(localStorage.length>0){
+                this.form.lots = lots
+                let stock_total = 0;
+                lots.forEach(element => {
+                    element.quantity = parseInt(element.quantity); 
+                    stock_total += parseInt(element.quantity);
+                });
+                this.form.stock = stock_total;
+            }
         },
         async clickItemLocation() {
-            if(!this.location_id){
+            if (!this.location_id) {
                 this.$message.error("Seleccione una ubicación");
-            }else{
-                await this.$http.get(`/${this.resource}/positions/${this.location_id}`)
+                return;
+            }
+            this.positions_selected = [];
+            this.positions = [];
+            await this.$http.get(`/${this.resource}/positions/${this.location_id}/${this.recordId}`)
                 .then(response => {
                     if (response.data.success) {
-                        this.positions = response.data.data;
+                        const data = response.data.data;
+                        this.positions_selected = data.item_positions;
+                        this.positions = data.positions;
+                        
                         this.positions_selected.forEach(element => {
                             const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
                             if(position_finded){
@@ -1801,12 +1937,13 @@ export default {
                                 position_finded.stock = 0;
                             }
                         });
+                        if(this.form.location_id!=this.location_id){
+                            this.positions_selected = [];
+                        }
+                        this.showDialogLocation = true;
                     }
                 });
-                console.log(this.positions);
-                
-                this.showDialogLocation = true;
-            }
+            
         },
         clickLotcode() {
             this.showDialogLots = true
@@ -1886,6 +2023,7 @@ export default {
                 brand_id: null,
                 date_of_due: null,
                 lot_code: null,
+                location_id: null,
                 line: null,
                 lots_enabled: false,
                 lots: [],
@@ -1909,6 +2047,10 @@ export default {
                 restrict_sale_cpe: false,
                 sales_condition_id: null,
                 supplier_id: null,
+                inventory_state_id: null,
+                stock_max: null,
+                average_usage: null,
+                days_to_alert: null
             }
 
             this.show_has_igv = true
@@ -2113,23 +2255,19 @@ export default {
             }
             if (this.form.has_perception && !this.form.percentage_perception) return this.$message.error('Ingrese un porcentaje');
 
-            if (this.form.lots_enabled && stock > 0) {
-
-                if (!this.form.lot_code)
-                    return this.$message.error('Código de lote es requerido');
-
-                if (!this.form.date_of_due)
-                    return this.$message.error('Fecha de vencimiento es requerido si lotes esta habilitado.');
+            if (this.form.lots_enabled) {
+                
+                if(this.form.lots.length==0){
+                    return this.$message.error('Ingrese los lotes correctamente');
+                }
             }
 
-            if (!this.recordId && this.form.series_enabled) {
+            /* if (!this.recordId && this.form.series_enabled) {
 
                 if (this.form.lots.length > this.form.stock)
                     return this.$message.error('La cantidad de series registradas es superior al stock');
 
-                if (this.form.lots.length != this.form.stock)
-                    return this.$message.error('La cantidad de series registradas son diferentes al stock');
-            }
+            } */
 
             if (this.form.has_isc) {
                 if (this.form.percentage_isc <= 0)
@@ -2143,6 +2281,7 @@ export default {
 
             if(this.positions_selected.length>0){
                 this.form.positions_selected = this.positions_selected;
+                this.positions_selected=[];
             }
             this.form.location_id = this.location_id;
 
@@ -2150,11 +2289,11 @@ export default {
 
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(async response => {
-                    console.log(response.data)
                     if (response.data.success) {
                         this.$message.success(response.data.message)
                         const item_id = response.data.id;
-                        
+                        this.positions_selected=[];
+                        this.initForm();
                         if (this.form.item_files.length > 0 || this.recordId)  {
                             let formData = new FormData();
                             
@@ -2167,7 +2306,6 @@ export default {
                             if (this.item_files_deleted && this.item_files_deleted.length > 0) {
                                 formData.append('files_deleted', JSON.stringify(this.item_files_deleted));
                             }
-                            console.log(formData);
                             this.$http.post(`/${this.resource}/saveDocuments/${item_id}`, formData, {
                                 headers: {
                                     'Content-Type': 'multipart/form-data'
@@ -2197,12 +2335,12 @@ export default {
                 })
                 .catch(error => {
                     console.log(error);
-                    /* if (error.response.status === 422) {
+                    if (error.response.status === 422) {
                         this.errors = error.response.data
                     } else {
                         console.log(error)
                         this.$message.error(error.response.data.message)
-                    } */
+                    }
                 })
                 .then(() => {
                     this.loading_submit = false
@@ -2226,8 +2364,11 @@ export default {
             });
         },
         close() {
-            this.$emit('update:showDialog', false)
-            this.resetForm()
+            this.resetForm();
+            this.positions_selected = [];
+            this.positions = [];
+            this.location_id = null;
+            this.$emit('update:showDialog', false);
         },
         changeHasIsc() {
             this.form.system_isc_type_id = null

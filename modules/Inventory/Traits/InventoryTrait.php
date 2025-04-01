@@ -298,7 +298,8 @@ trait InventoryTrait
         return collect($records)->transform(function ($row) {
             return [
                 'id' => $row->id,
-                'description' => $row->description
+                'description' => $row->description,
+                'establishment_id' => $row->establishment_id
             ];
         });
     }

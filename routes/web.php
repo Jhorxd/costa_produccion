@@ -200,7 +200,10 @@ if ($hostname) {
             Route::get('items/columns', 'Tenant\ItemController@columns');
             Route::get('items/records', 'Tenant\ItemController@records');
             Route::get('items/tables', 'Tenant\ItemController@tables');
+            Route::get('items/getLocations', 'Tenant\ItemController@getLocations');        
             Route::get('items/record/{item}', 'Tenant\ItemController@record');
+            Route::get('items/record2Jack', 'Tenant\ItemController@record2Jack');
+            Route::get('items/getPositionSelected/{item_id}', 'Tenant\ItemController@getPositionsSelected');
             Route::get('items/fileDownload/{id}', 'Tenant\ItemController@downloadDocument');
             Route::post('items', 'Tenant\ItemController@store');
             Route::delete('items/{item}', 'Tenant\ItemController@destroy');
@@ -235,7 +238,11 @@ if ($hostname) {
             Route::get('items/export/barcode/last', 'Tenant\ItemController@itemLast')->name('tenant.items.last');
             Route::post('get-items', 'Tenant\ItemController@getAllItems');
             
-            Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
+            Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
+            //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
+
+            //InventoryStates
+            Route::get('inventoryStates', 'Tenant\InventoryStateController@getData');
 
             //Persons
             Route::prefix('persons')->group(function () {
@@ -415,7 +422,7 @@ if ($hostname) {
                 Route::get('/search/customers', 'Tenant\DispatchController@searchCustomers');
                 Route::get('/search/customer/{id}', 'Tenant\DispatchController@searchClientById');
                 Route::post('/status_ticket', 'Tenant\Api\DispatchController@statusTicket');
-                Route::get('create_new/{table}/{id}', 'Tenant\DispatchController@createNew');
+                Route::get('/create_new/{table}/{id}', 'Tenant\DispatchController@createNew');
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchController@getOriginAddresses');
                 Route::get('/get_addresses_other_establishments/{establishment_id}', 'Tenant\DispatchController@getAddressesOtherEstablishments');
                 Route::get('/get_delivery_addresses/{person_id}', 'Tenant\DispatchController@getDeliveryAddresses');

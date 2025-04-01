@@ -228,9 +228,11 @@
                                     <th width="10%">#</th>
                                     <th width="20%">Cód. Barras</th>
                                     <th width="30%">Producto</th>
-                                    <th width="30%">Cantidad</th>
-                                    <th width="15%">Costo</th>
-                                    <th width="10%">Importe Costo</th>
+                                    <th width="20%">Cantidad</th>
+                                    <th width="10%">Unidad</th>
+                                    <!-- <th width="15%">Costo</th>
+                                    <th width="10%">Importe Costo</th> -->
+                                    <th width="25%">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -248,8 +250,13 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
-    
+                                    <td>{{ row.has_lots?'Lotes':'Unidades' }}</td>
                                     <td class="series-table-actions text-center">
+                                        <el-button
+                                                @click.prevent="SelectPositions(row)"
+                                                class="btn btn-primary btn-submit-default"
+                                                type="primary">Posición
+                                        </el-button>
                                         <button
                                             class="btn waves-effect waves-light btn-xs btn-danger"
                                             type="button"
@@ -291,6 +298,13 @@
                 @addRowLotGroup="addRowLotGroup"
                 :compromise-all-quantity="true">
             </output-lots-group-form>
+
+            <approve-position
+                :showDialog.sync="showDialogPositionDestiny"
+                :dataModal.sync="selectBoxDataModal"
+                :warehouse_id="form.warehouse_id"
+                @positions-save="savedDataModal">
+            </approve-position>
         </div>
     </div>
 </template>
@@ -301,10 +315,11 @@ import OutputLotsForm from '../../../../../../resources/js/views/tenant/document
 import OutputLotsGroupForm from '../../../../../../resources/js/views/tenant/documents/partials/lots_group'
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../../../../resources/js/helpers/modal_item";
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
+import approvePosition from './partials/approvePosition.vue';
 
 export default {
     props: ['resourceId'],
-    components: {OutputLotsForm, OutputLotsGroupForm},
+    components: {OutputLotsForm, OutputLotsGroupForm, approvePosition},
     data() {
         return {
             loading_item: false,
@@ -312,6 +327,7 @@ export default {
             titleDialog: null,
             showDialogLotsOutput: false,
             showDialogLotsGroup: false,
+            showDialogPositionDestiny: false,
             resource: "transfers",
             errors: {},
             form: {},
@@ -322,7 +338,8 @@ export default {
             search_item_by_barcode: false,
             all_items: [],
             lotsAll: [],
-            lotsGroupAll: []
+            lotsGroupAll: [],
+            selectBoxDataModal:{}
         };
     },
     async created() {
@@ -332,11 +349,17 @@ export default {
             this.all_items = this.items
             this.initRecord()
         });
-
+        
         await this.initForm();
         this.initFormAdd();
     },
     methods: {
+        savedDataModal(dataModal){
+            const item = this.form.items.find(element => element.id = this.selectBoxDataModal.id);
+            if(item){
+                item.dataModal = dataModal;
+            }            
+        },
         addRowLotGroup(id) {
             this.form.selected_lots_group = id
         },
@@ -371,7 +394,6 @@ export default {
                 });
 
             let row = this.items.find(x => x.id == this.form_add.item_id);
-            console.log(row);
 
             // this.form = _.clone(data);
             // this.form.lots = []; //Object.values(response.data.data.lots)
@@ -530,13 +552,11 @@ export default {
             }
 
             let dup = this.form.items.find(x => x.id == this.form_add.item_id);
-            console.log(dup)
             if (dup) {
                 return this.$message.error("Este producto ya esta agregado.");
             }
 
             let row = this.items.find(x => x.id == this.form_add.item_id);
-            console.log("Click:" +row);
             this.form.items.push({
                 id: row.id,
                 description: row.description,
@@ -549,9 +569,7 @@ export default {
 
             // cargamos lotes seleccionados previamentes
             if(this.form.selected_lots_group.length > 0){
-                console.log(this.form.selected_lots_group)
                 this.form.selected_lots_group.forEach(element => {
-                    console.log(element)
                     this.form.lot_group_total.push(element)
                 });
             }
@@ -569,6 +587,18 @@ export default {
                     this.form.warehouse_id = dato.warehouse_id
                     this.form.warehouse_destination_id = dato.warehouse_destination_id
                     this.form.items = items
+                    if(this.form.items.length>0){
+                        this.form.items.forEach(element => {
+                            element.dataModal={
+                                item_id : element.id,
+                                location_id: element.location_id || null,
+                                positions: [],
+                                stock_necessary: element.quantity,
+                                has_lots: element.id,
+                                has_position: element.has_position
+                            };
+                        });
+                    }
                 })
         },
         clickLotcodeOutput() {
@@ -669,7 +699,10 @@ export default {
             this.$refs.selectSearchNormal.$el.getElementsByTagName('input')[0].focus()
         },
 
-
+        SelectPositions(row){
+            this.selectBoxDataModal = row.dataModal;
+            this.showDialogPositionDestiny = true;
+        }
     }
 };
 </script>

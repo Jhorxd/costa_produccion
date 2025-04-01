@@ -39,6 +39,7 @@ use Modules\Inventory\Models\WarehouseLocationType;
 use App\Models\Tenant\Establishment;
 use Modules\Inventory\Models\PhysicalInventory; 
 use Modules\Inventory\Models\PhysicalInventoryDetail;
+use App\Models\Tenant\Company;
 
 class InventoryController extends Controller
 {
@@ -49,9 +50,33 @@ class InventoryController extends Controller
     {
         return view('inventory::inventory.index');
     }
-    public function indexPhysicalInventory()
-    {
-        return view('inventory::inventory.physicalInventory');
+    public function indexPhysicalInventory($id=null)
+    {   
+
+        if($id){
+          $isConfirmed=PhysicalInventory::find($id);
+          if($isConfirmed!=null){
+              if($isConfirmed->confirmed==1){
+                return redirect()->route('inventory.physicalList');
+              }
+          }
+        }                
+        $inventory = $id ? PhysicalInventory::with(['details' => function ($query) {
+            $query->join('items', 'inventory_physical_details.item_id', '=', 'items.id')
+                ->join('physical_inventory_categories', 'inventory_physical_details.category_id', '=', 'physical_inventory_categories.id')
+                ->select(
+                    'inventory_physical_details.*',
+                    'inventory_physical_details.cost as sale_unit_price',        
+                    'items.description as description',
+                    'physical_inventory_categories.name as category_name'
+                );
+        }])->find($id) : null;
+    
+        if ($id && !$inventory) {
+            return redirect()->route('inventory.physicalList');
+        }
+    
+        return view('inventory::inventory.physicalInventory', compact('inventory'));
     }
     public function indexPhysicalInventoryList()
     {
@@ -90,10 +115,11 @@ class InventoryController extends Controller
         )
         ->where('inventory_physical_details.physical_inventory_id', '=', $id) 
         ->get();
-               
+
+        $company = Company::active();
         
         // Renderizar la vista Blade con los datos
-        $pdf = PDF::loadView('inventory::inventory.pdfPhysicalIventory', compact('data','details'));
+        $pdf = PDF::loadView('inventory::inventory.pdfPhysicalIventory', compact('data','details','company'));
 
         // Descargar el PDF o mostrarlo en el navegador
         return $pdf->stream('reporte.pdf');
@@ -165,57 +191,76 @@ class InventoryController extends Controller
         $query = $query->paginate(config('tenant.items_per_page'));    
         return $query;
     }
-    public function store3(Request $request){        
-        DB::beginTransaction(); 
-            try {        
-            $physicalInventory = PhysicalInventory::create($request->except('details'));
-
+    public function store3(Request $request){
+        Log::debug($request->all());        
+        try {                    
             if ($request->has('details')) {
-                foreach ($request->details as $detail) {
-                    if ($detail['counted_quantity'] < 0) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'La cantidad de stock real debe ser mayor o igual a 0'
-                        ], 400);
+                if (!is_null($request->input('confirmed'))) {
+                    foreach ($request->details as $detail) {
+                        if ($detail['counted_quantity'] < 0) {
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'La cantidad de stock real  debeser mayor o igual a 0'
+                            ], 400);
+                        }
+        
+                        $type = 1;
+                        $quantity_new = $detail['counted_quantity'] - $detail['system_quantity'];
+                        if ($detail['counted_quantity'] < $detail['system_quantity']) {
+                            $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
+                            $type = null;
+                        }
+        
+                        $Item = Item::find($detail['item_id']);
+                        if ($Item->sale_unit_price != $detail['sale_unit_price']) {
+                            $Item->sale_unit_price = $detail['sale_unit_price'];
+                            $Item->save();                
+                        }
+                        
+                        $physicalInventory = PhysicalInventory::find($detail['physical_inventory_id']);
+                        $physicalInventory->confirmed=1;
+                        $physicalInventory->save();
+
+                        $inventory = new Inventory();
+                        $inventory->type = $type;
+                        $inventory->description = 'Stock Real';
+                        $inventory->item_id = $detail['item_id'];
+                        $inventory->warehouse_id = $request->warehouse_id; 
+                        $inventory->quantity = $quantity_new;
+                        if ($detail['counted_quantity'] != $detail['system_quantity']) {
+                            $inventory->inventory_transaction_id = 28;
+                        }
+                        $inventory->real_stock = $detail['counted_quantity'];
+                        $inventory->system_stock = $detail['system_quantity'];
+                        $inventory->save();
                     }
-
-            $type = 1;
-            $quantity_new = $detail['counted_quantity'] - $detail['system_quantity'];
-            if ($detail['counted_quantity'] < $detail['system_quantity']) {
-                $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
-                $type = null;
-            }           
-            $inventory = new Inventory();
-            $inventory->type = $type;
-            $inventory->description = 'Stock Real';
-            $inventory->item_id = $detail['item_id'];
-            $inventory->warehouse_id = $request->warehouse_id; 
-            $inventory->quantity = $quantity_new;
-            if ($detail['counted_quantity'] != $detail['system_quantity']) {
-                $inventory->inventory_transaction_id = 28;
+                } else {
+                    $physicalInventory = PhysicalInventory::create(
+                        array_merge($request->except('details'), ['confirmed' => false],['json_positions'=>json_encode($request->json_positions)])
+                    );                
+                    foreach ($request->details as $detail) {
+                        PhysicalInventoryDetail::create([
+                            'physical_inventory_id' => $physicalInventory->id,
+                            'item_id' => $detail['item_id'],
+                            'counted_quantity' => $detail['counted_quantity'],
+                            'system_quantity' => $detail['system_quantity'],
+                            'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
+                            'category_id' => $detail['category_id'] ?? null,
+                            'cost' => $detail['sale_unit_price'],
+                            'json_position' => json_encode($detail['json_position'])
+                        ]);
+                    }
+                }
             }
-            $inventory->real_stock = $detail['counted_quantity'];
-            $inventory->system_stock = $detail['system_quantity'];
-            $inventory->save();     
-            PhysicalInventoryDetail::create([
-                'physical_inventory_id' => $physicalInventory->id,
-                'item_id' => $detail['item_id'],
-                'counted_quantity' => $detail['counted_quantity'],
-                'system_quantity' => $detail['system_quantity'],
-                'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
-                'category_id' => $detail['category_id'] ?? null, 
-            ]);
+        
+            DB::commit(); 
+            return response()->json(['message' => 'Inventario y detalle guardado satisfactoriamente'], 201);
+        } catch (\Exception $e) {        
+            DB::rollBack(); 
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-    }
-
-        DB::commit(); 
-        return response()->json(['message' => 'Inventario y detalle guardado satisfactoriamente'], 201);
-    } catch (\Exception $e) {        
-        DB::rollBack(); 
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-    }
+    }      
     public function getProductsByEstablishmentAndWarehouse(Request $request){         
         $establishment_id = $request->input('establishment_id');
         $warehouse_id = $request->input('warehouse_id');
@@ -1127,7 +1172,9 @@ class InventoryController extends Controller
 
     public function list(Request $request)
     {
-        $query = InventoryWarehouseLocation::query();
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
+        $query = InventoryWarehouseLocation::where('warehouse_id', $warehouse_user_active->id);
 
         if ($request->has('column') && $request->has('value')) {
             $query->where($request->column, 'like', '%' . $request->value . '%');
@@ -1283,7 +1330,8 @@ class InventoryController extends Controller
     }
 
     public function warehouses(){
-        $warehouses = TenantWarehouse::all();
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouses = TenantWarehouse::where('establishment_id', $establishment_id)->get();
 
         if(!$warehouses->isEmpty()){
             return response()->json([
@@ -1296,8 +1344,7 @@ class InventoryController extends Controller
                 'success' => false,
                 'message' => 'Almacenes no encontrados'
             ]);
-        }
-        
+        }   
     }
 
     public function getLocationsById($id){
