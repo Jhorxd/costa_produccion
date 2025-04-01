@@ -193,11 +193,12 @@ class InventoryController extends Controller
         $query = $query->paginate(config('tenant.items_per_page'));    
         return $query;
     }
-    public function store3(Request $request){
+    public function store3(Request $request)
+    {
         $totalStock = 0; // Inicializar la suma del stock
-        //Log::debug($request->all());
-        DB::connection('tenant')->beginTransaction();             
-        try {                    
+        DB::connection('tenant')->beginTransaction();
+        
+        try {
             if ($request->has('details')) {
                 if (!is_null($request->input('confirmed'))) {
                     foreach ($request->details as $detail) {
@@ -205,110 +206,120 @@ class InventoryController extends Controller
                             DB::rollBack();
                             return response()->json([
                                 'success' => false,
-                                'message' => 'La cantidad de stock real  debeser mayor o igual a 0'
+                                'message' => 'La cantidad de stock real debe ser mayor o igual a 0'
                             ], 400);
                         }
-        
+                        
                         $type = 1;
                         $quantity_new = $detail['counted_quantity'] - $detail['system_quantity'];
+                        
                         if ($detail['counted_quantity'] < $detail['system_quantity']) {
                             $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
                             $type = null;
                         }
-        
+                        
                         $Item = Item::find($detail['item_id']);
                         if ($Item->sale_unit_price != $detail['sale_unit_price']) {
                             $Item->sale_unit_price = $detail['sale_unit_price'];
-                            $Item->save();                
+                            $Item->save();
                         }
                         
                         $physicalInventory = PhysicalInventory::find($detail['physical_inventory_id']);
-                        $physicalInventory->confirmed=1;
+                        $physicalInventory->confirmed = 1;
                         $physicalInventory->save();
-
+                        
                         $inventory = new Inventory();
                         $inventory->type = $type;
                         $inventory->description = 'Stock Real';
-                        $inventory->item_id = $detail['item_id'];
-                        $inventory->warehouse_id = $request->warehouse_id; 
+                        $inventory->item_id = $detail['item_id'];                    
+                        $inventory->warehouse_id = $request->warehouse_id;
                         $inventory->quantity = $quantity_new;
+                        
                         if ($detail['counted_quantity'] != $detail['system_quantity']) {
                             $inventory->inventory_transaction_id = 28;
                         }
+                        
                         $inventory->real_stock = $detail['counted_quantity'];
                         $inventory->system_stock = $detail['system_quantity'];
                         $inventory->save();
-
+                        
                         if (!empty($detail['json_position'])) {
-                            // Decodificar el JSON
                             Log::debug("entramos1");
                             $decodedJson = json_decode($detail['json_position'], true);
-                        
-                            // Verificar si la decodificación fue exitosa y si existe el índice 'positions'
+                            
                             if (is_array($decodedJson) && isset($decodedJson['positions'])) {
-                                $positions = $decodedJson['positions']; // Ahora accedemos al array de posiciones
-                                Log::debug("entramos2");
+                                $positions = $decodedJson['positions'];
+                                //Log::debug("entramos2");
+                                
                                 $positionsCount = count($positions);
-                                if($positionsCount==0){
-                                    $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $decodedJson['location_id'])                                        
-                                    ->get();
-                                    $itemPostion= ItemPosition::where('item_id','=', $detail['item_id'])->where('location_id','=',$decodedJson['location_id'])->get();                                    
-                                    // Recorrer y eliminar cada registro
+                                
+                                if ($positionsCount == 0) {
+                                    $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $decodedJson['location_id'])->get();
+                                    $itemPostion = ItemPosition::where('item_id', '=', $detail['item_id'])
+                                        ->where('location_id', '=', $decodedJson['location_id'])
+                                        ->get();
+                                    
                                     foreach ($itemPostion as $position) {
                                         $position->delete();
                                     }
+                                    
                                     Log::debug("entramos");
-
-                                }else if($positionsCount>0){
+                                } else if ($positionsCount > 0) {
                                     $inventoryWarehouseLocation = InventoryWarehouseLocation::find($decodedJson['location_id']);
-                                
-                                    // Obtener todas las posiciones actuales en la base de datos
+                                    
                                     $existingPositions = ItemPosition::where('item_id', $detail['item_id'])
-                                    ->where('location_id', $decodedJson['location_id'])
-                                    ->get()
-                                    ->keyBy('position_id'); // Usamos keyBy para indexar por 'position_id'                                    
-                                      // Guardar IDs de posiciones procesadas
+                                        ->where('location_id', $decodedJson['location_id'])
+                                        ->get()
+                                        ->keyBy('position_id');
+                                    
                                     $processedIds = [];
+                                    
                                     foreach ($positions as $position) {
                                         $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $decodedJson['location_id'])
-                                        ->where('row', $position['row'])
-                                        ->where('column', $position['column'])
-                                        ->first();
-
-                                    $processedIds[] = $warehouseLocationPosition->id;
-                                    if (isset($existingPositions[$warehouseLocationPosition->id])) {
-                                        $itemPosition = $existingPositions[$warehouseLocationPosition->id];
-                                        if ($itemPosition->stock != $position['stock']) {
-                                            $itemPosition->stock = $position['stock'];
-                                            $itemPosition->save();
+                                            ->where('row', $position['row'])
+                                            ->where('column', $position['column'])
+                                            ->first();
+                                        
+                                        $processedIds[] = $warehouseLocationPosition->id;
+                                        
+                                        if (isset($existingPositions[$warehouseLocationPosition->id])) {
+                                            $itemPosition = $existingPositions[$warehouseLocationPosition->id];
+                                            
+                                            if ($itemPosition->stock != $position['stock']) {
+                                                $itemPosition->stock = $position['stock'];
+                                                $itemPosition->save();
+                                            }else{
+                                                $itemPosition->save();
+                                            }
+                                        } else {
+                                            ItemPosition::create([
+                                                'item_id' => $detail['item_id'],
+                                                'location_id' => $decodedJson['location_id'],
+                                                'position_id' => $warehouseLocationPosition->id,
+                                                'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                                'stock' => $position['stock'] ?? 0,
+                                            ]);
                                         }
-                                    }else{
-                                         // Crear un nuevo registro si no existe
-                                        ItemPosition::create([
-                                            'item_id' => $detail['item_id'],
-                                            'location_id' => $decodedJson['location_id'],
-                                            'position_id' => $warehouseLocationPosition->id,
-                                            'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
-                                            'stock' => $position['stock'] ?? 0,
-                                        ]);                                        
-                                    }
-                                    // Eliminar registros en la base de datos que ya no están en el JSON
+                                    }                                    
                                     $positionsToDelete = $existingPositions->except($processedIds);
+                                    
                                     foreach ($positionsToDelete as $deletePosition) {
                                         $deletePosition->delete();
                                         Log::debug("Se eliminó ItemPosition con ID: " . $deletePosition->id);
                                     }
-                                 }
-                                }                            
+                                }
                             }
                         }
-                        //Log::debug($totalStock);
-                        //return;
                     }
                 } else {
                     $physicalInventory = PhysicalInventory::create(
-                        array_merge($request->except('details'), ['confirmed' => false],['json_positions'=>json_encode($request->json_positions)])
-                    );                
+                        array_merge(
+                            $request->except('details'),
+                            ['confirmed' => false],
+                            ['json_positions' => json_encode($request->json_positions)]
+                        )
+                    );
+                    
                     foreach ($request->details as $detail) {
                         PhysicalInventoryDetail::create([
                             'physical_inventory_id' => $physicalInventory->id,
@@ -321,16 +332,16 @@ class InventoryController extends Controller
                             'json_position' => json_encode($detail['json_position'])
                         ]);
                     }
-                }              
-            }        
+                }
+            }            
             DB::connection('tenant')->commit();
             return response()->json(['message' => 'Inventario y detalle guardado satisfactoriamente'], 201);
-        } catch (\Exception $e) { 
+        } catch (\Exception $e) {
             Log::debug($e);
-            DB::connection('tenant')->rollBack();                   
+            DB::connection('tenant')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
-    }      
+    }    
     public function getProductsByEstablishmentAndWarehouse(Request $request){         
         $establishment_id = $request->input('establishment_id');
         $warehouse_id = $request->input('warehouse_id');
