@@ -443,6 +443,7 @@
             </a>
             <div class="dropdown-menu-desktop">
                 <ul class="list-unstyled mb-0">
+                    <!-- GB: Hidden
                     @if(in_array('cuenta', $vc_modules))
                         @if(in_array('account_users_list', $vc_module_levels))
                             <li>
@@ -478,7 +479,9 @@
                             </svg>
                             Estilos y temas</a>
                     </li>
-                    <li class="multi-user-content pt-1 pl-4 pr-4">
+                    -->
+                    <!-- <li class="multi-user-content pt-1 pl-4 pr-4">-->
+                    <li class="">
                         @if(config('configuration.multi_user_enabled'))
                             <tenant-multi-users-change-client></tenant-multi-users-change-client>
                         @endif

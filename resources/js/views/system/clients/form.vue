@@ -204,6 +204,7 @@
                         name="1"
                         title="Módulos">
                         <div class="row">
+                            <!-- GB: Hidden
                             <span class="ml-4">Giro de negocio <small>(opcional)</small></span>
                             <div class="col-12">
                                 <el-radio-group v-model="business" @change="changeModules">
@@ -213,6 +214,7 @@
                                     <el-radio :label="4">Restaurante</el-radio>
                                 </el-radio-group>
                             </div>
+                            -->
                             <div class="col-md-6">
                                 <span>
                                     Habilitar módulos
