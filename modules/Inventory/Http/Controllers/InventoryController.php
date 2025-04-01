@@ -40,6 +40,7 @@ use App\Models\Tenant\Establishment;
 use Modules\Inventory\Models\PhysicalInventory; 
 use Modules\Inventory\Models\PhysicalInventoryDetail;
 use App\Models\Tenant\Company;
+use App\Models\Tenant\ItemPosition;
 
 class InventoryController extends Controller
 {
@@ -192,7 +193,9 @@ class InventoryController extends Controller
         return $query;
     }
     public function store3(Request $request){
-        Log::debug($request->all());        
+        $totalStock = 0; // Inicializar la suma del stock
+        //Log::debug($request->all());
+        DB::connection('tenant')->beginTransaction();             
         try {                    
             if ($request->has('details')) {
                 if (!is_null($request->input('confirmed'))) {
@@ -234,6 +237,46 @@ class InventoryController extends Controller
                         $inventory->real_stock = $detail['counted_quantity'];
                         $inventory->system_stock = $detail['system_quantity'];
                         $inventory->save();
+
+                        if (!empty($detail['json_position'])) {
+                            // Decodificar el JSON
+                            Log::debug("entramos1");
+                            $decodedJson = json_decode($detail['json_position'], true);
+                        
+                            // Verificar si la decodificación fue exitosa y si existe el índice 'positions'
+                            if (is_array($decodedJson) && isset($decodedJson['positions'])) {
+                                $positions = $decodedJson['positions']; // Ahora accedemos al array de posiciones
+                                Log::debug("entramos2");
+                                $positionsCount = count($positions);
+                                if($positionsCount==0){
+                                    $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $decodedJson['location_id'])                                        
+                                    ->get();
+                                    $itemPostion= ItemPosition::where('item_id','=', $detail['item_id'])->where('location_id','=',$decodedJson['location_id'])->get();                                    
+                                    // Recorrer y eliminar cada registro
+                                    foreach ($itemPostion as $position) {
+                                        $position->delete();
+                                    }
+                                    Log::debug("entramos");
+
+                                }
+                                Log::debug($positionsCount);
+                                foreach ($positions as $position) {
+                                    // Verificar si el índice 'stock' existe antes de sumarlo
+                                    if (isset($position['stock'])) {
+                                        $totalStock += $position['stock'];
+                                    }
+                                    //Log::debug( $decodedJson['location_id']);
+                                    // Buscar en WarehouseLocationPosition usando 'location_id' del JSON
+                                    $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $decodedJson['location_id'])                                        
+                                    ->get();
+                                    
+                                    $itemPostion= ItemPosition::where('item_id','=', $detail['item_id'])->where('location_id','=',$decodedJson['location_id'])->get();
+                                    Log::debug("entramos");
+                                }
+                            }
+                        }
+                        //Log::debug($totalStock);
+                        //return;
                     }
                 } else {
                     $physicalInventory = PhysicalInventory::create(
@@ -251,13 +294,12 @@ class InventoryController extends Controller
                             'json_position' => json_encode($detail['json_position'])
                         ]);
                     }
-                }
-            }
-        
-            DB::commit(); 
+                }              
+            }        
+            DB::connection('tenant')->commit();
             return response()->json(['message' => 'Inventario y detalle guardado satisfactoriamente'], 201);
-        } catch (\Exception $e) {        
-            DB::rollBack(); 
+        } catch (\Exception $e) {  
+            DB::connection('tenant')->rollBack();                   
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }      
