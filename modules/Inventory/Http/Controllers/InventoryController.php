@@ -266,7 +266,7 @@ class InventoryController extends Controller
                                     Log::debug("entramos");
                                 } else if ($positionsCount > 0) {
                                     $inventoryWarehouseLocation = InventoryWarehouseLocation::find($decodedJson['location_id']);
-                                    
+
                                     $existingPositions = ItemPosition::where('item_id', $detail['item_id'])
                                         ->where('location_id', $decodedJson['location_id'])
                                         ->get()
@@ -279,19 +279,23 @@ class InventoryController extends Controller
                                             ->where('row', $position['row'])
                                             ->where('column', $position['column'])
                                             ->first();
-                                        
+                                    
+                                        if (!$warehouseLocationPosition) {
+                                            continue; 
+                                        }
+                                    
                                         $processedIds[] = $warehouseLocationPosition->id;
-                                        
-                                        if (isset($existingPositions[$warehouseLocationPosition->id])) {
+                                    
+                                        if (isset($existingPositions[$warehouseLocationPosition->id])) {                                            
                                             $itemPosition = $existingPositions[$warehouseLocationPosition->id];
-                                            
+                                    
                                             if ($itemPosition->stock != $position['stock']) {
                                                 $itemPosition->stock = $position['stock'];
                                                 $itemPosition->save();
-                                            }else{
-                                                $itemPosition->save();
+                                            } else {
+                                                $itemPosition->touch();
                                             }
-                                        } else {
+                                        } else {                                            
                                             ItemPosition::create([
                                                 'item_id' => $detail['item_id'],
                                                 'location_id' => $decodedJson['location_id'],
@@ -300,13 +304,16 @@ class InventoryController extends Controller
                                                 'stock' => $position['stock'] ?? 0,
                                             ]);
                                         }
-                                    }                                    
-                                    $positionsToDelete = $existingPositions->except($processedIds);
+                                    }                                                                        
+                                    $positionsToDelete = $existingPositions->filter(function ($position) use ($processedIds) {
+                                        return !in_array($position->position_id, $processedIds);
+                                    });
                                     
                                     foreach ($positionsToDelete as $deletePosition) {
                                         $deletePosition->delete();
                                         Log::debug("Se eliminó ItemPosition con ID: " . $deletePosition->id);
                                     }
+                                    
                                 }
                             }
                         }
@@ -329,7 +336,7 @@ class InventoryController extends Controller
                             'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
                             'category_id' => $detail['category_id'] ?? null,
                             'cost' => $detail['sale_unit_price'],
-                            'json_position' => json_encode($detail['json_position'])
+                            'json_position' => isset($detail['json_position']) ? json_encode($detail['json_position']) : null
                         ]);
                     }
                 }
