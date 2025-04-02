@@ -282,6 +282,8 @@ class TransferController extends Controller
                     'date_of_transfer' => $request->date_of_transfer,
                     'warehouse_id' => $request->warehouse_id,
                     'warehouse_destination_id' => $request->warehouse_destination_id,
+                    'location_destination_id' => $request->location_destination_id ?? null,
+                    'position_destination_id' => $request->position_destination_id ?? null,
                     'quantity' => count($request->items),
                     'document_type_id' => $document_type_id,
                     'series' => $series->number,

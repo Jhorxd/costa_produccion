@@ -355,10 +355,15 @@ export default {
     },
     methods: {
         savedDataModal(dataModal){
-            const item = this.form.items.find(element => element.id = this.selectBoxDataModal.id);
+            console.log(dataModal);
+            console.log(this.selectBoxDataModal);
+            const item = this.form.items.find(element => element.id == this.selectBoxDataModal.item_id);
+            console.log(item);
+            
             if(item){
                 item.dataModal = dataModal;
-            }            
+            }
+            console.log(this.form);
         },
         addRowLotGroup(id) {
             this.form.selected_lots_group = id
@@ -427,10 +432,13 @@ export default {
             delete (this.errors.quantity)
         },
         changeQuantity(row, index) {
-            if (parseFloat(row.current_stock) < row.quantity) {
+            row.dataModal.stock_necessary = row.quantity; 
+            console.log(this.form);
+            
+            /* if (parseFloat(row.current_stock) < row.quantity) {
                 row.quantity = 1
                 return this.$message.error('El stock es menor a la cantidad de traslado.')
-            }
+            } */
         },
         changeSearchItemByBarcode() {
             if (this.search_item_by_barcode) {
@@ -594,7 +602,7 @@ export default {
                                 location_id: element.location_id || null,
                                 positions: [],
                                 stock_necessary: element.quantity,
-                                has_lots: element.id,
+                                has_lots: element.has_lots,
                                 has_position: element.has_position
                             };
                         });

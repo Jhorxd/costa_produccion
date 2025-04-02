@@ -28,12 +28,12 @@
           >
             <div class="box-content">
               <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
-              <p>Stock disponible: {{ box.stock_available }}</p>
+              <p>Stock disponible: {{ box.stock_item }}</p>
               <div class="content-stock d-flex justify-content-center" v-if="box.is_selected">
                 <el-input 
                   type="number" 
                   class="form-control-feedback input-stock" 
-                  v-model="box.stock" 
+                  v-model="box.stock"
                   dusk="stock" 
                   placeholder="Cantidad" 
                   :min="1"
@@ -45,7 +45,7 @@
                 type="primary"
                 @click="selectBox(box)"
                 :class="{ 'selected-button': box.is_selected }"
-                :disabled="box.stock_available < 1 || box.lots_group_list.length==0"
+                :disabled="box.stock_available < 1 || (box.lots_group_list.length==0 && box.uses_lots) || box.stock_item==0"
               >
                 {{ box.is_selected ? 'Seleccionado' : 'Seleccionar' }}
               </el-button>
@@ -58,11 +58,18 @@
         <el-button @click.prevent="saveChanges" type="primary">Guardar</el-button>
       </div>
     </div>
+    <position-lot
+      :showDialog.sync = "showDialogLots"
+      :lots= "lotsBoxSelected"
+      :stock_necessary = "stock_necessary"
+      @update-box-selected="saveLots">
+    </position-lot>
   </el-dialog>
 </template>
 
 <script>
 import { parseString } from 'xml2js';
+import positionLot from './positionLot.vue';
 
 export default {
   props: [
@@ -70,6 +77,7 @@ export default {
     'dataModal',
     'warehouse_id'
   ],
+  components: {positionLot},
   data() {
     return {
       titleDialog: 'Selección de posición',
@@ -79,6 +87,11 @@ export default {
       location_id: '',
       item_id: '',
       stock_necessary: 0,
+      has_lots: false,
+      has_positions: false,
+      showDialogLots: false,
+      boxSelected: [],
+      lotsBoxSelected:[]
     };
   },
   computed: {
@@ -101,16 +114,24 @@ export default {
             stock_item: 0,
             code_location: 'An',
             is_selected: false,
-            has_position: false,
-            has_lots: false,
             stock: 0,
-            showDialogLots: false,
           };
         });
       });
     }
   },
   methods: {
+    saveLots(data){
+      const positionFinded = this.positions.find(element => element.id == this.boxSelected.id);
+      if(positionFinded){
+        if(positionFinded.lots_group_list.length>0){
+          positionFinded.lots_group_list = data;
+          positionFinded.is_selected = true;
+        }else{
+          positionFinded.is_selected = false;
+        }
+      }
+    },
     async getLocations(warehouse_id) {
       await this.$http
         .get(`/${this.resource}/locations/${warehouse_id}`)
@@ -142,6 +163,8 @@ export default {
       await this.getPositions(this.location_id, this.item_id);
     },
     async create() {
+      this.item_id = this.dataModal.item_id || '';
+      await this.getLocations(this.warehouse_id);
       this.positions = this.dataModal.positions ? [...this.dataModal.positions] : [];
       
       if (this.dataModal.location_id!=null){
@@ -149,11 +172,9 @@ export default {
         await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id)); 
       }
       
-      this.item_id = this.dataModal.item_id || '';
       this.stock_necessary = this.dataModal.stock_necessary || 0;
       this.has_lots = this.dataModal.has_lots || false;
       this.has_position = this.dataModal.has_position || false;
-      await this.getLocations(this.warehouse_id);
     },
     numberToLetter(number) {
       let letter = '';
@@ -165,8 +186,12 @@ export default {
       return letter;
     },
     selectBox(box) {
+      console.log(box);
+      
       if(this.has_lots){
-        this.showDialogLots = true
+        this.boxSelected = box;
+        this.lotsBoxSelected = box.lots_group_list;
+        this.showDialogLots = true;
       }else{
         if (box.is_selected) {
           box.is_selected = false;
@@ -194,23 +219,38 @@ export default {
         this.$message.error("Debes seleccionar una ubicación");
         return;
       }
-      
-      let stock_total = 0;
-      this.positions.forEach(element => {
-        if(element.is_selected){
-          stock_total+=element.stock;
+      if(this.has_lots){
+        console.log(this.boxSelected);
+        
+        this.$emit('positions-save', {
+          item_id: this.item_id,
+          location_id: this.location_id,
+          positions: this.positions,
+          stock_necessary: this.stock_necessary,
+          has_lots: this.has_lots,
+          has_position: this.has_position,
+        });
+      }else{
+        let stock_total = 0;
+        this.positions.forEach(element => {
+          if(element.is_selected){
+            stock_total+=element.stock;
+          }
+        });
+        
+        if(this.stock_necessary != 0 && this.stock_necessary!=stock_total){
+          this.$message.error("El stock total necesario es:"+this.stock_necessary);
+          return;
         }
-      });
-
-      if(this.stock_necessary != 0 && this.stock_necessary!=stock_total){
-        this.$message.error("Stock seleccionado excesivo, la cantidad necesaria es:"+this.stock_necessary);
-        return;
-      } 
-      
-      this.$emit('positions-save', {
-        location_id: this.location_id,
-        positions: [...this.positions]
-      });
+        this.$emit('positions-save', {
+          item_id: this.item_id,
+          location_id: this.location_id,
+          positions: [...this.positions],
+          stock_necessary: this.stock_necessary,
+          has_lots: this.has_lots,
+          has_position: this.has_position,
+        });
+      }
       
       this.close();
       this.$message.success("Posición guardada correctamente");

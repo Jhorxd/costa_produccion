@@ -24,7 +24,6 @@
           <div v-for="(row, rowIndex) in matrix" :key="rowIndex" class="row-container">
             <div v-for="(box, colIndex) in row" :key="colIndex" class="position-box">
               <div class="box-content">
-                <p>id:{{ box.id }}</p>
                 <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
                 <p>Cantidad disponible: {{ box.stock_available }}</p>
                 <el-button

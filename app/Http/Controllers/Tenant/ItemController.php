@@ -620,7 +620,8 @@ class ItemController extends Controller
                             'code' => $lotData['code'],
                             'quantity' => $lotData['quantity'],
                             'date_of_due' => $lotData['date_of_due'],
-                            'status' => $lotData['status']
+                            'status' => $lotData['status'],
+                            'warehouse_id' => $request->warehouse_id,
                         ]);
                         $processedLots[$lotData['code']] = $lot->id;
                     }
@@ -631,13 +632,16 @@ class ItemController extends Controller
                         'quantity' => $lotData['quantity'],
                         'date_of_due' => $lotData['date_of_due'],
                         'status' => $lotData['status'],
-                        'item_id' => $item->id
+                        'item_id' => $item->id,
+                        'warehouse_id' => $request->warehouse_id,
                     ]);
                     $processedLots[$lotData['code']] = $lot->id;
                 }
             }
+        }else{
+            ItemPosition::whereNotNull('lots_group_id')->where('item_id', $item->id)->where('warehouse_id', $request->warehouse_id)->delete();
+            ItemLotsGroup::where('item_id', $item->id)->where('warehouse_id', $request->warehouse_id)->delete();
         }
-
 
         if(isset($request->positions_selected)){
             foreach ($request->positions_selected as $position) {
@@ -827,23 +831,12 @@ class ItemController extends Controller
                 $item->warehouse_id = $warehouse->id;
                 $item->save();
             }
-
-            $v_lots =  isset($request->lots)? $request->lots:[];
-            foreach ($v_lots as $lot) {
-                ItemLotsGroup::create([
-                    'code' => $lot['code'],
-                    'quantity' => $lot['quantity'],
-                    'date_of_due' => $lot['date_of_due'],
-                    'item_id' => $item->id,
-                    'status' => $lot['status'],
-                ]);
-            }
         } else {
             /****************************** SECCION PARA EDITAR ITEM_LOTS_GROUP **********************************************/
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
             $warehouse = Warehouse::where('establishment_id',$establishment->id)->first();
             //Eliminar lotes que ya no estan
-            $v_lots = isset($request->lots) ? $request->lots:[];
+            /* $v_lots = isset($request->lots) ? $request->lots:[];
             $lots = ItemLotsGroup::where('item_id', $item->id)->get();
             $v_lot_ids = array_column($v_lots, 'id');
             foreach ($lots as $lot) {
@@ -875,7 +868,7 @@ class ItemController extends Controller
                     ]);
                     $temp_lot->push();
                 }
-            }
+            } */
         }
 
 
