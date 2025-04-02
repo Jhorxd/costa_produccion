@@ -59,6 +59,8 @@ class InventoryTransfer extends ModelTenant
         'state',
         'warehouse_id',
         'warehouse_destination_id',
+        'location_destination_id',
+        'position_destination_id',
         'quantity',
         'filename'
     ];
@@ -66,6 +68,8 @@ class InventoryTransfer extends ModelTenant
         'date_of_transfer' => 'date',
         'warehouse_id' => 'int',
         'warehouse_destination_id' => 'int',
+        'location_destination_id' => 'int',
+        'position_destination_id' => 'int',
         'user_id' => 'int',
         'quantity' => 'float'
     ];

@@ -1593,6 +1593,7 @@ import ExtraInfo from './partials/extra_info'
 import {mapActions, mapState} from "vuex";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../helpers/modal_item";
 import ItemLocation from './locations.vue';
+import { Alert } from 'bootstrap';
 
 export default {
     props: [
@@ -1894,12 +1895,11 @@ export default {
                 })
         },
         changeLotsEnabled() {
+            this.positions_selected = [];
             if(!this.form.lots_enabled){
                 this.form.lot_code = null;
                 this.form.lots = [];
-            }else{
-                this.position_selected = [];
-            }
+            }          
         },
         changeProductioTab(){
 
@@ -2279,10 +2279,12 @@ export default {
                     return this.$message.error('El porcentaje isc debe ser mayor a 0 (Compras)');
             }
 
-            if(this.positions_selected.length>0){
-                this.form.positions_selected = this.positions_selected;
-                this.positions_selected=[];
+            if (this.form.lots_enabled && this.positions_selected.length==0) {
+                return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
+
+            this.form.positions_selected = this.positions_selected;
+            
             this.form.location_id = this.location_id;
 
             this.loading_submit = true
@@ -2306,6 +2308,7 @@ export default {
                             if (this.item_files_deleted && this.item_files_deleted.length > 0) {
                                 formData.append('files_deleted', JSON.stringify(this.item_files_deleted));
                             }
+                            this.positions_selected=[];
                             this.$http.post(`/${this.resource}/saveDocuments/${item_id}`, formData, {
                                 headers: {
                                     'Content-Type': 'multipart/form-data'
