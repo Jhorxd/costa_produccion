@@ -296,7 +296,12 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
           });
           //total de stock del data
           const totalStock = data.reduce((total, item) => total + item.stock, 0);
-          this.form.json_position=data;
+          this.form.json_position = {
+              location_id:this.location_id,  // Aquí agregas location_id dentro del JSON
+              positions: data // Aquí mantienes el arreglo
+          };
+          //this.form.json_position=data;
+          //this.form.location_id=this.location_id;
           
           console.log(JSON.stringify(this.temp_positions));
           console.log(totalStock);
