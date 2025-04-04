@@ -75,4 +75,19 @@ class WarehouseLocationPosition extends ModelTenant
         return $this->hasMany(ItemPosition::class, 'position_id')
             ->whereNotNull('lots_group_id')->select('id','stock','lots_group_id','position_id');
     }
+
+    public function itemPositions()
+    {
+        return $this->hasMany(ItemPosition::class, 'position_id');
+    }
+
+    public function updateQuantityUsed() //$itemPosition->position->updateQuantityUsed();
+    {
+        $uniqueItemsCount = $this->hasMany(ItemPosition::class, 'position_id')
+            ->distinct('item_id')
+            ->count('item_id');
+        
+        $this->quantity_used = $uniqueItemsCount;
+        $this->save();
+    }
 }

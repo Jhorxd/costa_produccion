@@ -216,7 +216,7 @@ if ($hostname) {
             Route::prefix('transfers')->group(function () {
                 Route::get('locations/{warehouse_id}', 'PositionController@getLocations');
                 Route::get('positions/{location_id}', 'PositionController@getPositions');
-                Route::get('positions/{location_id}/{item_id}', 'PositionController@getPositions');
+                Route::get('positions/{location_id}/{item_id}/{warehouse_id}', 'PositionController@getPositions');
             });
 
             Route::prefix('reports')->group(function () {

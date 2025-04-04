@@ -23,7 +23,7 @@
                                 <td>{{ lot?lot.code:'---' }}</td>
                                 <td>{{ lot?lot.quantity:'---' }}</td>
                                 <td>
-                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)">
+                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)" :disabled="calculaBotonDesabilitar(lot)">
                                         <i class="fa fa-check"></i>
                                     </button>
                                     <!-- <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button> -->
@@ -46,7 +46,7 @@
         props: [
             'showDialog',
             'box_selected',
-            'lots'
+            'lots',
         ],
         data() {
             return {
@@ -57,12 +57,26 @@
             }
         },
         methods: {
+            calculaBotonDesabilitar(lot){
+                console.log(this.lots_selected);
+                console.log(lot);
+                
+                if(lot.selected_global){
+                    const finded = this.lots_selected.find(element => element.lots_group_id == lot.id);
+                    if(finded){
+                        return false;
+                    }else{
+                        return true;
+                    }
+                }else{
+                    return false;
+                }
+            },
             async create() {
-                this.lots_temp = this.lots;
+                this.lots_temp = JSON.parse(JSON.stringify(this.lots));
                 
                 this.lots_temp.forEach(element => {
-                    if(element.selected==undefined) 
-                        element.selected = false;
+                    element.selected = false;
                 });
                 
                 if(this.box_selected.lots.length>0){
@@ -72,32 +86,41 @@
                         if(element.lots_group){
                             element.code = element.lots_group.code;
                         }
-                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group.id);
+                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group_id);
                         if(lots_finded){
                             lots_finded.selected = true;
                         }
                     });
                 }
+                console.log(this.lots_temp);
+                console.log(this.lots_selected);
+                
             },
-            LotSelected(lot, index){
+            LotSelected(lot, index){              
                 const updatedLot = { ...lot, selected: !lot.selected };
                 
                 if(lot.selected){
                     const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
                     if (lotIndex !== -1)
                         this.lots_selected.splice(lotIndex, 1);
+                    const lotIndexGlobal = this.lots.findIndex(existingLot => existingLot.id === updatedLot.id);
+                    if (lotIndexGlobal !== -1)
+                        this.lots[lotIndexGlobal].selected_global = false;
                 }else{
-                    const lotExists = this.lots_selected.find(existingLot => existingLot.id === updatedLot.id);
+                    const lotExists = this.lots_selected.find(existingLot => existingLot.lots_group_id === updatedLot.id);
                     if (!lotExists){
                         updatedLot.lots_group_id = updatedLot.id;
                         updatedLot.stock = updatedLot.quantity;
                         
                         this.lots_selected.push(updatedLot);
                     }
+                    const lotIndexGlobal = this.lots.findIndex(existingLot => existingLot.id === updatedLot.id);
+                    if (lotIndexGlobal !== -1)
+                        this.lots[lotIndexGlobal].selected_global = true;
                 }
                 this.lots_temp.splice(index, 1, updatedLot);
             },
-            submit(){                
+            submit(){
                 this.$emit('update-box-selected',this.lots_selected);
                 this.close();
             },

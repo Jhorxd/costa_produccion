@@ -29,7 +29,7 @@
             <div class="box-content">
               <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
               <p>Stock disponible: {{ box.stock_item }}</p>
-              <div class="content-stock d-flex justify-content-center" v-if="box.is_selected">
+              <div class="content-stock d-flex justify-content-center" v-if="box.is_selected && !box.uses_lots">
                 <el-input 
                   type="number" 
                   class="form-control-feedback input-stock" 
@@ -140,14 +140,17 @@ export default {
           if(response_data.success) {
             this.locations = response_data.data;
             if (this.dataModal.location_id){
-              this.location_id = this.dataModal.location_id;
+              const locationExists = this.locations.some(loc => loc.id == this.dataModal.location_id);
+              if(locationExists){
+                this.location_id = this.dataModal.location_id;
+              }
             }
           }
         });
     },
-    async getPositions(location_id, item_id) {
+    async getPositions(location_id, item_id, warehouse_id) {
       await this.$http
-        .get(`/${this.resource}/positions/${location_id}/${item_id}`)
+        .get(`/${this.resource}/positions/${location_id}/${item_id}/${warehouse_id}`)
         .then(response => {
           const response_data = response.data;
           if(response_data.success) {
@@ -169,7 +172,7 @@ export default {
       
       if (this.dataModal.location_id!=null){
         
-        await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id)); 
+        await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id), this.warehouse_id); 
       }
       
       this.stock_necessary = this.dataModal.stock_necessary || 0;

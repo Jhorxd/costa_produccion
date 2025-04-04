@@ -133,6 +133,7 @@ export default {
           if(this.lots_enabled){
             this.box_selected = box;
             this.showDialogLotsPosition = true;
+            
           }else{
             if(box.is_selected){
               box.is_selected = false;
@@ -156,6 +157,8 @@ export default {
                 const filteredPositions = this.positions.filter(position => {
                     return Array.isArray(position.lots) && position.lots.length > 0;
                 });
+                console.log(filteredPositions);
+                
                 this.$emit('positions-save', filteredPositions);
             }
             this.close();
@@ -184,11 +187,15 @@ export default {
           const position = this.positions.find(element => element.row== this.box_selected.row && element.column == this.box_selected.row);
           
           position.lots = Array.from(data_updated_box_selected);
+          this.box_selected.lots = Array.from(data_updated_box_selected);
           if(data_updated_box_selected.length>0){
             this.box_selected.is_selected = true;
           }else{
             this.box_selected.is_selected = false;
           }
+          console.log(this.positions);
+          console.log(this.box_selected);
+          
           
           this.$message.success("Guardado correctamente");
         }

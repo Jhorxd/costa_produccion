@@ -1699,6 +1699,7 @@ export default {
             positions: [],
             states: [],
             positions_selected: [],
+            lots_enabled_init_aux: null,
             location_id: null,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -1896,10 +1897,11 @@ export default {
         },
         changeLotsEnabled() {
             this.positions_selected = [];
+            this.positions = [];
             if(!this.form.lots_enabled){
                 this.form.lot_code = null;
                 this.form.lots = [];
-            }          
+            }
         },
         changeProductioTab(){
 
@@ -1926,8 +1928,10 @@ export default {
                 .then(response => {
                     if (response.data.success) {
                         const data = response.data.data;
-                        this.positions_selected = data.item_positions;
                         this.positions = data.positions;
+                        this.mapLots(this.positions);
+                        
+                        this.positions_selected = data.item_positions;
                         
                         this.positions_selected.forEach(element => {
                             const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
@@ -1937,13 +1941,26 @@ export default {
                                 position_finded.stock = 0;
                             }
                         });
-                        if(this.form.location_id!=this.location_id){
+                        if(this.form.location_id!=this.location_id || this.lots_enabled_init_aux != this.form.lots_enabled){
                             this.positions_selected = [];
                         }
+                        
                         this.showDialogLocation = true;
                     }
                 });
             
+        },
+        mapLots(positions){
+            positions.forEach(element => {
+                if(element.lots.length>0){
+                    element.lots.forEach(element_lot => {
+                        const lot_finded = this.form.lots.find(form_lot => form_lot.id == element_lot.lots_group_id);
+                        if(lot_finded){
+                            lot_finded.selected_global = true;
+                        }
+                    });
+                }
+            });
         },
         clickLotcode() {
             this.showDialogLots = true
@@ -2124,6 +2141,12 @@ export default {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data;
+                        if(this.form.lots.length>0){
+                            this.form.lots.forEach(lot => {
+                                lot.selected_global = false;
+                            });
+                        }
+                        this.lots_enabled_init_aux = this.form.lots_enabled;
                         if(response.data.data.positions_selected.length>0){
                             response.data.data.positions_selected.forEach(position_selected => {
                                 this.positions_selected.push({
@@ -2279,7 +2302,7 @@ export default {
                     return this.$message.error('El porcentaje isc debe ser mayor a 0 (Compras)');
             }
 
-            if (this.form.lots_enabled && this.positions_selected.length==0) {
+            if (this.recordId && this.form.lots_enabled && this.positions_selected.length==0) {
                 return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
 
