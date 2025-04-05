@@ -23,7 +23,7 @@
                                 <td>{{ lot?lot.code:'---' }}</td>
                                 <td>{{ lot?lot.quantity:'---' }}</td>
                                 <td>
-                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)">
+                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)" :disabled="calculaBotonDesabilitar(lot)">
                                         <i class="fa fa-check"></i>
                                     </button>
                                     <!-- <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button> -->
@@ -46,7 +46,7 @@
         props: [
             'showDialog',
             'box_selected',
-            'lots'
+            'lots',
         ],
         data() {
             return {
@@ -57,48 +57,71 @@
             }
         },
         methods: {
+            calculaBotonDesabilitar(lot){                
+                if(lot.selected_global){
+                    const finded = this.lots_selected.find(element => element.lots_group_id == lot.id);
+                    if(finded){
+                        return false;
+                    }else{
+                        return true;
+                    }
+                }else{
+                    return false;
+                }
+            },
             async create() {
-                this.lots_temp = this.lots;
+                this.lots_temp = JSON.parse(JSON.stringify(this.lots));
                 
                 this.lots_temp.forEach(element => {
-                    if(element.selected==undefined) 
-                        element.selected = false;
+                    element.selected = false;
                 });
                 
                 if(this.box_selected.lots.length>0){
                     this.lots_selected = [...this.box_selected.lots];
                     
                     this.lots_selected.forEach(element => {
-                        if(element.lots_group){
+                        if(element.lots_group && element.lots_group.code) {
                             element.code = element.lots_group.code;
                         }
-                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group.id);
+                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group_id);
                         if(lots_finded){
                             lots_finded.selected = true;
                         }
                     });
                 }
             },
-            LotSelected(lot, index){
+            LotSelected(lot, index) {              
                 const updatedLot = { ...lot, selected: !lot.selected };
                 
-                if(lot.selected){
+                if(lot.selected) {
                     const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
-                    if (lotIndex !== -1)
+                    if (lotIndex !== -1) {
                         this.lots_selected.splice(lotIndex, 1);
-                }else{
-                    const lotExists = this.lots_selected.find(existingLot => existingLot.id === updatedLot.id);
-                    if (!lotExists){
+                    }
+                } else {
+                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
+                    
+                    if (lotIndex == -1) {
                         updatedLot.lots_group_id = updatedLot.id;
                         updatedLot.stock = updatedLot.quantity;
+                        updatedLot.code = updatedLot.code;
                         
                         this.lots_selected.push(updatedLot);
                     }
                 }
+                
                 this.lots_temp.splice(index, 1, updatedLot);
             },
-            submit(){                
-                this.$emit('update-box-selected',this.lots_selected);
+            submit() {
+                const newlySelectedIds = this.lots_selected.map(lot => lot.lots_group_id);
+                
+                this.lots.forEach(lot => {
+                    if (newlySelectedIds.includes(lot.id)) {
+                        lot.selected_global = true;
+                    }
+                });
+                
+                this.$emit('update-box-selected', this.lots_selected);
                 this.close();
             },
             async clickCancelSubmit() {

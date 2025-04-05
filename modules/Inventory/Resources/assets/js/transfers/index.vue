@@ -59,7 +59,7 @@
                                     <el-table-column label="Cantidad"
                                                      property="quantity"></el-table-column>
 
-                                    <el-table-column label="Series/Lotes">
+                                    <!-- <el-table-column label="Series/Lotes">
                                         <template slot-scope="scope"
                                                   width="100">
                                             <ul v-if="scope.row.lots" class="list-unstyled">
@@ -73,7 +73,7 @@
                                                 </li>
                                             </ul>
                                         </template>
-                                    </el-table-column>
+                                    </el-table-column> -->
                                 </el-table>
                                 <el-button slot="reference"
                                            icon="el-icon-zoom-in"></el-button>

@@ -38,7 +38,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label class="control-label">Cantidad</label>
-                <el-input v-model="form.counted_quantity" type="number"></el-input>
+                <el-input v-model="form.counted_quantity" type="number" :disabled="product_selected_use_lots || product_selected_use_positions"></el-input>
               </div>
             </div>
             <div class="col-md-6">
@@ -58,6 +58,31 @@
               </div>
             </div>
           </div>
+
+          <div class="row mt-3" v-if="product_selected_use_lots">
+            <div class="col-md-12">
+              <el-button class="second-buton" @click.prevent="clickItemLots()">Elegir lotes</el-button>
+            </div>
+          </div>
+
+          <div class="row mt-3" v-if="product_selected_use_positions && !product_selected_use_lots">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label class="control-label">Ubicación<span class="text-danger">*</span></label>
+                <el-select
+                    v-model="location_id"
+                    filterable>
+                    <el-option
+                        v-for="option in locations"
+                        :key="option.id"
+                        :label="option.name"
+                        :value="option.id"
+                    ></el-option>
+                </el-select>
+              </div>
+              <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
+            </div>
+          </div>
           <!-- Botón Agregar -->
           <div class="row mt-3">
              <div class="col-md-12 text-center">
@@ -66,27 +91,21 @@
                </el-button>
              </div>
           </div>
-          <div class="form-group">
-          <label class="control-label">Ubicación<span class="text-danger">*</span></label>
-          <el-select
-              v-model="location_id"
-              filterable>
-              <el-option
-                  v-for="option in locations"
-                  :key="option.id"
-                  :label="option.name"
-                  :value="option.id"
-              ></el-option>
-          </el-select>
-        </div>
-        <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
-        <item-location
-                :showDialog.sync="showDialogLocation"
-                :location_id="location_id"
-                :positions_selected="positions_selected"
-                :positions="positions"
-                @positions-save="saveDataPosition">
-        </item-location> 
+          
+          <item-location
+                  :showDialog.sync="showDialogLocation"
+                  :location_id="location_id"
+                  :positions_selected="positions_selected"
+                  :positions="positions"
+                  @positions-save="saveDataPosition">
+          </item-location> 
+
+          <physical-inventory-lots
+                  :showDialog.sync="showDialogLots"
+                  :lots="productSelectedLots"
+                  @save-data-lots="saveDataLots">
+          </physical-inventory-lots>
+
         </div>
       </form>
     </el-dialog>
@@ -108,17 +127,17 @@
   </style>
   
   
-  <script>
-import { method } from 'lodash';
-import ItemLocation from './../../../../../../resources/js/views/tenant/items/locations2.vue'
+<script>
+  import { method } from 'lodash';
+  import ItemLocation from './../../../../../../resources/js/views/tenant/items/locations2.vue'
+  import physicalInventoryLots from './physicalInventoryLots.vue';
 
   export default {
     props: ['showDialog', 'recordId','checked','establishment_id','warehouse_id'],
-    components: {ItemLocation},
+    components: {ItemLocation, physicalInventoryLots},
     data() {
       return {
         titleDialog: "Agregar Producto",
-        message: "Hola Mundo",
         showDialogLocation: false,
         location_id: null,
         locations: [],
@@ -135,17 +154,49 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
             counted_quantity: 0,
             difference: 0,
             category_id: null,
-            json_position:null         
+            json_position:null,
+            json_lots:null
         },
         products: [],
         categories: [],
-        selectedCategory: null
+        selectedCategory: null,
+        product_selected_use_lots: false,
+        product_selected_use_positions: false,
+        showDialogLots: false,
+        productSelectedLots: [],
+        total_stock_initial: 0,
       };
     },
     created() {                                   
-        this.getAllPhysicalInventoryCategories();      
+        this.getAllPhysicalInventoryCategories();
     },
     methods: {
+      async getItemLots(){
+        const response = await this.$http.get(`/physical-inventory/getItemPositionsLots/${this.form.item_id}/${this.warehouse_id}`);
+        console.log(response);
+        if(response.data.success){
+          this.productSelectedLots = response.data.data;
+        }
+      },
+      async clickItemLots(){
+        
+        this.showDialogLots = true;
+        this.total_stock_initial = 0;
+        this.productSelectedLots.forEach(lot =>{
+          this.total_stock_initial += lot.stock;
+        });
+      },
+      saveDataLots(data){
+        let total_lot_final = 0;
+        data.forEach(element => {
+          total_lot_final += element.stock;
+        });
+        this.productSelectedLots = data;
+        this.form.json_lots = data;
+        const difference = total_lot_final - this.total_stock_initial;
+        this.form.counted_quantity = this.form.counted_quantity + difference;
+        console.log(data);
+      },
       close() {
         this.cleanForm();
         this.$emit('update:showDialog', false);        
@@ -162,7 +213,7 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
             .get(url)
             .then(response => {              
               this.products = response.data.data; 
-              console.log(this.products);         
+              console.log(this.products);
                 // Procesar la respuesta aquí
             })
             .catch(error => {
@@ -172,20 +223,25 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
                 this.loading_submit = false;
             }); 
         },
-        handleProductChange(value){
-        let product = this.products.find(product => product.item_id === value);
-        this.form.sale_unit_price = product.sale_unit_price;
-        //this.form.stock = product.stock;
-        this.form.precioTotal = product.sale_unit_price * product.stock;
-        this.form.description = product.description;
-        this.form.item_id = product.item_id;
-        this.form.system_quantity = product.stock;
-        this.form.counted_quantity=product.stock;
-        this.form.difference=this.form.system_quantity-this.form.counted_quantity;
-        this.getLocations();
-        if(this.locations.length>0){
-          this.location_id=null;
-        }
+        async handleProductChange(value){
+          let product = this.products.find(product => product.item_id === value);
+          this.product_selected_use_lots = product.has_use_lots;
+          if(this.product_selected_use_lots) {
+            await this.getItemLots();
+          }
+          this.product_selected_use_positions = product.has_use_positions;
+          this.form.sale_unit_price = product.sale_unit_price;
+          //this.form.stock = product.stock;
+          this.form.precioTotal = product.sale_unit_price * product.stock;
+          this.form.description = product.description;
+          this.form.item_id = product.item_id;
+          this.form.system_quantity = product.stock;
+          this.form.counted_quantity=product.stock;
+          this.form.difference=this.form.system_quantity-this.form.counted_quantity;
+          this.getLocations();
+          if(this.locations.length>0){
+            this.location_id=null;
+          }
         },
         cleanForm(){
           this.form={
@@ -212,7 +268,7 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
                 this.$emit('add-item', this.form);
                 this.cleanForm();
                 this.$emit('update:showDialog', false);
-            } 
+            }
             else {
                 this.$message.error('Debe seleccionar un producto');
             }
@@ -296,7 +352,12 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
           });
           //total de stock del data
           const totalStock = data.reduce((total, item) => total + item.stock, 0);
-          this.form.json_position=data;
+          this.form.json_position = {
+              location_id:this.location_id,  // Aquí agregas location_id dentro del JSON
+              positions: data // Aquí mantienes el arreglo
+          };
+          //this.form.json_position=data;
+          //this.form.location_id=this.location_id;
           
           console.log(JSON.stringify(this.temp_positions));
           console.log(totalStock);
@@ -335,5 +396,5 @@ import ItemLocation from './../../../../../../resources/js/views/tenant/items/lo
       }              
     }
   }
-  </script>
+</script>
   

@@ -26,7 +26,7 @@
                                     v-text="errors.date_of_transfer[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div :class="form.location_destination_id!=null?'col-md-3':'col-md-4'">
                             <div class="form-group">
                                 <label class="control-label">Almacén Inicial</label>
                                 <el-select v-model="form.warehouse_id"
@@ -46,7 +46,7 @@
                                 ></small>
                             </div>
                         </div>
-                        <div class="col-md-5">
+                        <div :class="form.location_destination_id!=null?'col-md-4':'col-md-5'">
                             <div :class="{'has-danger': errors.warehouse_destination_id}"
                                  class="form-group">
                                 <label class="control-label">Almacén Final</label>
@@ -64,6 +64,15 @@
                                     class="form-control-feedback"
                                     v-text="errors.warehouse_destination_id[0]"
                                 ></small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end" v-if="form.location_destination_id!=null">
+                            <div class="form-group">
+                                <el-button
+                                    type="primary"
+                                    @click.prevent="clickSelectPosition"
+                                >Mostrar ubicaciones
+                                </el-button>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -225,24 +234,24 @@
                                    width="100%">
                                 <thead>
                                 <tr width="100%">
-                                    <th width="10%">#</th>
-                                    <th width="20%">Cód. Barras</th>
-                                    <th width="30%">Producto</th>
-                                    <th width="20%">Cantidad</th>
-                                    <th width="10%">Unidad</th>
+                                    <th width="10%" class="text-center">#</th>
+                                    <th width="20%" class="text-center">Cód. Barras</th>
+                                    <th width="20%" class="text-center">Producto</th>
+                                    <th width="15%" class="text-center">Cantidad</th>
+                                    <th width="15%" class="text-center">Unidad</th>
                                     <!-- <th width="15%">Costo</th>
                                     <th width="10%">Importe Costo</th> -->
-                                    <th width="25%">Opciones</th>
+                                    <th width="20%" class="text-center">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <tr v-for="(row, index) in form.items"
                                     :key="index"
                                     width="100%">
-                                    <td>{{ index + 1 }}</td>
-                                    <td>{{ row.barcode }}</td>
-                                    <td>{{ row.description }}</td>
-                                    <td>
+                                    <td class="text-center">{{ index + 1 }}</td>
+                                    <td class="text-center">{{ row.barcode }}</td>
+                                    <td class="text-center">{{ row.description }}</td>
+                                    <td class="text-center">
                                         <!-- {{ row.quantity }} -->
     
                                         <el-input-number v-model="row.quantity"
@@ -250,20 +259,21 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
-                                    <td>{{ row.has_lots?'Lotes':'Unidades' }}</td>
+                                    <td class="text-center">{{ row.has_lots?'Lotes':'Unidades' }}</td>
                                     <td class="series-table-actions text-center">
                                         <el-button
-                                                @click.prevent="SelectPositions(row)"
-                                                class="btn btn-primary btn-submit-default"
-                                                type="primary">Posición
+                                            @click.prevent="SelectPositions(row)"
+                                            class="btn btn-primary btn-submit-default btn-sm"
+                                            type="primary"
+                                            v-if="row.has_position">Posición
                                         </el-button>
-                                        <button
-                                            class="btn waves-effect waves-light btn-xs btn-danger"
-                                            type="button"
+                                        <el-button
+                                            class="btn waves-effect waves-light btn-sm btn-danger"
+                                            type="danger"
                                             @click.prevent="clickCancel(index)"
-                                        >
-                                            <i class="fa fa-trash"></i>
-                                        </button>
+                                            icon="el-icon-delete"
+                                            size="mini">
+                                        </el-button>
                                     </td>
                                 </tr>
                                 </tbody>
@@ -305,6 +315,12 @@
                 :warehouse_id="form.warehouse_id"
                 @positions-save="savedDataModal">
             </approve-position>
+
+            <positions 
+                :showDialog.sync="showDialogPositions" 
+                :dataModal="dataModalPosition"
+                :warehouse_id="form.warehouse_destination_id">
+            </positions>
         </div>
     </div>
 </template>
@@ -316,10 +332,11 @@ import OutputLotsGroupForm from '../../../../../../resources/js/views/tenant/doc
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../../../../resources/js/helpers/modal_item";
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
 import approvePosition from './partials/approvePosition.vue';
+import positions from './partials/positions.vue';
 
 export default {
     props: ['resourceId'],
-    components: {OutputLotsForm, OutputLotsGroupForm, approvePosition},
+    components: {OutputLotsForm, OutputLotsGroupForm, approvePosition, positions},
     data() {
         return {
             loading_item: false,
@@ -339,21 +356,56 @@ export default {
             all_items: [],
             lotsAll: [],
             lotsGroupAll: [],
-            selectBoxDataModal:{}
+            selectBoxDataModal:{},
+            showDialogPositions: false,
+            dataModalPosition: {location_id: null, positions: []}
         };
     },
     async created() {
-        await this.$http.get(`/${this.resource}/tables`).then(response => {
+        await this.initForm();
+        try {
+            const response = await this.$http.get(`/${this.resource}/tables`);
+            
             this.warehouses = response.data.warehouses;
             this.items = response.data.items;
-            this.all_items = this.items
-            this.initRecord()
-        });
+            this.all_items = this.items;
+            await this.initRecord();
+
+            if (this.form.location_destination_id && this.form.position_destination_id) {
+                await this.getPositions(this.form.location_destination_id);
+            }
+            console.log(this.form);
+            
+        } catch (error) {
+            console.error("Error en created:", error);
+        }
         
-        await this.initForm();
         this.initFormAdd();
     },
     methods: {
+        clickSelectPosition(){
+            this.showDialogPositions = true;
+        },
+        async getPositions(location_id) {
+            try {
+                const response = await this.$http.get(`/${this.resource}/positions/${location_id}`);
+                const response_data = response.data;
+
+                if (response_data.success) {
+                    const positions = response_data.data.map(element => ({
+                        ...element,
+                        is_selected: element.id === this.form.position_destination_id
+                    }));
+
+                    this.dataModalPosition = {
+                        location_id,
+                        positions
+                    };
+                }
+            } catch (error) {
+                console.error("Error fetching positions:", error);
+            }
+        },
         savedDataModal(dataModal){
             console.log(dataModal);
             console.log(this.selectBoxDataModal);
@@ -584,30 +636,38 @@ export default {
 
             this.initFormAdd();
         },
-        initRecord(){
-            this.$http.get(`/${this.resource}/record2/${this.resourceId}`)
-                .then(response => {
-                    let dato = response.data.data.inventory_transfer
-                    let items = response.data.data.inventory_items
-                    this.form.id = dato.id
-                    this.form.description = dato.description
-                    this.form.transfer_reason_description = dato.transfer_reason_description
-                    this.form.warehouse_id = dato.warehouse_id
-                    this.form.warehouse_destination_id = dato.warehouse_destination_id
-                    this.form.items = items
-                    if(this.form.items.length>0){
-                        this.form.items.forEach(element => {
-                            element.dataModal={
-                                item_id : element.id,
-                                location_id: element.location_id || null,
-                                positions: [],
-                                stock_necessary: element.quantity,
-                                has_lots: element.has_lots,
-                                has_position: element.has_position
-                            };
-                        });
+        async initRecord() {
+            try {
+                const response = await this.$http.get(`/${this.resource}/record2/${this.resourceId}`);
+                const data = response.data.data.inventory_transfer;
+                const items = response.data.data.inventory_items;
+
+                this.form = {
+                ...this.form,
+                id: data.id,
+                description: data.description,
+                transfer_reason_description: data.transfer_reason_description,
+                warehouse_id: data.warehouse_id,
+                warehouse_destination_id: data.warehouse_destination_id,
+                location_destination_id: data.location_destination_id,
+                position_destination_id: data.position_destination_id,
+                items: items.map(item => ({
+                    ...item,
+                    dataModal: {
+                    item_id: item.id,
+                    location_id: item.location_id || null,
+                    positions: [],
+                    stock_necessary: item.quantity,
+                    has_lots: item.has_lots,
+                    has_position: item.has_position
                     }
-                })
+                }))
+                };
+
+            } catch (error) {
+                console.error("Error en initRecord:", error);
+                throw error;
+            }
         },
         clickLotcodeOutput() {
             this.showDialogLotsOutput = true;
@@ -621,6 +681,8 @@ export default {
             this.form = {
                 warehouse_id: null,
                 warehouse_destination_id: null,
+                location_destination_id: null,
+                position_destination_id: null,
                 description: null,
                 transfer_reason_description: null,
                 state: false,
@@ -630,14 +692,51 @@ export default {
                 lot_groups_total: [],
             };
         },
+        formatForm(form){
+            const items = form.items.map(element => {
+                const selectedPositions = element.dataModal.positions
+                    .filter(position => position.is_selected)
+                    .map(position => ({
+                        id: position.id,
+                        column: position.column,
+                        row: position.row,
+                        stock: position.stock,
+                        ...(position.uses_lots && { 
+                            lots_group_list: position.lots_group_list 
+                        })
+                    }));
+                return {
+                    id: element.id,
+                    has_lots: element.dataModal.has_lots,
+                    has_positions: element.dataModal.has_position,
+                    location_id: element.dataModal.location_id,
+                    stock_necessary: element.quantity,
+                    positions: selectedPositions.length > 0 ? selectedPositions : undefined
+                }
+            });
+            return {
+                id: form.id,
+                items: items,
+                warehouse_init_id: form.warehouse_id,
+                warehouse_destination_id: form.warehouse_destination_id,
+                location_destination_id: form.location_destination_id,
+                position_destination_id: form.position_destination_id,
+                date_of_transfer: form.date_of_transfer
+            };
+        },
         async submit() {
             if (this.form.items.length == 0) {
                 return this.$message.error("Debe agregar productos.");
             }
-
+            
             this.loading_submit = true;
+
+            console.log(this.form);
+            const data = this.formatForm(this.form);
+            console.log(data);
+            //return;
             await this.$http
-                .post(`/${this.resource}/approve_transfer`, this.form)
+                .post(`/${this.resource}/approve_transfer`, data)
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message);

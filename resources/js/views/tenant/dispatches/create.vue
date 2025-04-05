@@ -423,10 +423,10 @@
                                                 <td>{{ row.unit_type_id }}</td>
                                                 <td v-html="setDescriptionOfItem(row)" class="text-dark"></td>
                                                 <td class="text-end">{{ getFormatQuantity(row.quantity) }} 
-                                                    <a v-if="row.IdLoteSelected!=''" class="text-center font-weight-bold text-info"
+                                                    <!-- <a v-if="row.IdLoteSelected!=''" class="text-center font-weight-bold text-info"
                                                         href="#" @click.prevent="listLotGroupSelected(row.IdLoteSelected)">
                                                         [Lotes]
-                                                    </a>
+                                                    </a> -->
                                                 </td>
                                                 <td class="text-end">S/{{ getFormatQuantity(row.unit_price) }}</td>
                                                 <td class="text-end">S/{{ getFormatQuantity(row.total) }}</td>
@@ -443,10 +443,10 @@
                                                 <td>{{ row.unit_type_id }}</td>
                                                 <td v-html="setDescriptionOfItem(row)" class="text-dark"></td>
                                                 <td class="text-end">{{ getFormatQuantity(row.quantity) }}
-                                                    <a v-if="row.IdLoteSelected!=''" class="text-center font-weight-bold text-info"
+                                                    <!-- <a v-if="row.IdLoteSelected!=''" class="text-center font-weight-bold text-info"
                                                         href="#" @click.prevent="listLotGroupSelected(row.IdLoteSelected)">
                                                         [Lotes]
-                                                    </a>
+                                                    </a> -->
                                                 </td>
                                                 <td class="text-end">
                                                     <button class="btn waves-effect waves-light btn-xs btn-danger"
