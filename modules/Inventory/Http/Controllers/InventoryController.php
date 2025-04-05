@@ -390,7 +390,9 @@ class InventoryController extends Controller
                     'item_warehouse.warehouse_id',
                     'item_warehouse.stock',
                     'items.sale_unit_price',
-                    'items.description'
+                    'items.description',
+                    'items.stock_max',
+                    'items.stock as stock_total'
                 )
         ->orderBy('item_warehouse.item_id')
         ->get();

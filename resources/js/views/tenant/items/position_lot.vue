@@ -23,7 +23,7 @@
                                 <td>{{ lot?lot.code:'---' }}</td>
                                 <td>{{ lot?lot.quantity:'---' }}</td>
                                 <td>
-                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)" :disabled="calculaBotonDesabilitar(lot)">
+                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)" :disabled="calculaBotonDesabilitar(lot, lots_selected)">
                                         <i class="fa fa-check"></i>
                                     </button>
                                     <!-- <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button> -->
@@ -57,9 +57,15 @@
             }
         },
         methods: {
-            calculaBotonDesabilitar(lot){                
+            calculaBotonDesabilitar(lot, lots_selected){                
                 if(lot.selected_global){
-                    const finded = this.lots_selected.find(element => element.lots_group_id == lot.id);
+                    const finded = lots_selected.find(element => {
+                        if (element.lots_group_id) {
+                            return element.lots_group_id == lot.id;
+                        } else {
+                            return element.code == lot.code;
+                        }
+                    });
                     if(finded){
                         return false;
                     }else{
@@ -83,7 +89,14 @@
                         if(element.lots_group && element.lots_group.code) {
                             element.code = element.lots_group.code;
                         }
-                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group_id);
+                        //const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group_id);
+                        const lots_finded = this.lots_temp.find(lot => {
+                            if (element.lots_group_id) {
+                                return element.lots_group_id == lot.id;
+                            } else {
+                                return element.code == lot.code;
+                            }
+                        });
                         if(lots_finded){
                             lots_finded.selected = true;
                         }
@@ -113,11 +126,13 @@
                 this.lots_temp.splice(index, 1, updatedLot);
             },
             submit() {
-                const newlySelectedIds = this.lots_selected.map(lot => lot.lots_group_id);
+                const newlySelectedCode = this.lots_selected.map(lot => lot.code);
                 
                 this.lots.forEach(lot => {
-                    if (newlySelectedIds.includes(lot.id)) {
+                    if (newlySelectedCode.includes(lot.code)) {
                         lot.selected_global = true;
+                    }else if (!this.calculaBotonDesabilitar(lot, this.box_selected.lots)){
+                        lot.selected_global = false;
                     }
                 });
                 

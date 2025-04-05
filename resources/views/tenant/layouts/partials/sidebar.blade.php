@@ -459,11 +459,11 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                     {{-- <li class="{{ ($firstLevel === 'warehouses')?'nav-active':'' }}">
                                                         <a class="nav-link" href="{{route('warehouses.index')}}">Almacenes</a>
                                                     </li> --}}
-                                                    <li
+                                                    {{-- <li
                                                         class="{{(($firstLevel === 'reports') && ($secondLevel === 'valued-kardex')) ? 'nav-active' : ''}}">
                                                         <a class="nav-link" href="{{route('reports.valued_kardex.index')}}">Kardex
                                                             valorizado</a>
-                                                    </li>
+                                                    </li> --}}
                                                 @endif
                                                 @if(in_array('production_app', $vc_modules) && $configuration->isShowExtraInfoToItem())
                                                     <li class="{{($firstLevel === 'extra_info_items') ? 'nav-active' : ''}}">

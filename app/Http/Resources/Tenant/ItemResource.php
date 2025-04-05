@@ -131,6 +131,7 @@ use Modules\Item\Models\ItemLotsGroup;
                 'percentage_isc' => $this->percentage_isc,
                 'suggested_price' => $this->suggested_price,
                 'stock' => $this->getStockByWarehouse(),
+                'stock_total' => $this->stock,
                 'stock_min' => $this->stock_min,
                 'stock_max' => $this->stock_max,
                 'average_usage' => $this->average_usage,
