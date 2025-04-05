@@ -1570,7 +1570,7 @@
             :recordId="recordId"
             :showDialog.sync="showDialogLots"
             :stock="form.stock"
-            @addRowLot="addRowLot">
+            @addRowLot="saveLotsModal">
         </lots-form>
 
         <item-location
@@ -1593,6 +1593,7 @@ import ExtraInfo from './partials/extra_info'
 import {mapActions, mapState} from "vuex";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../helpers/modal_item";
 import ItemLocation from './locations.vue';
+import { Alert } from 'bootstrap';
 
 export default {
     props: [
@@ -1698,6 +1699,7 @@ export default {
             positions: [],
             states: [],
             positions_selected: [],
+            lots_enabled_init_aux: null,
             location_id: null,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -1894,18 +1896,18 @@ export default {
                 })
         },
         changeLotsEnabled() {
+            this.positions_selected = [];
+            this.positions = [];
             if(!this.form.lots_enabled){
                 this.form.lot_code = null;
                 this.form.lots = [];
-            }else{
-                this.position_selected = [];
             }
         },
         changeProductioTab(){
 
         },
-        addRowLot(lots) {
-            if(localStorage.length>0){
+        saveLotsModal(lots) {
+            if(lots.length>0){
                 this.form.lots = lots
                 let stock_total = 0;
                 lots.forEach(element => {
@@ -1920,30 +1922,46 @@ export default {
                 this.$message.error("Seleccione una ubicación");
                 return;
             }
-            this.positions_selected = [];
-            this.positions = [];
             await this.$http.get(`/${this.resource}/positions/${this.location_id}/${this.recordId}`)
                 .then(response => {
                     if (response.data.success) {
                         const data = response.data.data;
-                        this.positions_selected = data.item_positions;
                         this.positions = data.positions;
+                        this.mapLots(this.positions);
                         
-                        this.positions_selected.forEach(element => {
-                            const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
-                            if(position_finded){
-                                position_finded.stock = parseInt(element.stock);
-                            }else{
-                                position_finded.stock = 0;
-                            }
-                        });
-                        if(this.form.location_id!=this.location_id){
+                        if(this.positions_selected.length==0){
+                            this.positions_selected = data.item_positions;
+                            this.positions_selected.forEach(element => {
+                                const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
+                                if(position_finded){
+                                    position_finded.stock = parseInt(element.stock);
+                                }else{
+                                    position_finded.stock = 0;
+                                }
+                            });
+                        }
+                        
+                        if(this.form.location_id!=this.location_id || this.lots_enabled_init_aux != this.form.lots_enabled){
                             this.positions_selected = [];
                         }
-                        this.showDialogLocation = true;
+                        
+                        
                     }
                 });
-            
+            this.showDialogLocation = true;
+        },
+        mapLots(positions){
+            positions.forEach(element => {
+                if(element.lots.length>0){
+                    element.lots.forEach(element_lot => {
+                        const lot_finded = this.form.lots.find(form_lot => form_lot.id == element_lot.lots_group_id);
+                        if(lot_finded){
+                            lot_finded.selected_global = true;
+                            element_lot.code = lot_finded.code;
+                        }
+                    });
+                }
+            });
         },
         clickLotcode() {
             this.showDialogLots = true
@@ -2008,7 +2026,10 @@ export default {
                 purchase_affectation_igv_type_id: null,
                 calculate_quantity: false,
                 stock: 0,
+                stock_max: null,
+                stock_old: 1,
                 stock_min: 1,
+                stock_total: 0,
                 has_igv: true,
                 has_perception: false,
                 item_unit_types: [],
@@ -2047,8 +2068,7 @@ export default {
                 restrict_sale_cpe: false,
                 sales_condition_id: null,
                 supplier_id: null,
-                inventory_state_id: null,
-                stock_max: null,
+                inventory_state_id: '1',
                 average_usage: null,
                 days_to_alert: null
             }
@@ -2124,6 +2144,13 @@ export default {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data;
+                        this.form.stock_old = this.form.stock; 
+                        if(this.form.lots.length>0){
+                            this.form.lots.forEach(lot => {
+                                lot.selected_global = false;
+                            });
+                        }
+                        this.lots_enabled_init_aux = this.form.lots_enabled;
                         if(response.data.data.positions_selected.length>0){
                             response.data.data.positions_selected.forEach(position_selected => {
                                 this.positions_selected.push({
@@ -2243,6 +2270,15 @@ export default {
                  return this.$message.error('Stock Inicial debe ser un número entero.');
             }
 
+            if(this.stock_max!=null && parseInt(this.form.stock)>parseInt(this.form.stock_old) && this.recordId){
+                const difference = parseInt(this.form.stock)-parseInt(this.form.stock_old);
+                const new_stock_total = parseInt(this.form.stock_total)+difference;
+                if(new_stock_total>parseInt(this.form.stock_max)){
+                    const stock_available = parseInt(this.form.stock_max) - parseInt(this.form.stock_total) + parseInt(this.form.stock_old); 
+                    return this.$message.error('El stock maximo disponible es: '+ stock_available);
+                }
+            }
+
             if (this.validateItemUnitTypes() > 0) return this.$message.error('El campo factor no puede ser menor a 0.0001');
 
             if (this.fromPharmacy === true) {
@@ -2279,10 +2315,12 @@ export default {
                     return this.$message.error('El porcentaje isc debe ser mayor a 0 (Compras)');
             }
 
-            if(this.positions_selected.length>0){
-                this.form.positions_selected = this.positions_selected;
-                this.positions_selected=[];
+            if (this.recordId && this.form.lots_enabled && this.positions_selected.length==0) {
+                return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
+
+            this.form.positions_selected = this.positions_selected;
+            
             this.form.location_id = this.location_id;
 
             this.loading_submit = true
@@ -2306,6 +2344,7 @@ export default {
                             if (this.item_files_deleted && this.item_files_deleted.length > 0) {
                                 formData.append('files_deleted', JSON.stringify(this.item_files_deleted));
                             }
+                            this.positions_selected=[];
                             this.$http.post(`/${this.resource}/saveDocuments/${item_id}`, formData, {
                                 headers: {
                                     'Content-Type': 'multipart/form-data'

@@ -40,6 +40,8 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Str;
     use Modules\Finance\Traits\FinanceTrait;
+    use Modules\Item\Models\Category;
+    use Modules\Item\Models\Brand;
     use Modules\Order\Http\Requests\OrderNoteRequest;
     use Modules\Order\Http\Resources\OrderNoteCollection;
     use Modules\Order\Http\Resources\OrderNoteDocumentCollection;
@@ -386,7 +388,8 @@
         {
             // $items = $this->table('items');
             $items = SearchItemController::getItemsToOrderNote();
-            $categories = [];
+            $categories = Category::all();
+            $brands = Brand::all();
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
             $system_isc_types = SystemIscType::whereActive()->get();
             $price_types = PriceType::whereActive()->get();
@@ -399,6 +402,7 @@
             return compact(
                 'items',
                 'categories',
+                'brands',
                 'affectation_igv_types',
                 'system_isc_types',
                 'price_types',

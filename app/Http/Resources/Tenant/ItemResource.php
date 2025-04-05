@@ -78,7 +78,7 @@ use Modules\Item\Models\ItemLotsGroup;
             $item_positions_selected = ItemPosition::where('item_id', $this->id)->get();
             if($item_positions_selected){
                 foreach($item_positions_selected as $position_selected){
-                    $item_position = WarehouseLocationPosition::find($position_selected->position_id);
+                    $item_position = WarehouseLocationPosition::with('lots')->find($position_selected->position_id);
                     if($item_position){
                         $item_position->stock=$position_selected->stock;
                         array_push($item_positions, $item_position);
@@ -131,6 +131,7 @@ use Modules\Item\Models\ItemLotsGroup;
                 'percentage_isc' => $this->percentage_isc,
                 'suggested_price' => $this->suggested_price,
                 'stock' => $this->getStockByWarehouse(),
+                'stock_total' => $this->stock,
                 'stock_min' => $this->stock_min,
                 'stock_max' => $this->stock_max,
                 'average_usage' => $this->average_usage,

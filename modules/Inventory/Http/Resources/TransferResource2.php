@@ -40,6 +40,8 @@ class TransferResource2 extends JsonResource
             'item_id' => $this->item_id,
             'warehouse_id' => $this->warehouse_id,
             'warehouse_destination_id' => $this->warehouse_destination_id,
+            'location_destination_id' => $this->location_destination_id,
+            'position_destination_id' => $this->position_destination_id,
             'warehouse_description' => $this->warehouse->description,
             'state' => $this->state,
             // 'stock' => ItemWarehouse::where([['item_id', $this->item_id],['warehouse_id', $this->warehouse_id]])->first()->stock,

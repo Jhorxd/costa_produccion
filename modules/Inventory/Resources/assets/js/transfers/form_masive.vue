@@ -400,6 +400,8 @@ export default {
             }
         },
         saveDataModalPositions(data){
+            console.log(data);
+            
             this.dataModalPosition = data;
         },
         addRowLotGroup(id) {
@@ -632,7 +634,18 @@ export default {
             if (this.form.items.length == 0) {
                 return this.$message.error("Debe agregar productos.");
             }
-
+            if(this.dataModalPosition.location_id!=null){
+                this.form.location_destination_id = this.dataModalPosition.location_id;
+            }
+            if(this.dataModalPosition.positions.length>0){
+                this.dataModalPosition.positions.forEach(element => {
+                    if(element.is_selected){
+                        this.form.position_destination_id = element.id;
+                    }
+                });
+            }
+            console.log(this.form);
+            
             this.loading_submit = true;
             await this.$http
                 .post(`/${this.resource}`, this.form)

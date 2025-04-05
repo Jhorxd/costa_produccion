@@ -21,7 +21,7 @@
                             <tr v-for="(lot,index) in lots_temp" :key="lot.id">
                                 <td>{{ index+1 }}</td>
                                 <td>{{ lot?lot.code:'---' }}</td>
-                                <td>{{ lot?lot.quantity:'---' }}</td>
+                                <td>{{ lot?lot.stock:'---' }}</td>
                                 <td>
                                     <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)">
                                         <i class="fa fa-check"></i>
@@ -45,8 +45,8 @@
     export default {
         props: [
             'showDialog',
-            'box_selected',
-            'lots'
+            'lots',
+            'stock_necessary'
         ],
         data() {
             return {
@@ -61,11 +61,10 @@
                 this.lots_temp = this.lots;
                 
                 this.lots_temp.forEach(element => {
-                    if(element.selected==undefined) 
-                        element.selected = false;
+                    this.$set(element, 'selected', element.selected || false);
                 });
                 
-                if(this.box_selected.lots.length>0){
+                /* if(this.box_selected.lots.length>0){
                     this.lots_selected = [...this.box_selected.lots];
                     
                     this.lots_selected.forEach(element => {
@@ -77,12 +76,12 @@
                             lots_finded.selected = true;
                         }
                     });
-                }
+                } */
             },
             LotSelected(lot, index){
-                const updatedLot = { ...lot, selected: !lot.selected };
+                this.$set(lot, 'selected', !lot.selected);
                 
-                if(lot.selected){
+                /* if(lot.selected){
                     const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
                     if (lotIndex !== -1)
                         this.lots_selected.splice(lotIndex, 1);
@@ -95,10 +94,23 @@
                         this.lots_selected.push(updatedLot);
                     }
                 }
-                this.lots_temp.splice(index, 1, updatedLot);
+                this.lots_temp.splice(index, 1, updatedLot); */
             },
-            submit(){                
-                this.$emit('update-box-selected',this.lots_selected);
+            submit(){           
+                let stock_total = 0;
+                this.lots_temp.forEach(element => {
+                    if(element.selected)
+                        stock_total++;
+                }); 
+                if(this.stock_necessary>stock_total){
+                    const differenceStock = parseInt(this.stock_necessary)-parseInt(stock_total);
+                    this.$message.warning("Aun falta que seleccione "+differenceStock+" lote(s)");
+                    return;
+                }else if(stock_total>this.stock_necessary){
+                    this.$message.warning("Lotes seleccionados de forma excesiva, la cantidad necesaria es "+this.stock_necessary+" lote(s)");
+                    return;
+                }
+                this.$emit('update-box-selected',this.lots_temp);
                 this.close();
             },
             async clickCancelSubmit() {

@@ -26,7 +26,7 @@ class PositionController extends Controller
         }
     }
 
-    public function getPositions($location_id, $item_id=null){
+    public function getPositions($location_id, $item_id=null, $warehouse_id=null){
         $location = InventoryWarehouseLocation::find($location_id);
         if (!$location) {
             return response()->json([
@@ -39,6 +39,7 @@ class PositionController extends Controller
             foreach ($positions as $position) {
                 if($item_id!=null){
                     $item_positions = ItemPosition::where('item_id', $item_id)
+                    ->where('warehouse_id', $warehouse_id)
                     ->where('position_id', $position->id)
                     ->with('lots_group')
                     ->get();
@@ -47,7 +48,6 @@ class PositionController extends Controller
                                     ($item_positions->count() == 1 && $item_positions->first()->lots_group_id !== null);
 
                     if ($works_with_lots) {
-                        // Caso CON lotes
                         $position->stock_item = $item_positions->sum('stock');
                         $position->lots_group_list = $item_positions->map(function($ip) {
                             return [

@@ -191,6 +191,7 @@
                     number:1,
                     confirmed:null,
                     json_positions:{},
+                    json_lots:{},
                     details: []                               
               },
               establishments: [],
@@ -298,11 +299,6 @@
              }
           },
           addItem(newItem) {
-            //this.totalCantidad1+= Number(newItem.system_quantity);
-            //this.totalCantidad2 += Number(newItem.counted_quantity);
-            //const individualAmount = (Number(newItem.counted_quantity) - Number(newItem.system_quantity)) * newItem.sale_unit_price;
-            //this.importeTotal += individualAmount; 
-            alert("desde el origin "+JSON.stringify(newItem));                      
             const index = this.form.details.findIndex(item => item.item_id === newItem.item_id);
             if (index !== -1) {                
                 this.form.details.splice(index, 1, newItem);
@@ -355,17 +351,16 @@
             .post(url,this.form)
             .then(response => { 
               this.$message.success(response.data.message);
-              setTimeout(() => {
+              /* setTimeout(() => {
                 window.location.href = "/physical-inventory";
-              }, 1000); 
+              }, 1000);  */
             })
             .catch(error => {
                 
             })
             .then(() => {
               this.cleanForm();               
-            });
-                      
+            });      
           },
           cleanForm(cleanALL=false){
           if (!cleanALL) {
@@ -383,8 +378,7 @@
             this.importeTotal = 0;
             
           },
-          handleGlobalCategory(value){
-            alert(value);                    
+          handleGlobalCategory(value){  
             // Actualizar category_id de todos los elementos en details
             this.form.details.forEach(item => {
                 item.category_id = value;
