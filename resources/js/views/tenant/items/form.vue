@@ -1570,7 +1570,7 @@
             :recordId="recordId"
             :showDialog.sync="showDialogLots"
             :stock="form.stock"
-            @addRowLot="addRowLot">
+            @addRowLot="saveLotsModal">
         </lots-form>
 
         <item-location
@@ -1906,8 +1906,8 @@ export default {
         changeProductioTab(){
 
         },
-        addRowLot(lots) {
-            if(localStorage.length>0){
+        saveLotsModal(lots) {
+            if(lots.length>0){
                 this.form.lots = lots
                 let stock_total = 0;
                 lots.forEach(element => {
@@ -1922,8 +1922,6 @@ export default {
                 this.$message.error("Seleccione una ubicación");
                 return;
             }
-            this.positions_selected = [];
-            this.positions = [];
             await this.$http.get(`/${this.resource}/positions/${this.location_id}/${this.recordId}`)
                 .then(response => {
                     if (response.data.success) {
@@ -1931,24 +1929,26 @@ export default {
                         this.positions = data.positions;
                         this.mapLots(this.positions);
                         
-                        this.positions_selected = data.item_positions;
+                        if(this.positions_selected.length==0){
+                            this.positions_selected = data.item_positions;
+                            this.positions_selected.forEach(element => {
+                                const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
+                                if(position_finded){
+                                    position_finded.stock = parseInt(element.stock);
+                                }else{
+                                    position_finded.stock = 0;
+                                }
+                            });
+                        }
                         
-                        this.positions_selected.forEach(element => {
-                            const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
-                            if(position_finded){
-                                position_finded.stock = parseInt(element.stock);
-                            }else{
-                                position_finded.stock = 0;
-                            }
-                        });
                         if(this.form.location_id!=this.location_id || this.lots_enabled_init_aux != this.form.lots_enabled){
                             this.positions_selected = [];
                         }
                         
-                        this.showDialogLocation = true;
+                        
                     }
                 });
-            
+            this.showDialogLocation = true;
         },
         mapLots(positions){
             positions.forEach(element => {
@@ -2026,7 +2026,10 @@ export default {
                 purchase_affectation_igv_type_id: null,
                 calculate_quantity: false,
                 stock: 0,
+                stock_max: null,
+                stock_old: 1,
                 stock_min: 1,
+                stock_total: 0,
                 has_igv: true,
                 has_perception: false,
                 item_unit_types: [],
@@ -2066,7 +2069,6 @@ export default {
                 sales_condition_id: null,
                 supplier_id: null,
                 inventory_state_id: '1',
-                stock_max: null,
                 average_usage: null,
                 days_to_alert: null
             }
@@ -2142,6 +2144,7 @@ export default {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data;
+                        this.form.stock_old = this.form.stock; 
                         if(this.form.lots.length>0){
                             this.form.lots.forEach(lot => {
                                 lot.selected_global = false;
@@ -2265,6 +2268,15 @@ export default {
             const stock = parseInt(this.form.stock);
             if(isNaN(stock)){
                  return this.$message.error('Stock Inicial debe ser un número entero.');
+            }
+
+            if(this.stock_max!=null && parseInt(this.form.stock)>parseInt(this.form.stock_old) && this.recordId){
+                const difference = parseInt(this.form.stock)-parseInt(this.form.stock_old);
+                const new_stock_total = parseInt(this.form.stock_total)+difference;
+                if(new_stock_total>parseInt(this.form.stock_max)){
+                    const stock_available = parseInt(this.form.stock_max) - parseInt(this.form.stock_total) + parseInt(this.form.stock_old); 
+                    return this.$message.error('El stock maximo disponible es: '+ stock_available);
+                }
             }
 
             if (this.validateItemUnitTypes() > 0) return this.$message.error('El campo factor no puede ser menor a 0.0001');

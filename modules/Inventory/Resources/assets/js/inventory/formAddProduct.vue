@@ -153,6 +153,8 @@
             system_quantity: 0,
             counted_quantity: 0,
             difference: 0,
+            stock_total: 0,
+            stock_max: null,
             category_id: null,
             json_position:null,
             json_lots:null
@@ -236,8 +238,10 @@
           this.form.description = product.description;
           this.form.item_id = product.item_id;
           this.form.system_quantity = product.stock;
-          this.form.counted_quantity=product.stock;
-          this.form.difference=this.form.system_quantity-this.form.counted_quantity;
+          this.form.counted_quantity = product.stock;
+          this.form.difference = this.form.system_quantity-this.form.counted_quantity;
+          this.form.stock_total = product.stock_total;
+          this.form.stock_max = product.stock_max;
           this.getLocations();
           if(this.locations.length>0){
             this.location_id=null;
@@ -253,6 +257,8 @@
             system_quantity: 0,
             counted_quantity: 0,
             difference: 0,
+            stock_total: 0,
+            stock_max: null,
             category_id: null
           }
           this.locations=[];
@@ -263,7 +269,19 @@
             if(this.checked && this.form.category_id==null){
               this.$message.error('Debe seleccionar una categoría');
               return;              
-            }       
+            }
+            
+            if(this.form.stock_max!=null && parseInt(this.form.counted_quantity)>parseInt(this.form.system_quantity)){
+              const difference= parseInt(this.form.counted_quantity) - parseInt(this.form.system_quantity);
+              const newStockTotal = difference + parseInt(this.form.stock_total);
+              
+              if( newStockTotal > parseInt(this.form.stock_max)){
+                const stock_available = parseInt(this.form.stock_max) - parseInt(this.form.stock_total) + parseInt(this.form.system_quantity);
+                this.$message.error('El stock actual supera el stock máximo permitido: ' + stock_available);
+                return; 
+              }
+            }
+            
             if(this.form.item_id){                            
                 this.$emit('add-item', this.form);
                 this.cleanForm();
@@ -372,7 +390,6 @@
               this.form.counted_quantity+=result;
           }else{
               const result2=totalStockAssigned-totalStock;
-              alert(result2);
               this.form.counted_quantity-=result2;
           }
           // Si hay posiciones seleccionadas

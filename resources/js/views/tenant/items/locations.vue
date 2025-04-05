@@ -133,7 +133,6 @@ export default {
           if(this.lots_enabled){
             this.box_selected = box;
             this.showDialogLotsPosition = true;
-            
           }else{
             if(box.is_selected){
               box.is_selected = false;
@@ -150,13 +149,22 @@ export default {
             }
             
           }
+          
         },
         saveChanges(){
           if(this.lots_enabled){
+            
+
             // Validar que todos los lotes tengan al menos una posición asignada
             const allLotsHavePosition = this.lots.every(lot => {
                 return this.positions.some(position => 
-                    position.lots.some(positionLot => positionLot.lots_group_id === lot.id)
+                    position.lots.some(positionLot => {
+                      if (positionLot.lots_group_id) {
+                          return positionLot.lots_group_id == lot.id;
+                      } else {
+                          return positionLot.code == lot.code;
+                      }
+                    })
                 );
             });
             
@@ -206,16 +214,6 @@ export default {
           this.box_selected.lots = Array.from(data_updated_box_selected);
           
           this.box_selected.is_selected = data_updated_box_selected.length > 0;
-          
-          const allUsedLotIds = new Set();
-          this.positions.forEach(pos => {
-              pos.lots.forEach(lot => {
-                  allUsedLotIds.add(lot.lots_group_id);
-              });
-          });
-          this.lots.forEach(lot => {
-              lot.selected_global = allUsedLotIds.has(lot.id);
-          });
           
           this.$message.success("Guardado correctamente");
       },
