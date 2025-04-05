@@ -708,10 +708,29 @@
         {
             $items_not_services = self::getNotServiceItem($request, $id);
             $items_services = self::getServiceItem($request, $id);
+
+            return self::TransformToModal($items_not_services->merge($items_services));
+
             $establishment_id = auth()->user()->establishment_id;
             $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
-// aqui
-            return self::TransformModalToOrderNote($items_not_services->merge($items_services), $warehouse);
+
+             $item_not_service = Item::with('warehousePrices')
+                ->whereIsActive()
+            ->orderBy('description');
+            $service_item = Item::with('warehousePrices')
+                ->where('items.unit_type_id', 'ZZ')
+                ->whereIsActive()
+                ->orderBy('description');
+            $item_not_service = $item_not_service
+                // Configurable en  env la variable NUMBER_ITEMS
+                ->take(\Config('extra.number_items_at_start'))
+                ->get();
+            $service_item = $service_item
+                // Configurable en  env la variable NUMBER_ITEMS
+                ->take(\Config('extra.number_items_at_start'))
+                //->take(10)
+                ->get();
+            return self::TransformToModal($item_not_service->merge($service_item));
         }
 
         /**

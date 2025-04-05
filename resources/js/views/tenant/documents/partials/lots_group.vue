@@ -110,7 +110,7 @@ export default {
             idSelected: null,
             search: '',
             lots_group_: [],
-            orderT: 'desc',
+            orderT: 'asc',
             set_compromise_all_quantity: false,
         };
     },
@@ -150,7 +150,7 @@ export default {
             if (show_message) this.$message.success('Cantidad asignada')
         },
         orderData() {
-            this.orderT = this.orderT == 'desc' ? 'asc' : 'desc'
+            this.orderT = this.orderT == 'asc' ? 'desc' : 'asc'
         },
         filter() {
             if(_.isNull(this.lotsGroupAll) ||_.isUndefined(this.lotsGroupAll)) {
@@ -186,11 +186,35 @@ export default {
         create() {
             this.filter()
             this.set_compromise_all_quantity = false
+            
+            if(this.lots_group_ && this.lots_group_.length > 0){
+
+                this.lots_group_.sort((a, b) => new Date(a.date_of_due) - new Date(b.date_of_due));
+
+                let remainingQuantity = this.quantity;
+
+                // Asignar la cantidad pedida priorizando el lote más próximo a vencer
+                this.lots_group_.forEach(row => {
+                    if (remainingQuantity > 0) {
+                        if (remainingQuantity >= row.quantity) {
+                            row.compromise_quantity = row.quantity; // Tomar todo el stock del lote
+                            remainingQuantity -= row.quantity;
+                        } else {
+                            row.compromise_quantity = remainingQuantity; // Solo tomar lo que falta
+                            remainingQuantity = 0;
+                        }
+                    } else {
+                        row.compromise_quantity = 0; // Si ya se cubrió la cantidad, los demás quedan en 0
+                    }
+                });
+
+                
+            }
         },
         async submit() {
             //validar cantidad comprometida igual a cantidad pedida
             let compromise_quantity = this.lots_group_.filter(x => x.compromise_quantity > 0).reduce((accum, item) => accum + Number(item.compromise_quantity), 0)
-            if (compromise_quantity != this.quantity) {
+            if (Number(compromise_quantity) != Number(this.quantity)) {
                 return this.$message.warning('La suma de cantidades comprometidas de los lotes debe der igual a la cantidad pedida.');
             }
             //validar cantridad comprometer en lote
@@ -208,6 +232,7 @@ export default {
                 }
             })
             console.log(lots_selecteds);
+            // await this.$emit("update:quantity", compromise_quantity);
             await this.$emit("addRowLotGroup", lots_selecteds);
             await this.$emit("update:showDialog", false);
         },

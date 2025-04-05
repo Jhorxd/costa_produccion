@@ -981,21 +981,34 @@ class Item extends ModelTenant
         }
 
         //Posiciones
-        $location_id = ItemPosition::where('item_id', $this->id)->value('location_id');
-        $name_location = '';
-        if ($location_id) {
+        $locations = ItemPosition::where('item_id', $this->id)->pluck('location_id')->unique();
+        $locations_data = [];
+
+        foreach ($locations as $location_id) {
             $location = InventoryWarehouseLocation::find($location_id);
 
             if ($location) {
-                $position = WarehouseLocationPosition::with('lots.lots_group')
-                    ->where('location_id', $location_id)
-                    ->first();
-        
-                if ($position) {
-                    $name_location = $location->name; 
-                }
-            }
+            // Obtener todas las posiciones de esta ubicación específicas para item_id = 7
+            $positions = WarehouseLocationPosition::with('lots.lots_group')
+                ->where('location_id', $location_id)
+                ->whereIn('id', function ($query) {
+                    $query->select('position_id')
+                        ->from('item_positions')
+                        ->where('item_id', $this->id);
+                    })
+                ->get();
+            // Obtener solo las columnas de las posiciones
+            $columns = $positions->pluck('column')->toArray();
+
+            // Agregar a la lista de ubicaciones
+            $locations_data[] = [
+                'location_name' => $location->name,
+                'code_location' => $location->code,
+                'columns' => $columns,
+            ];
         }
+    }
+        
 
         $data = [
             'id'                               => $this->id,
@@ -1118,8 +1131,8 @@ class Item extends ModelTenant
                 'description' => $this->pharmaceutical_item_unit_type->description,
             ] : null,
             'active_principle' => $this->active_principle,
-            'locations' => $name_location,
-            'estado' => 'Activo',
+            'locations' => $locations_data,
+            'estado' => 'Disponible',
             'accion' => 'Alergías'
         ];
 
