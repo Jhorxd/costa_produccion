@@ -78,7 +78,7 @@ use Modules\Item\Models\ItemLotsGroup;
             $item_positions_selected = ItemPosition::where('item_id', $this->id)->get();
             if($item_positions_selected){
                 foreach($item_positions_selected as $position_selected){
-                    $item_position = WarehouseLocationPosition::find($position_selected->position_id);
+                    $item_position = WarehouseLocationPosition::with('lots')->find($position_selected->position_id);
                     if($item_position){
                         $item_position->stock=$position_selected->stock;
                         array_push($item_positions, $item_position);

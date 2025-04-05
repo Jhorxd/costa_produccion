@@ -1957,6 +1957,7 @@ export default {
                         const lot_finded = this.form.lots.find(form_lot => form_lot.id == element_lot.lots_group_id);
                         if(lot_finded){
                             lot_finded.selected_global = true;
+                            element_lot.code = lot_finded.code;
                         }
                     });
                 }
@@ -2064,7 +2065,7 @@ export default {
                 restrict_sale_cpe: false,
                 sales_condition_id: null,
                 supplier_id: null,
-                inventory_state_id: null,
+                inventory_state_id: '1',
                 stock_max: null,
                 average_usage: null,
                 days_to_alert: null

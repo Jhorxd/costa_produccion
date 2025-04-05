@@ -108,7 +108,8 @@
                         code: null,
                         quantity: this.stock,
                         date_of_due:  moment().format('YYYY-MM-DD'),
-                        status: 1
+                        status: 1,
+                        selected_global: false
                     });
                 }
                 if (this.states.length === 0) { // Carga solo si states está vacío
@@ -126,7 +127,8 @@
                     code: null,
                     quantity: 0,
                     date_of_due:  moment().format('YYYY-MM-DD'),
-                    status: 1
+                    status: 1,
+                    selected_global: false,
                 });
             },
             deleteMoreLots(number){

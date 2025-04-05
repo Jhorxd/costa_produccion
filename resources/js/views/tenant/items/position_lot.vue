@@ -57,10 +57,7 @@
             }
         },
         methods: {
-            calculaBotonDesabilitar(lot){
-                console.log(this.lots_selected);
-                console.log(lot);
-                
+            calculaBotonDesabilitar(lot){                
                 if(lot.selected_global){
                     const finded = this.lots_selected.find(element => element.lots_group_id == lot.id);
                     if(finded){
@@ -83,7 +80,7 @@
                     this.lots_selected = [...this.box_selected.lots];
                     
                     this.lots_selected.forEach(element => {
-                        if(element.lots_group){
+                        if(element.lots_group && element.lots_group.code) {
                             element.code = element.lots_group.code;
                         }
                         const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group_id);
@@ -92,36 +89,39 @@
                         }
                     });
                 }
-                console.log(this.lots_temp);
-                console.log(this.lots_selected);
-                
             },
-            LotSelected(lot, index){              
+            LotSelected(lot, index) {              
                 const updatedLot = { ...lot, selected: !lot.selected };
                 
-                if(lot.selected){
+                if(lot.selected) {
                     const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
-                    if (lotIndex !== -1)
+                    if (lotIndex !== -1) {
                         this.lots_selected.splice(lotIndex, 1);
-                    const lotIndexGlobal = this.lots.findIndex(existingLot => existingLot.id === updatedLot.id);
-                    if (lotIndexGlobal !== -1)
-                        this.lots[lotIndexGlobal].selected_global = false;
-                }else{
-                    const lotExists = this.lots_selected.find(existingLot => existingLot.lots_group_id === updatedLot.id);
-                    if (!lotExists){
+                    }
+                } else {
+                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
+                    
+                    if (lotIndex == -1) {
                         updatedLot.lots_group_id = updatedLot.id;
                         updatedLot.stock = updatedLot.quantity;
+                        updatedLot.code = updatedLot.code;
                         
                         this.lots_selected.push(updatedLot);
                     }
-                    const lotIndexGlobal = this.lots.findIndex(existingLot => existingLot.id === updatedLot.id);
-                    if (lotIndexGlobal !== -1)
-                        this.lots[lotIndexGlobal].selected_global = true;
                 }
+                
                 this.lots_temp.splice(index, 1, updatedLot);
             },
-            submit(){
-                this.$emit('update-box-selected',this.lots_selected);
+            submit() {
+                const newlySelectedIds = this.lots_selected.map(lot => lot.lots_group_id);
+                
+                this.lots.forEach(lot => {
+                    if (newlySelectedIds.includes(lot.id)) {
+                        lot.selected_global = true;
+                    }
+                });
+                
+                this.$emit('update-box-selected', this.lots_selected);
                 this.close();
             },
             async clickCancelSubmit() {

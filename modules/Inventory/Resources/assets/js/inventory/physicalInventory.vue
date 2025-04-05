@@ -191,6 +191,7 @@
                     number:1,
                     confirmed:null,
                     json_positions:{},
+                    json_lots:{},
                     details: []                               
               },
               establishments: [],
@@ -355,17 +356,16 @@
             .post(url,this.form)
             .then(response => { 
               this.$message.success(response.data.message);
-              setTimeout(() => {
+              /* setTimeout(() => {
                 window.location.href = "/physical-inventory";
-              }, 1000); 
+              }, 1000);  */
             })
             .catch(error => {
                 
             })
             .then(() => {
               this.cleanForm();               
-            });
-                      
+            });      
           },
           cleanForm(cleanALL=false){
           if (!cleanALL) {

@@ -403,15 +403,6 @@ class TransferController extends Controller
                     $stock_transfer = (int)$it['stock_necessary'];
                     
                 }
-
-                //pasamos el stock al destino
-                $item_warehouse_destination = ItemWarehouse::firstOrNew(['item_id' => $it['id'], 'warehouse_id' => $request->warehouse_destination_id]);
-                if ($item_warehouse_destination->exists) {
-                    $item_warehouse_destination->stock += $stock_transfer;
-                }else{
-                    $item_warehouse_destination->stock = $stock_transfer;
-                }
-                $item_warehouse_destination->save();
                 
                 if(isset($request->location_destination_id) && isset($request->position_destination_id) && !$it['has_lots']){
                     $item_position = ItemPosition::firstOrNew(['item_id' => $it['id'], 'position_id' => $request->position_destination_id]);
@@ -425,24 +416,6 @@ class TransferController extends Controller
                     $item_position->save();
                 }
 
-                //quitamos stock por item (general)
-                $item = Item::find($it['id']);
-                if($item){
-                    $item->stock -= $stock_transfer;
-                    $item->save();
-                }
-
-                //quitamos el stock por almacén
-                $item_warehouse_init = ItemWarehouse::where('item_id', $it['id'])->where('warehouse_id', $request->warehouse_init_id)->first();
-                if ($item_warehouse_init) {
-                    if($item_warehouse_init->stock>$stock_transfer){
-                        $item_warehouse_init->stock -= $stock_transfer;
-                        $item_warehouse_init->save();
-                    }else{
-                        $item_warehouse_init->delete();
-                    }   
-                }
-
                 $inventory = new Inventory();
                 $inventory->type = 2;
                 $inventory->description = 'Traslado';
@@ -452,6 +425,14 @@ class TransferController extends Controller
                 $inventory->quantity = $stock_transfer;
                 $inventory->inventories_transfer_id = $inventory_transfer->id;
                 $inventory->save();
+
+                 //quitamos el stock por almacén
+                 $item_warehouse_init = ItemWarehouse::where('item_id', $it['id'])->where('warehouse_id', $request->warehouse_init_id)->first();
+                 if ($item_warehouse_init) {
+                     if($item_warehouse_init->stock==0){
+                         $item_warehouse_init->delete();
+                     }  
+                 }
             }
 
             if(!$inventory_transfer->state)

@@ -234,24 +234,24 @@
                                    width="100%">
                                 <thead>
                                 <tr width="100%">
-                                    <th width="10%">#</th>
-                                    <th width="20%">Cód. Barras</th>
-                                    <th width="30%">Producto</th>
-                                    <th width="20%">Cantidad</th>
-                                    <th width="10%">Unidad</th>
+                                    <th width="10%" class="text-center">#</th>
+                                    <th width="20%" class="text-center">Cód. Barras</th>
+                                    <th width="20%" class="text-center">Producto</th>
+                                    <th width="15%" class="text-center">Cantidad</th>
+                                    <th width="15%" class="text-center">Unidad</th>
                                     <!-- <th width="15%">Costo</th>
                                     <th width="10%">Importe Costo</th> -->
-                                    <th width="25%">Opciones</th>
+                                    <th width="20%" class="text-center">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <tr v-for="(row, index) in form.items"
                                     :key="index"
                                     width="100%">
-                                    <td>{{ index + 1 }}</td>
-                                    <td>{{ row.barcode }}</td>
-                                    <td>{{ row.description }}</td>
-                                    <td>
+                                    <td class="text-center">{{ index + 1 }}</td>
+                                    <td class="text-center">{{ row.barcode }}</td>
+                                    <td class="text-center">{{ row.description }}</td>
+                                    <td class="text-center">
                                         <!-- {{ row.quantity }} -->
     
                                         <el-input-number v-model="row.quantity"
@@ -259,21 +259,21 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
-                                    <td>{{ row.has_lots?'Lotes':'Unidades' }}</td>
+                                    <td class="text-center">{{ row.has_lots?'Lotes':'Unidades' }}</td>
                                     <td class="series-table-actions text-center">
                                         <el-button
-                                                @click.prevent="SelectPositions(row)"
-                                                class="btn btn-primary btn-submit-default"
-                                                type="primary"
-                                                v-if="row.has_position">Posición
+                                            @click.prevent="SelectPositions(row)"
+                                            class="btn btn-primary btn-submit-default btn-sm"
+                                            type="primary"
+                                            v-if="row.has_position">Posición
                                         </el-button>
-                                        <button
-                                            class="btn waves-effect waves-light btn-xs btn-danger"
-                                            type="button"
+                                        <el-button
+                                            class="btn waves-effect waves-light btn-sm btn-danger"
+                                            type="danger"
                                             @click.prevent="clickCancel(index)"
-                                        >
-                                            <i class="fa fa-trash"></i>
-                                        </button>
+                                            icon="el-icon-delete"
+                                            size="mini">
+                                        </el-button>
                                     </td>
                                 </tr>
                                 </tbody>

@@ -153,11 +153,22 @@ export default {
         },
         saveChanges(){
           if(this.lots_enabled){
+            // Validar que todos los lotes tengan al menos una posición asignada
+            const allLotsHavePosition = this.lots.every(lot => {
+                return this.positions.some(position => 
+                    position.lots.some(positionLot => positionLot.lots_group_id === lot.id)
+                );
+            });
+            
+            if (!allLotsHavePosition) {
+              this.$message.error("No se puede guardar. Todos los lotes deben tener al menos una posición asignada.");
+              return;
+            }
+
             if (this.positions.length > 0) {
                 const filteredPositions = this.positions.filter(position => {
                     return Array.isArray(position.lots) && position.lots.length > 0;
                 });
-                console.log(filteredPositions);
                 
                 this.$emit('positions-save', filteredPositions);
             }
@@ -183,21 +194,45 @@ export default {
             }
           }
         },
-        updateBoxSelected(data_updated_box_selected){
-          const position = this.positions.find(element => element.row== this.box_selected.row && element.column == this.box_selected.row);
+        updateBoxSelected(data_updated_box_selected) {
+          const position = this.positions.find(element => 
+              element.row === this.box_selected.row && 
+              element.column === this.box_selected.column
+          );
+          
+          const previousLotIds = position.lots.map(lot => lot.lots_group_id);
           
           position.lots = Array.from(data_updated_box_selected);
           this.box_selected.lots = Array.from(data_updated_box_selected);
-          if(data_updated_box_selected.length>0){
-            this.box_selected.is_selected = true;
-          }else{
-            this.box_selected.is_selected = false;
-          }
-          console.log(this.positions);
-          console.log(this.box_selected);
           
+          this.box_selected.is_selected = data_updated_box_selected.length > 0;
+          
+          const allUsedLotIds = new Set();
+          this.positions.forEach(pos => {
+              pos.lots.forEach(lot => {
+                  allUsedLotIds.add(lot.lots_group_id);
+              });
+          });
+          this.lots.forEach(lot => {
+              lot.selected_global = allUsedLotIds.has(lot.id);
+          });
           
           this.$message.success("Guardado correctamente");
+      },
+
+        updateGlobalSelectionStatus() {
+            // Obtener todos los IDs de lotes usados en cualquier posición
+            const allUsedLotIds = new Set();
+            this.positions.forEach(position => {
+                position.lots.forEach(lot => {
+                    allUsedLotIds.add(lot.id);
+                });
+            });
+
+            // Actualizar selected_global en base a los lotes usados
+            this.lots.forEach(lot => {
+                lot.selected_global = allUsedLotIds.has(lot.id);
+            });
         }
     }
 };
@@ -210,25 +245,30 @@ export default {
   padding: 10px;
   display: flex;
   flex-direction: column;
+  overflow-x: auto;
 }
 
 .boxes-container {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .row-container {
   display: flex;
-  justify-content: center;
-  width: 100%;
+  flex-wrap: nowrap;
   gap: 10px;
   margin-bottom: 10px;
+  width: max-content;
+  max-width: 100%;
+  padding: 10px 20px;
+  box-sizing: border-box;
 }
 
 .position-box {
-  flex: 1;
-  min-width: 150px;
-  max-width: 200px;
+  flex: 0 0 160px;
   border: 1px solid #ccc;
   padding: 10px;
   border-radius: 5px;

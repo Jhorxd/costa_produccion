@@ -136,10 +136,10 @@ if ($hostname) {
                 Route::get('getWarehousesByEstablishment/{id}', 'InventoryController@getWarehousesByEstablishment');
                 Route::get('getProductsByEstablishmentAndWarehouse', 'InventoryController@getProductsByEstablishmentAndWarehouse');
                 Route::get('getAllPhysicalInventoryCategories', 'InventoryController@getAllPhysicalInventoryCategories');
-                Route::post('store', 'InventoryController@store3');
+                Route::post('store', 'InventoryController@storePhysicalInventory');
                 Route::get('getAllPhysicalInventories', 'InventoryController@getAllPhysicalInventories');
-                Route::get('pdf/{id}', 'InventoryController@getPdfInventory');                            
-                        
+                Route::get('pdf/{id}', 'InventoryController@getPdfInventory');
+                Route::get('getItemPositionsLots/{item_id}/{warehouse_id}', 'InventoryController@getItemPositionsLots');
             });
             
             Route::get('inventory-warehouses', 'InventoryController@indexWarehouses')->name('inventory.index2');

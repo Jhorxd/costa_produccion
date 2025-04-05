@@ -193,7 +193,7 @@ class InventoryController extends Controller
         $query = $query->paginate(config('tenant.items_per_page'));    
         return $query;
     }
-    public function store3(Request $request)
+    public function storePhysicalInventory(Request $request)
     {
         $totalStock = 0; // Inicializar la suma del stock
         DB::connection('tenant')->beginTransaction();
@@ -218,10 +218,13 @@ class InventoryController extends Controller
                             $type = null;
                         }
                         
-                        $Item = Item::find($detail['item_id']);
-                        if ($Item->sale_unit_price != $detail['sale_unit_price']) {
-                            $Item->sale_unit_price = $detail['sale_unit_price'];
-                            $Item->save();
+                        $item = Item::find($detail['item_id']);
+                        if($item){
+                            if ($item->sale_unit_price != $detail['sale_unit_price']) {
+                                $item->sale_unit_price = $detail['sale_unit_price'];
+                            }
+                            $item->stock += $quantity_new;
+                            $item->save();
                         }
                         
                         $physicalInventory = PhysicalInventory::find($detail['physical_inventory_id']);
@@ -242,8 +245,23 @@ class InventoryController extends Controller
                         $inventory->real_stock = $detail['counted_quantity'];
                         $inventory->system_stock = $detail['system_quantity'];
                         $inventory->save();
-                        
-                        if (!empty($detail['json_position'])) {
+                        if (!empty($detail['json_lots'])) {
+                            $decodedJsonLots = json_decode($detail['json_lots'], true);
+                            if (is_array($decodedJsonLots)) {
+                                foreach ($decodedJsonLots as $lot) {
+                                    $lot_group = ItemLotsGroup::find($lot['lots_group_id']);
+                                    if($lot_group){
+                                        $lot_group->quantity = $lot['stock'];
+                                        $lot_group->save();
+                                    }
+                                    $lot_group_position = ItemPosition::where('item_id',$detail['item_id'])->where('position_id', $lot['position_id'])->where('lots_group_id',$lot['lots_group_id'])->first();
+                                    if($lot_group_position){
+                                        $lot_group_position->stock = $lot['stock'];
+                                        $lot_group_position->save();
+                                    }
+                                }
+                            }
+                        } else if (!empty($detail['json_position'])) {
                             Log::debug("entramos1");
                             $decodedJson = json_decode($detail['json_position'], true);
                             
@@ -323,7 +341,8 @@ class InventoryController extends Controller
                         array_merge(
                             $request->except('details'),
                             ['confirmed' => false],
-                            ['json_positions' => json_encode($request->json_positions)]
+                            ['json_positions' => json_encode($request->json_positions)],
+                            ['json_lots' => json_encode($request->json_lots)],
                         )
                     );
                     
@@ -336,7 +355,8 @@ class InventoryController extends Controller
                             'difference' => $detail['counted_quantity'] - $detail['system_quantity'],
                             'category_id' => $detail['category_id'] ?? null,
                             'cost' => $detail['sale_unit_price'],
-                            'json_position' => isset($detail['json_position']) ? json_encode($detail['json_position']) : null
+                            'json_position' => isset($detail['json_position']) ? json_encode($detail['json_position']) : null,
+                            'json_lots' => isset($detail['json_lots']) ? json_encode($detail['json_lots']) : null
                         ]);
                     }
                 }
@@ -374,9 +394,37 @@ class InventoryController extends Controller
                 )
         ->orderBy('item_warehouse.item_id')
         ->get();
+        foreach ($products as $product) {
+            $positions_lots_count = ItemPosition::where('item_id', $product->item_id)
+                ->where('warehouse_id', $warehouse_id)
+                ->whereNotNull('lots_group_id')
+                ->count();
+            $positions_positions_count = ItemPosition::where('item_id', $product->item_id)
+                ->where('warehouse_id', $warehouse_id)
+                ->whereNull('lots_group_id')
+                ->count();
+            
+            $product->has_use_lots = $positions_lots_count > 0;
+
+            $product->has_use_positions = $positions_positions_count > 0;
+        }
         return response()->json([
             'success' => true,
             'data' => $products
+        ]);
+    }
+    public function getItemPositionsLots($item_id, $warehouse_id){
+        $item_positions = ItemPosition::where('item_id', $item_id)->where('warehouse_id', $warehouse_id)->whereNotNull('lots_group_id')->get();
+        foreach ($item_positions as $items_position_value) {
+            $lots_group = ItemLotsGroup::find($items_position_value->lots_group_id);
+            if($lots_group){
+                $items_position_value->code = $lots_group->code;
+                $items_position_value->date_of_due = $lots_group->date_of_due;
+            }
+        }
+        return response()->json([
+            'success' => true,
+            'data' => $item_positions
         ]);
     }
     public function getWarehousesByEstablishment($id)
