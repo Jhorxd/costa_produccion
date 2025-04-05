@@ -82,6 +82,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                 <span>Preventa</span>
                             </a>
                             <ul class="nav nav-children" style="">
+                                <!-- GB: Hidden
                                 @if(in_array('sale-opportunity', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'sale-opportunities') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{route('tenant.sale_opportunities.index')}}">
@@ -89,6 +90,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         </a>
                                     </li>
                                 @endif
+                                -->
 
                                 @if(in_array('quotations', $vc_module_levels))
 
@@ -99,6 +101,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     </li>
                                 @endif
 
+                                <!-- GB: Hidden
                                 @if(in_array('contracts', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'contracts') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{ route('tenant.contracts.index') }}">
@@ -122,6 +125,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         </a>
                                     </li>
                                 @endif
+                                -->
                             </ul>
                         </li>
                     @endif
@@ -181,7 +185,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         <a class="nav-link" href="{{ route('tenant.pos.index') }}">Punto de venta</a>
                                     </li>
                                 @endif
-
+                                <!-- GB: Hidden
                                 {{-- Venta Rápida --}}
                                 @if(in_array('pos_garage', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'pos' && $secondLevel === 'garage') ? 'nav-active' : '' }}">
@@ -189,7 +193,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                 style="font-size:.65rem;">(Grifos y Markets)</span></a>
                                     </li>
                                 @endif
-
+                                -->
                             </ul>
                         </li>
                     @endif
@@ -259,6 +263,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                                     </a>
                                                                 </li>
                                                             @endif
+                                                            <!-- GB: Hidden
                                                             @if(in_array('purchases_fixed_assets_items', $vc_module_levels))
                                                                 <li
                                                                     class="{{ ($firstLevel === 'fixed-asset' && $secondLevel === 'items') ? 'nav-active' : '' }}">
@@ -273,6 +278,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                                         activo fijo</a>
                                                                 </li>
                                                             @endif
+                                                            -->
                                                         </ul>
                                                     </li>
                                     @endif
@@ -281,10 +287,10 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     @if(in_array('persons', $vc_modules))
                                         <li
                                             class="nav-parent
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {{ ($firstLevel === 'persons' && $secondLevel === 'customers') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {{ $firstLevel === 'person-types' ? 'nav-active nav-expanded' : '' }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {{ $firstLevel === 'agents' ? 'nav-active nav-expanded' : '' }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ">
+                                                    {{ ($firstLevel === 'persons' && $secondLevel === 'customers') ? 'nav-active nav-expanded' : '' }}
+                                                    {{ $firstLevel === 'person-types' ? 'nav-active nav-expanded' : '' }}
+                                                    {{ $firstLevel === 'agents' ? 'nav-active nav-expanded' : '' }}
+                                                        ">
                                             <a class="nav-link" href="#">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -356,6 +362,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                         <a class="nav-link" href="{{route('tenant.items.index')}}">Productos</a>
                                                     </li>
                                                 @endif
+                                                <!-- GB: Hidden
                                                 @if(in_array('items_packs', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'item-sets') ? 'nav-active' : '' }}">
                                                         <a class="nav-link"
@@ -367,6 +374,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                         <a class="nav-link" href="{{route('tenant.services')}}">Servicios</a>
                                                     </li>
                                                 @endif
+                                                -->
                                                 @if(in_array('items_categories', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'categories') ? 'nav-active' : '' }}">
                                                         <a class="nav-link" href="{{route('tenant.categories.index')}}">Categorías</a>
@@ -843,7 +851,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             </a>
                         </li>
                     @endif
-
+                    <!-- GB: Hidden
                     {{-- Tienda virtual --}}
                     @if(in_array('ecommerce', $vc_modules))
                         <li
@@ -906,7 +914,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             </ul>
                         </li>
                     @endif
-
+                    
                     {{-- Restaurante --}}
                     @if(in_array('restaurant_app', $vc_modules))
                         <li class=" nav-parent {{ ($firstLevel === 'restaurant') ? 'nav-active nav-expanded' : '' }}">
@@ -994,7 +1002,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             </ul>
                         </li>
                     @endif
-
+                    -->
                     {{-- DIGEMID --}}
                     @if(in_array('digemid', $vc_modules) && $configuration->isPharmacy())
                         <li class=" nav-parent {{ ($firstLevel === 'digemid') ? 'nav-active nav-expanded' : '' }}">
@@ -1053,6 +1061,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                     {{-- @if(in_array('hotels', $vc_modules) || in_array('documentary-procedure', $vc_modules))
                     <li class="nav-description">Módulos extras</li>
                     @endif --}}
+                    <!-- GB: hidden
                     @if(in_array('hotels', $vc_modules))
                         <li class=" nav-parent {{ ($firstLevel === 'hotels') ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
@@ -1106,6 +1115,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             </ul>
                         </li>
                     @endif
+                    
                     {{-- Suscription --}}
                     @if(in_array('suscription_app', $vc_modules))
                         <li class=" nav-parent {{ ($firstLevel === 'full_suscription') ? 'nav-active nav-expanded' : '' }}">
@@ -1253,7 +1263,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             </ul>
                         </li>
                     @endif
-
+                    
                     @if(in_array('documentary-procedure', $vc_modules))
                         <li
                             class=" nav-parent {{ ($firstLevel === 'documentary-procedure') ? 'nav-active nav-expanded' : '' }}">
@@ -1326,7 +1336,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             </ul>
                         </li>
                     @endif
-
+                    
                     {{-- Produccion --}}
                     @if(in_array('production_app', $vc_modules))
 
@@ -1391,7 +1401,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                             </ul>
                                         </li>
                     @endif
-
+                    -->
                     <!-- @if(in_array('generate_link_app', $vc_modules))
                 <li class="{{ ($firstLevel === 'payment-links')?'nav-active':'' }}">
                     <a class="nav-link"
@@ -1493,6 +1503,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                             Sucursales & Series</a>
                     </li>
                 @endif
+                <!-- GB: Hidden
                 @if(in_array('app_2_generator', $vc_modules))
                     <li>
                         <a class="nav-link" href="{{ route('tenant.liveapp.configuration') }}">
@@ -1508,6 +1519,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                         </a>
                     </li>
                 @endif
+                
                 @if(in_array('apps', $vc_modules))
                     <li>
                         <a class="nav-link" href="{{url('list-extras')}}">
@@ -1529,6 +1541,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                         </a>
                     </li>
                 @endif
+                -->
                 @if(in_array('configuration', $vc_modules))
                     <li
                         class="{{in_array($firstLevel, ['list-platforms', 'list-cards', 'list-currencies', 'list-bank-accounts', 'list-banks', 'list-attributes', 'list-detractions', 'list-units', 'list-payment-methods', 'list-incomes', 'list-payments', 'company_accounts', 'list-vouchers-type', 'companies', 'advanced', 'tasks', 'inventories', 'bussiness_turns', 'offline-configurations', 'series-configurations', 'configurations', 'login-page', 'list-settings']) ? 'nav-active' : ''}}">
