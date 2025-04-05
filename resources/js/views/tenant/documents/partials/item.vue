@@ -316,7 +316,7 @@
                             <td class="text-center">{{ row.sales_condition ? row.sales_condition.description : ''  }}</td>
                             <td class="text-left">{{ row.pharmaceutical_unit_type ? row.pharmaceutical_unit_type.description : '' }}</td>
                             <td class="text-left">{{ row.active_principle }}</td>
-                            <td class="text-left">{{ row.estado }}</td>
+                            <td class="text-left">{{ row.inventory_state_description ? row.inventory_state_description : ''  }}</td>
                             <!-- <td class="text-left">{{ row.accion }}</td> -->
                         </tr>
                         <tr v-if="items.length === 0">

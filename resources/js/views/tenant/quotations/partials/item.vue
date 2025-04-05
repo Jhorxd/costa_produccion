@@ -269,7 +269,7 @@
                             <th class="text-left" style="min-width: 170px;">Forma Farmaceútica</th>
                             <th class="text-left" style="min-width: 130px;">Principio Activo</th>
                             <th class="text-left" style="min-width: 95px;">Estado</th>
-                            <th class="text-left" style="min-width: 95px;">Accion</th>
+                            <!-- <th class="text-left" style="min-width: 95px;">Accion</th> -->
                         </tr>
                         <tr
                             v-for="(row, index) in items"
@@ -291,7 +291,7 @@
                             <td class="text-left">
                                 <div v-for="(location, i) in row.locations" :key="i">
                                     <div v-for="(col, idx) in location.columns" :key="idx">
-                                        {{ location.location_name }} - {{ location.code_location }} - {{ col }}
+                                        {{ location.code_location }} - {{ col }} - {{ numberToLetter(col) }}
                                     </div>
                                 </div>
                             </td>
@@ -300,8 +300,8 @@
                             <td class="text-center">{{ row.sales_condition ? row.sales_condition.description : ''  }}</td>
                             <td class="text-left">{{ row.pharmaceutical_unit_type ? row.pharmaceutical_unit_type.description : '' }}</td>
                             <td class="text-left">{{ row.active_principle }}</td>
-                            <td class="text-left">{{ row.estado }}</td>
-                            <td class="text-left">{{ row.accion }}</td>
+                            <td class="text-left">{{ row.inventory_state_description ? row.inventory_state_description : ''  }}</td>
+                            <!-- <td class="text-left">{{ row.accion }}</td> -->
                         </tr>
                         <tr v-if="items.length === 0">
                             <td colspan="7" class="text-center">No hay registros disponibles</td>
@@ -1105,6 +1105,15 @@ export default {
         clickIncrease() {
             this.form.quantity = parseInt(this.form.quantity + 1)
             this.calculateTotal()
+        },
+        numberToLetter(number) {
+            let letter = '';
+            while (number > 0) {
+                const remainder = (number - 1) % 26;
+                letter = String.fromCharCode(65 + remainder) + letter;
+                number = Math.floor((number - 1) / 26);
+            }
+            return letter;
         },
         async searchRemoteItems(input) {
             if (input.length > 2) {

@@ -38,7 +38,7 @@ use Modules\Item\Models\WebPlatform;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Modules\Purchase\Models\WeightedAverageCost;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
-
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class Item
@@ -988,26 +988,40 @@ class Item extends ModelTenant
             $location = InventoryWarehouseLocation::find($location_id);
 
             if ($location) {
-            // Obtener todas las posiciones de esta ubicación específicas para item_id = 7
-            $positions = WarehouseLocationPosition::with('lots.lots_group')
-                ->where('location_id', $location_id)
-                ->whereIn('id', function ($query) {
-                    $query->select('position_id')
-                        ->from('item_positions')
-                        ->where('item_id', $this->id);
+            // Obtener todas las posiciones de esta ubicación específica para un item
+                $positions = WarehouseLocationPosition::with('lots.lots_group')
+                    ->where('location_id', $location_id)
+                    ->whereIn('id', function ($query) {
+                        $query->select('position_id')
+                            ->from('item_positions')
+                            ->where('item_id', $this->id);
                     })
-                ->get();
+                    ->get();
             // Obtener solo las columnas de las posiciones
-            $columns = $positions->pluck('column')->toArray();
+                $columns = $positions->pluck('column')->toArray();
 
             // Agregar a la lista de ubicaciones
-            $locations_data[] = [
-                'location_name' => $location->name,
-                'code_location' => $location->code,
-                'columns' => $columns,
-            ];
+                $locations_data[] = [
+                    'location_name' => $location->name,
+                    'code_location' => $location->code,
+                    'columns' => $columns,
+                ];
+            }
         }
-    }
+
+        $item = Item::where('id', $this->id)
+            ->where('inventory_state_id', $this->inventory_state_id)
+            ->first();
+        
+        $inventory_state_description = null;
+        if($item){
+            $inventory_state = InventoryState::where('id', $item->inventory_state_id)
+                ->first();
+
+            if ($inventory_state) {
+                $inventory_state_description = $inventory_state->description;
+            }
+        }
         
 
         $data = [
@@ -1132,7 +1146,7 @@ class Item extends ModelTenant
             ] : null,
             'active_principle' => $this->active_principle,
             'locations' => $locations_data,
-            'estado' => 'Disponible',
+            'inventory_state_description' => $inventory_state_description,
             'accion' => 'Alergías'
         ];
 

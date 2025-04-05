@@ -101,14 +101,14 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     </li>
                                 @endif
 
-                                <!-- GB: Hidden
-                                @if(in_array('contracts', $vc_module_levels))
+                                
+                                {{-- @if(in_array('contracts', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'contracts') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{ route('tenant.contracts.index') }}">
                                             Contratos
                                         </a>
                                     </li>
-                                @endif
+                                @endif --}}
 
                                 @if(in_array('order-note', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'order-notes') ? 'nav-active' : '' }}">
@@ -118,28 +118,27 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     </li>
                                 @endif
 
-                                @if(in_array('technical-service', $vc_module_levels))
+                                {{-- @if(in_array('technical-service', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'technical-services') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{route('tenant.technical_services.index')}}">
                                             Servicio de soporte técnico
                                         </a>
                                     </li>
-                                @endif
-                                -->
+                                @endif --}}
+                                
                             </ul>
                         </li>
                     @endif
 
                     {{-- Ventas --}}
                     @if(in_array('documents', $vc_modules))
-                        <li class="
-                                                                                                                    nav-parent
-                                                                                                                    {{ ($firstLevel === 'documents' && $secondLevel !== 'create' && $secondLevel !== 'not-sent' && $secondLevel !== 'regularize-shipping') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                    {{ ($firstLevel === 'documents' && $secondLevel === 'create') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                    {{ ($firstLevel === 'sale-notes') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                    {{ ($firstLevel === 'regularize-shipping') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                    {{ ($firstLevel === 'pos') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                        ">
+                        <li class="nav-parent
+                                {{ ($firstLevel === 'documents' && $secondLevel !== 'create' && $secondLevel !== 'not-sent' && $secondLevel !== 'regularize-shipping') ? 'nav-active nav-expanded' : '' }}
+                                {{ ($firstLevel === 'documents' && $secondLevel === 'create') ? 'nav-active nav-expanded' : '' }}
+                                {{ ($firstLevel === 'sale-notes') ? 'nav-active nav-expanded' : '' }}
+                                {{ ($firstLevel === 'regularize-shipping') ? 'nav-active nav-expanded' : '' }}
+                                {{ ($firstLevel === 'pos') ? 'nav-active nav-expanded' : '' }}
+                            ">
                             <a class="nav-link" href="#">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
