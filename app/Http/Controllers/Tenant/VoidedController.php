@@ -58,9 +58,10 @@ class VoidedController extends Controller
     {
         $validate = $this->validateVoided($request);
         if(!$validate['success']) return $validate;
-
+        
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
+            $facturalo->updateStockForAnnulmentSale($request->documents);
             $facturalo->save($request->all());
             $facturalo->createXmlUnsigned();
             $service_pse_xml = $facturalo->servicePseSendXml();

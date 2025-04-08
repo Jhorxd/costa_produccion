@@ -37,7 +37,12 @@ use Modules\Inventory\Models\Warehouse;
 use App\CoreFacturalo\Requests\Inputs\Functions;
 use App\Models\Tenant\PurchaseSettlement;
 use App\CoreFacturalo\Services\Helpers\SendDocumentPse;
+use App\Models\Tenant\DocumentItem;
+use App\Models\Tenant\Item;
+use App\Models\Tenant\ItemPosition;
+use App\Models\Tenant\ItemWarehouse;
 use Modules\Finance\Traits\FilePaymentTrait;
+use Modules\Item\Models\ItemLotsGroup;
 use Modules\PseService\Http\Gior\Service as GiorService;
 
 
@@ -119,7 +124,7 @@ class Facturalo
         return $this->response;
     }
 
-    public function save($inputs)
+    public function save(&$inputs)
     {
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
@@ -127,6 +132,7 @@ class Facturalo
         switch ($this->type) {
             case 'debit':
             case 'credit':
+                $this->updateStockForSale($inputs['items'], 'add');
                 $document = Document::create($inputs);
                 $document->note()->create($inputs['note']);
                 foreach ($inputs['items'] as $row) {
@@ -136,6 +142,7 @@ class Facturalo
                 $this->document = Document::find($document->id);
                 break;
             case 'invoice':
+                $this->updateStockForSale($inputs['items']);
                 $document = Document::create($inputs);
                 $this->savePayments($document, $inputs['payments']);
                 $this->saveFee($document, $inputs['fee']);
@@ -241,7 +248,180 @@ class Facturalo
         return $this;
     }
 
+    public function updateStockForSale(&$items, $operation = 'subtract'){
+        foreach ($items as &$item_element) {
+            $item_extra_data = $item_element['item'];
+            if(isset($item_extra_data['IdLoteSelected'])){
+                if ($operation == 'add') {
+                    $item = Item::find($item_element['item_id']);
+                    if($item){
+                        $item->stock += (int) $item_element['quantity'];
+                        $item->save();
+                    }
+                }
+                foreach ($item_extra_data['IdLoteSelected'] as $lot_element) {
+                    $lot_position = ItemPosition::where('lots_group_id', $lot_element['id'])->where('item_id', $item_element['item_id'])->first();
+                    if($lot_position){
+                        $quantity = (int)$lot_element['compromise_quantity'];
+    
+                        if ($operation === 'subtract') {
+                            $lot_position->stock -= $quantity;
+                        } elseif ($operation === 'add') {
+                            $lot_position->stock += $quantity;
+                        }
+                        $lot_position->save();
+                    }
+                }
+            }else{
+                $establishment_id = auth()->user()->establishment_id;
+                $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
+                if ($operation == 'subtract') {
+                    $item_positions = ItemPosition::where('warehouse_id', $warehouse_user_active->id)->where('item_id', $item_element['item_id'])->get();
+                    $processed_item_position_ids = [];
+                    if(!empty($item_positions)){
+                        $missing_quantity=(int)$item_element['quantity'];
+                        foreach ($item_positions as $item_position_element) {
+                            if($missing_quantity<=(int)$item_position_element->stock){
+                                $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => (int)$missing_quantity];
+                                $item_position_element->stock -= $missing_quantity;
+                                $item_position_element->save();
+                                break;
+                            }else{
+                                $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => $item_position_element->stock];
+                                $missing_quantity -= $item_position_element->stock;
+                                $item_position_element->stock = 0;
+                                $item_position_element->save();
+                            }
+                        }
+                        $item_element['item']['item_positions_used'] = $processed_item_position_ids;
+                    }
+                } elseif ($operation == 'add') {
+                    $item = Item::find($item_element['item_id']);
+                    if($item){
+                        $item->stock += (int) $item_element['quantity'];
+                        $item->save();
+                    }
+                    if(isset($item_element['item']['item_positions_used'])){
+                        foreach ($item_element['item']['item_positions_used'] as $position_used_element) {
+                            $item_position = ItemPosition::find($position_used_element['id']);
+                            if($item_position){
+                                $item_position->stock += (int)$position_used_element['stock'];
+                                $item_position->save(); 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
+    /* public function updateStockForSale(&$items, $operation = 'subtract') {
+        foreach ($items as &$item_element) {
+            $item_extra_data = $item_element['item'];
+    
+            if (isset($item_extra_data['IdLoteSelected'])) {
+                foreach ($item_extra_data['IdLoteSelected'] as $lot_element) {
+                    $lot_position = ItemPosition::where('lots_group_id', $lot_element['id'])
+                                                  ->where('item_id', $item_element['item_id'])
+                                                  ->first();
+    
+                    if ($lot_position) {
+                        $quantity = (int)$lot_element['compromise_quantity'];
+    
+                        if ($operation === 'subtract') {
+                            $lot_position->stock -= $quantity;
+                        } elseif ($operation === 'add') {
+                            $lot_position->stock += $quantity;
+                        }
+    
+                        $lot_position->save();
+                    }
+                }
+            } else {
+                $establishment_id = auth()->user()->establishment_id;
+                $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
+                $item_positions = ItemPosition::where('warehouse_id', $warehouse_user_active->id)
+                                              ->where('item_id', $item_element['item_id'])
+                                              ->get();
+    
+                if (!empty($item_positions)) {
+                    $missing_quantity = (int)$item_element['quantity'];
+                    $processed_item_position_ids = [];
+    
+                    foreach ($item_positions as $item_position_element) {
+                        if ($operation === 'subtract') {
+                            if ($missing_quantity <= (int)$item_position_element->stock) {
+                                $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => $missing_quantity];
+                                $item_position_element->stock -= $missing_quantity;
+                                $item_position_element->save();
+                                break;
+                            } else {
+                                $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => $item_position_element->stock];
+                                $missing_quantity -= $item_position_element->stock;
+                                $item_position_element->stock = 0;
+                                $item_position_element->save();
+                            }
+                        } elseif ($operation === 'add') {
+                            $quantityToAdd = isset($item_element['item']['item_positions_used']) ?
+                                array_reduce($item_element['item']['item_positions_used'], function ($carry, $item) {
+                                    return $carry + $item['stock'];
+                                }, 0) :
+                                (int)$item_element['quantity'];
+    
+                            $item_position_element->stock += min($quantityToAdd, $missing_quantity);
+                            $missing_quantity -= min($quantityToAdd, $missing_quantity);
+                            $item_position_element->save();
+    
+                            $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => min($quantityToAdd, $missing_quantity)];
+                            if($missing_quantity <= 0) break;
+                        }
+                    }
+                    $item_element['item']['item_positions_used'] = $processed_item_position_ids;
+                }
+            }
+        }
+    } */
+
+    public function updateStockForAnnulmentSale($documents){
+        $documents_item = DocumentItem::where('document_id',$documents[0]['document_id'])->get();
+        if(!empty($documents_item)){
+            foreach ($documents_item as $document_item_element) {
+                $itemParsed = json_decode(json_encode($document_item_element['item']), true);
+                $item = Item::find($document_item_element['item_id']);
+                if($item){
+                    $item->stock += (int)$document_item_element['quantity'];
+                    $item->save();
+                }
+                $item_warehouse = ItemWarehouse::where('warehouse_id', $document_item_element['warehouse_id'])->where('item_id', $document_item_element['item_id'])->first();
+                if($item_warehouse){
+                    $item_warehouse->stock += (int)$document_item_element['quantity'];
+                    $item_warehouse->save();
+                }
+                if(isset($itemParsed['IdLoteSelected'])){
+                    foreach ($itemParsed['IdLoteSelected'] as $lot_element) {
+                        $lot = ItemLotsGroup::find($lot_element['id']);
+                        if($lot){
+                            $lot->quantity += (int)$lot_element['compromise_quantity'];
+                            $lot->save();
+                        }
+                        $lot_position = ItemPosition::where('item_id', $item->id)->where('lots_group_id', $lot_element['id'])->first();
+                        if($lot_position){
+                            $lot_position->stock += (int)$lot_element['compromise_quantity'];
+                            $lot_position->save();
+                        }
+                    }
+                }else if(isset($itemParsed['item_positions_used'])){
+                    foreach ($itemParsed['item_positions_used'] as $item_position_element) {
+                        $item_position = ItemPosition::find($item_position_element['id']);
+                        if($item_position){
+                            $item_position->stock += (int)$item_position_element['stock'];
+                            $item_position->save();
+                        }
+                    }
+                }
+            }
+        }
+    }
     /**
      * Firma digital xml
      */
