@@ -62,7 +62,8 @@ class VoidedController extends Controller
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->updateStockForAnnulmentSale($request->documents);
-            $facturalo->save($request->all());
+            $inputs = $request->all();
+            $facturalo->save($inputs);
             $facturalo->createXmlUnsigned();
             $service_pse_xml = $facturalo->servicePseSendXml();
             $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);

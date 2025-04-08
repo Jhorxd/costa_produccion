@@ -33,6 +33,7 @@ use App\Models\Tenant\PaymentMethodType;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\SaleNoteItem;
+use App\Models\Tenant\ItemPosition;
 use App\Models\Tenant\SaleNotePayment;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\SaleNoteMigration;
@@ -1648,7 +1649,10 @@ class SaleNoteController extends Controller
 
         DB::connection('tenant')->transaction(function () use ($id) {
 
+            // dd($id);
             $obj =  SaleNote::find($id);
+            // dd($obj);
+            $this->updateStockForAnnulmentSaleNote($obj);
             $obj->state_type_id = 11;
             $obj->save();
 
@@ -1664,6 +1668,7 @@ class SaleNoteController extends Controller
                 //habilito las series
                 // ItemLot::where('item_id', $item->item_id )->where('warehouse_id', $warehouse->id)->update(['has_sale' => false]);
                 $this->voidedLots($sale_note_item);
+                // $this->updateStockForAnnulmentSaleNote($obj);
 
             }
 
@@ -1675,6 +1680,52 @@ class SaleNoteController extends Controller
         ];
 
 
+    }
+
+    public function updateStockForAnnulmentSaleNote($id)
+    {
+        $sale_note_item = SaleNoteItem::where('sale_note_id', $id)->first();
+        if(!empty($sale_note_item)){
+            foreach($sale_note_item as $element)
+            {
+                $itemParsed = json_decode(json_encode($element['item']),true);
+                $item = Item::find($element['item_id']);
+                if($item){
+                    $item->stock += (int)$element['quantity'];
+                    $item->save();
+                }
+                $item_warehouse = ItemWarehouse::where('warehouse_id', $element['warehouse_id'])
+                                ->where('item_id', $element['item_id'])
+                                ->first();
+                if($item_warehouse){
+                    $item_warehouse->stock += (int)$element['quantity'];
+                    $item_warehouse->save();
+                }
+                if(isset($itemParsed['IdLoteSelected'])){
+                    foreach($itemParsed['IdLoteSelected'] as $lot_element)
+                    {
+                        $lot = ItemLotsGroup::find($lot_element['id']);
+                        if($lot){
+                            $lot->quantity += (int)$lot_element['compromise_quantity'];
+                            $lot->save();
+                        }
+                        $lot_position = ItemPosition::where('item_id', $item->id)->where('lots_group_id', $lot_element['id'])->first();
+                        if($lot_position){
+                            $lot_position->stock += (int)$lot_element['compromise_quantity'];
+                            $lot_position->save();
+                        }
+                    }
+                }else if(isset($itemParsed['item_positions_used'])){
+                    foreach ($itemParsed['item_positions_used'] as $item_position_element) {
+                        $item_position = ItemPosition::find($item_position_element['id']);
+                        if($item_position){
+                            $item_position->stock += (int)$item_position_element['stock'];
+                            $item_position->save();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function voidedSaleNoteItem($sale_note_item, $warehouse)
