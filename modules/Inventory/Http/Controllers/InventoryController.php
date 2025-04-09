@@ -342,7 +342,7 @@ class InventoryController extends Controller
                             $request->except('details'),
                             ['confirmed' => false],
                             ['json_positions' => json_encode($request->json_positions)],
-                            ['json_lots' => json_encode($request->json_lots)],
+                            ['json_lots' => json_encode($request->json_lots)]
                         )
                     );
                     
