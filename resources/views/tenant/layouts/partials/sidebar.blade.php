@@ -54,7 +54,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     <path d="M13.45 11.55l2.05 -2.05" />
                                     <path d="M6.4 20a9 9 0 1 1 11.2 0z" />
                                 </svg>
-                                <span>DASHBOARD</span>
+                                <span>Dashboard</span>
                             </a>
                         </li>
                     @endif
@@ -150,7 +150,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     <line x1="16" y1="17" x2="8" y2="17"></line>
                                     <polyline points="10 9 9 9 8 9"></polyline>
                                 </svg>
-                                <span>VENTAS</span>
+                                <span>Ventas</span>
                             </a>
                             <ul class="nav nav-children" style="">
                                 @if(auth()->user()->type != 'integrator' && $vc_company->soap_type_id != '03')
