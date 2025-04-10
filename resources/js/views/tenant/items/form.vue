@@ -881,7 +881,7 @@
                     </div> 
                 </el-tab-pane>
 
-                <el-tab-pane class
+                <!-- <el-tab-pane class
                              v-if="!isService"
                              name="second">
                     <span slot="label">Almacenes</span>
@@ -903,18 +903,18 @@
                                                       type="number"></el-input>
                                         </td>
                                     </tr>
-                                    <!-- <tr v-for="w in warehouses" :key="w.id">
+                                    <tr v-for="w in warehouses" :key="w.id">
                                         <td>{{ w.description }}</td>
                                         <td width="150">
                                             <el-input placeholder="Precio" v-model="w.price" type="number" min="0" step="0.01"></el-input>
                                         </td>
-                                    </tr> -->
+                                    </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
-                </el-tab-pane>
+                </el-tab-pane> -->
                 <el-tab-pane class  v-if="!isService" name="third">
                     <span slot="label">Presentaciones</span>
                     <div class="row">
@@ -1219,7 +1219,7 @@
                         </div>
                     </div>
                 </el-tab-pane>
-                <el-tab-pane class
+                <!-- <el-tab-pane class
                              v-if="!isService"
                              name="five">
                     <span slot="label">Compra</span>
@@ -1284,7 +1284,7 @@
                             </div>
                         </div>
 
-                        <!-- isc compras -->
+                        isc compras
                         <div class="col-md-4">
                             <div :class="{'has-danger': errors.purchase_has_isc}"
                                  class="form-group">
@@ -1332,10 +1332,10 @@
                                 </div>
                             </div>
                         </template>
-                        <!-- isc compras -->
+                        isc compras
 
                     </div>
-                </el-tab-pane>
+                </el-tab-pane> -->
 
                 <el-tab-pane v-if="canShowExtraData"
                              class
