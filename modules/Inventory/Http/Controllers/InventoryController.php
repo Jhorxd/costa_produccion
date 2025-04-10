@@ -515,6 +515,30 @@ class InventoryController extends Controller
         ];
     }
 
+    public function checkPositions($warehouse_id, $item_id)
+    {
+        $item_positions_count = ItemPosition::where('item_id', $item_id)->where('warehouse_id', $warehouse_id)->count();
+        $locations = [];
+        if($item_positions_count > 0){
+            $location_ids = ItemPosition::where('item_id', $item_id)
+                                  ->where('warehouse_id', $warehouse_id)
+                                  ->pluck('location_id')
+                                  ->toArray();
+            $locations = InventoryWarehouseLocation::whereIn('id', $location_ids)->get();
+        }
+
+        $data = [
+            'positions_enabled' => $item_positions_count > 0,
+            'locations' => $locations
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => "Datos encontrados",
+            'data' =>  $data
+        ]);
+    }
+
 
     public function ExtraDataList()
     {
@@ -570,6 +594,8 @@ class InventoryController extends Controller
             $quantity = $request->input('quantity');
             $lot_code = $request->input('lot_code');
             $comments = $request->input('comments');
+            $lots_enabled = $request->input('lots_enabled');
+            $positions_enabled = $request->input('positions_enabled');
             $created_at = $request->input('created_at');
 
 
@@ -606,10 +632,14 @@ class InventoryController extends Controller
 
             $warehouse = Warehouse::query()->find($warehouse_id);
 
-            $itm = Item::query()
-                ->select('id', 'description')
-                ->where('id', $item_id)
+            $itm = Item::where('id', $item_id)
                 ->first();
+            if($type == 'input'){
+                $itm->stock += (int)$request->quantity;
+            }else{
+                $itm->stock -= (int)$request->quantity;
+            }
+            $itm->save();
             $guide_items[] = [
                 'id' => $item_id,
                 'name' => $itm->description,
@@ -636,35 +666,78 @@ class InventoryController extends Controller
             $lots_enabled = isset($request->lots_enabled) ? $request->lots_enabled : false;
 
             if ($type == 'input') {
-                foreach ($lots as $lot) {
-                    /*$inventory->lots()->create([
-                        'date' => $lot['date'],
-                        'series' => $lot['series'],
-                        'item_id' => $item_id,
-                        'warehouse_id' => $warehouse_id,
-                        'has_sale' => false
-                    ]);*/
-
-                    $inventory->lots()->create([
-                        'date' => $lot['date'],
-                        'series' => $lot['series'],
-                        'item_id' => $item_id,
-                        'warehouse_id' => $warehouse_id,
-                        'has_sale' => false,
-                        'state' => $lot['state'],
-                    ]);
-                }
-
-                if ($lots_enabled) {
-                    ItemLotsGroup::create([
+                $data_item = $request->input('data_item');
+                if($positions_enabled && !$lots_enabled){
+                    $positions = $data_item['positions'];
+                    $location_id = $data_item['location_id'];
+                    foreach ($positions as $position_element) {
+                        $item_position = ItemPosition::where('position_id', $position_element['id'])
+                                                     ->where('item_id', $item_id)
+                                                     ->first();
+                        if ($item_position) {
+                            $item_position->stock += (int) $position_element['stock'];
+                            $item_position->save();
+                        } else {
+                            $newItemPosition = new ItemPosition();
+                            $newItemPosition->position_id = $position_element['id'];
+                            $newItemPosition->location_id = $location_id;
+                            $newItemPosition->warehouse_id = $warehouse_id;
+                            $newItemPosition->item_id = $item_id;
+                            $newItemPosition->stock = (int) $position_element['stock'];
+                            $newItemPosition->save();
+                        }
+                    }
+                }else if ($lots_enabled){
+                    $lot = ItemLotsGroup::create([
                         'code' => $lot_code,
                         'quantity' => $quantity,
                         'date_of_due' => $request->date_of_due,
-                        'item_id' => $item_id
+                        'item_id' => $item_id,
+                        'status' => 1,
+                        'warehouse_id' => $warehouse_id
+                    ]);
+
+                    ItemPosition::create([
+                        'stock' => $quantity,
+                        'lots_group_id' => $lot->id,
+                        'item_id' => $item_id,
+                        'position_id' => $data_item['positions']['0']['id'],
+                        'location_id' => $data_item['location_id'],
+                        'warehouse_id' => $warehouse_id
                     ]);
                 }
             } else {
-                foreach ($lots as $lot) {
+                $data_item = $request->input('data_item');
+                if($positions_enabled && !$lots_enabled){
+                    $positions = $data_item['positions'];
+                    foreach($positions as $position_element){
+                        $item_position = ItemPosition::where('position_id', $position_element['id'])->where('item_id', $item_id)->first();
+                        if($item_position){
+                            $item_position->stock -= (int)$position_element['stock'];
+                            $item_position->save();
+                        }
+                    }
+                }else{
+                    if (isset($request->IdLoteSelected)) {
+                        if (is_array($request->IdLoteSelected)) {
+                            foreach ($request->IdLoteSelected as $lot_element) {
+                                $item_position = ItemPosition::where('item_id', $item_id)->where('lots_group_id', $lot_element['id'])->where('warehouse_id', $warehouse_id)->first();
+                                if($item_position){
+                                    $item_position->stock -= (int)$lot_element['compromise_quantity'];
+                                    $item_position->save();
+                                }
+                                $lot = ItemLotsGroup::find($lot_element['id']);
+                                $lot->quantity = ($lot->quantity - $lot_element['compromise_quantity']);
+                                $lot->save();
+                            }
+                        } else {
+                            $lot = ItemLotsGroup::find($request->IdLoteSelected);
+                            $lot->quantity = ($lot->quantity - $quantity);
+                            $lot->save();
+                        }
+                    }
+                }
+                /* foreach ($lots as $lot) {
                     if ($lot['has_sale']) {
                         $item_lot = ItemLot::findOrFail($lot['id']);
                         // $item_lot->delete();
@@ -672,23 +745,7 @@ class InventoryController extends Controller
                         $item_lot->state = 'Inactivo';
                         $item_lot->save();
                     }
-                }
-
-                if (isset($request->IdLoteSelected)) {
-                    if (is_array($request->IdLoteSelected)) {
-                        foreach ($request->IdLoteSelected as $row) {
-                            Log::info($row);
-                            $lot = ItemLotsGroup::find($row['id']);
-                            $lot->quantity = ($lot->quantity - $row['compromise_quantity']);
-                            $lot->save();
-                        }
-                    } else {
-                        $lot = ItemLotsGroup::find($request->IdLoteSelected);
-                        $lot->quantity = ($lot->quantity - $quantity);
-                        $lot->save();
-                    }
-                }
-
+                } */
             }
             DB::connection('tenant')->commit();
 
