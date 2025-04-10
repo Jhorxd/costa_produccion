@@ -183,6 +183,7 @@ if ($hostname) {
                 Route::get('regularize_stock', 'InventoryController@regularize_stock');
 
                 Route::post('search_items', 'InventoryController@searchItems');
+                Route::get('checkPositions/{warehouse_id}/{item_id}', 'InventoryController@checkPositions');
                 /**
                  * inventory/report/tables
                  * inventory/report/records

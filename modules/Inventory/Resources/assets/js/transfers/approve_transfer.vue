@@ -407,15 +407,11 @@ export default {
             }
         },
         savedDataModal(dataModal){
-            console.log(dataModal);
-            console.log(this.selectBoxDataModal);
             const item = this.form.items.find(element => element.id == this.selectBoxDataModal.item_id);
-            console.log(item);
             
             if(item){
                 item.dataModal = dataModal;
             }
-            console.log(this.form);
         },
         addRowLotGroup(id) {
             this.form.selected_lots_group = id
@@ -654,12 +650,12 @@ export default {
                 items: items.map(item => ({
                     ...item,
                     dataModal: {
-                    item_id: item.id,
-                    location_id: item.location_id || null,
-                    positions: [],
-                    stock_necessary: item.quantity,
-                    has_lots: item.has_lots,
-                    has_position: item.has_position
+                        item_id: item.id,
+                        location_id: item.location_id || null,
+                        positions: [],
+                        stock_necessary: item.quantity,
+                        has_lots: item.has_lots,
+                        has_position: item.has_position
                     }
                 }))
                 };
