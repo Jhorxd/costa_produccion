@@ -28,7 +28,7 @@
           >
             <div class="box-content">
               <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
-              <p>Stock disponible: {{ box.stock_item }}</p>
+              <p>{{type=="input"?'Stock en uso':'Stock disponible'}}: {{ box.stock_item }}</p>
               <div class="content-stock d-flex justify-content-center" v-if="box.is_selected && !has_lots">
                 <el-input 
                   type="number" 
@@ -113,6 +113,23 @@ export default {
     }
   },
   methods: {
+    async create() {
+      
+      this.item_id = this.dataModal.item_id || '';
+      this.locations = this.locations_available ? [...this.locations_available] : [];
+      //await this.getLocations(this.warehouse_id);
+      this.positions = this.dataModal.positions ? [...this.dataModal.positions] : [];
+
+      this.stock_necessary = this.dataModal.stock_necessary || 0;
+      this.has_lots = this.dataModal.has_lots;
+      this.has_position = this.dataModal.has_position;
+      
+      if (this.dataModal.location_id!=null){
+        
+        await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id), this.warehouse_id); 
+      }
+      
+    },
     disableSelectButton(box){
       if(this.type=="input"){
         if(parseInt(box.stock_available)<=0 && parseInt(box.stock_item)<=0){
@@ -168,21 +185,6 @@ export default {
     },
     async changeLocation() {
       await this.getPositions(this.location_id, this.item_id, this.warehouse_id);
-    },
-    async create() {
-      this.item_id = this.dataModal.item_id || '';
-      this.locations = this.locations_available ? [...this.locations_available] : [];
-      //await this.getLocations(this.warehouse_id);
-      this.positions = this.dataModal.positions ? [...this.dataModal.positions] : [];
-      
-      if (this.dataModal.location_id!=null){
-        
-        await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id), this.warehouse_id); 
-      }
-      
-      this.stock_necessary = this.dataModal.stock_necessary || 0;
-      this.has_lots = this.dataModal.has_lots || false;
-      this.has_position = this.dataModal.has_position || false;
     },
     numberToLetter(number) {
       let letter = '';

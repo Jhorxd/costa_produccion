@@ -33,17 +33,17 @@
   
   export default {
     props: {
-        idWarehouse: Number, // ID del almacén
-        resource: String, // Recurso para la API (ej: 'locations')
+        idWarehouse: Number,
+        resource: String,
     },
     data() {
         return {
-            records: [], // Datos que se mostrarán en la tabla
-            loading: false, // Estado de carga
+            records: [],
+            loading: false,
             pagination: {
-                total: 0, // Total de registros
-                current_page: 1, // Página actual
-                per_page: 10, // Registros por página
+                total: 0,
+                current_page: 1,
+                per_page: 10,
             },
         };
     },
@@ -68,6 +68,9 @@
             } finally {
                 this.loading = false;
             }
+        },
+        refreshData() {
+            this.getRecords();
         },
   
         // Obtener los parámetros de la consulta (paginación y búsqueda)

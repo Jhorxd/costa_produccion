@@ -5,8 +5,10 @@
     use App\Models\Tenant\Configuration;
 use App\Models\Tenant\ItemPosition;
 use App\Models\Tenant\ItemSupply;
-    use Illuminate\Http\Request;
+use App\Models\Tenant\Kardex;
+use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Models\WarehouseLocationPosition;
 use Modules\Item\Models\ItemLotsGroup;
 
@@ -75,10 +77,20 @@ use Modules\Item\Models\ItemLotsGroup;
                 });
             }
             $item_positions = [];
-            $item_positions_selected = ItemPosition::where('item_id', $this->id)->get();
+            if($this->lots_enabled){
+                $item_positions_selected = ItemPosition::where('item_id', $this->id)
+                ->select('position_id', 'location_id', 'warehouse_id', DB::raw('SUM(stock) as stock'))
+                ->groupBy('position_id', 'location_id', 'warehouse_id')
+                ->get();
+            }else{
+                $item_positions_selected = ItemPosition::where('item_id', $this->id)->get();
+            }
             if($item_positions_selected){
                 foreach($item_positions_selected as $position_selected){
-                    $item_position = WarehouseLocationPosition::with('lots')->find($position_selected->position_id);
+                    $item_id = $this->id;
+                    $item_position = WarehouseLocationPosition::with(['lots' => function ($query) use ($item_id) {
+                        $query->where('item_id', $item_id);
+                    }])->find($position_selected->position_id);
                     if($item_position){
                         $item_position->stock=$position_selected->stock;
                         array_push($item_positions, $item_position);
@@ -86,9 +98,11 @@ use Modules\Item\Models\ItemLotsGroup;
                 }
             }
             $lots = ItemLotsGroup::where('item_id', $this->id)->get();
+            $hasSales = Kardex::where('item_id', $this->id)->where('type', 'sale')->count()>0;
 
             return [
                 'id' => $this->id,
+                'has_sales' => $hasSales,
                 'inventory_state_id' => $this->inventory_state_id,
                 'positions_selected' => $item_positions,
                 'location_id' => $item_positions!= [] ? $item_positions[0]->location_id:null,

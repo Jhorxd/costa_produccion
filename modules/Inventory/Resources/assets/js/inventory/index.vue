@@ -31,7 +31,7 @@
                 </li>
             </ol>
             <div v-if="typeUser == 'admin'" class="right-wrapper pull-right">
-                <button
+                <!-- <button
                     type="button"
                     class="btn btn-success btn-sm  mt-2 mr-2"
                     @click.prevent="clickImport()"
@@ -86,7 +86,7 @@
                             >Series</a
                         >
                     </div>
-                </div>
+                </div> -->
 
                 <button
                     type="button"
@@ -167,7 +167,7 @@
                             >
                                 Trasladar
                             </button>
-                            <button
+                            <!-- <button
                                 v-if="typeUser == 'admin'"
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-warning"
@@ -189,7 +189,7 @@
                                 >
                                     <i class="fa fa-info-circle"></i>
                                 </el-tooltip>
-                            </button>
+                            </button> -->
                         </td>
                     </tr>
                 </data-table>

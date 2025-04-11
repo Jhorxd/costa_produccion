@@ -181,9 +181,7 @@ export default {
         
         this.$http.get('/warehouses/recordsCustom')
     .then(response => {
-        console.log(response.data); // Muestra los datos en la consola
         this.records = response.data.data;
-        console.log(response.data.data);
     })
     .catch(error => {
         console.error("Error al obtener los datos:", error);
@@ -239,7 +237,6 @@ export default {
                     to: response.data.to,
                     total: response.data.total
                     };
-                    console.log( this.pagination);
                     //this.pagination = response.data.meta;
                     //console.log(JSON.stringify(response.data.meta))
                     this.pagination.per_page = parseInt(
@@ -281,7 +278,6 @@ export default {
             let response = await this.$http.post(`/${this.resource}/visibleMassive`,{
                 resource: this.fromRestaurant ? 'restaurant' : 'ecommerce',
             });
-            console.log(response);
                 
             if (response.status === 200) {
                 this.$message.success(response.data.message);
