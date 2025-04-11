@@ -1830,6 +1830,11 @@ export default {
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
             }
 
+            if(this.form.item.stock <= 0)
+            {
+                return this.$message.error('El producto no cuenta con stock suficiente');
+            }
+
             // this.row.edit = false;
             // this.initForm();
             this.row.item.extra = extra;

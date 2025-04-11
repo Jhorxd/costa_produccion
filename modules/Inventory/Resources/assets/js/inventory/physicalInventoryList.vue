@@ -96,6 +96,7 @@
           <th>Almacen</th>
           <th>Tipo de ajuste</th>
           <th>Estado</th>
+          <th>PDF</th>
           <th>Acciones</th>     
         </tr>
       </thead>
@@ -117,14 +118,14 @@
             </span>
           </td>      
           <td>{{ item.adjustment_type_name}}</td>
-          <td>
-            <button
+          <td><button
             class="btn waves-effect waves-light btn-xs btn-info"
             type="button"
             @click.prevent="clickDownload(item.id)">
             <i class="fa fa-file-pdf"></i>
             PDF
-            </button>
+            </button></td>
+          <td v-if="typeUser === 'admin'">
             <div class="dropdown">
               <button id="dropdownMenuButton"
                                         aria-expanded="false"
@@ -162,7 +163,8 @@
   
   <script>
   import queryString from "query-string";
-  export default {    
+  export default {  
+    props: ['typeUser'],  
     data() {
       return {
         records:[],

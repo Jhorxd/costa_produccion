@@ -686,7 +686,8 @@ class DocumentController extends Controller
     public function storeWithData($data)
     {
         self::setChildrenToData($data);
-        $fact = DB::connection('tenant')->transaction(function () use ($data) {
+        
+        $fact = DB::connection('tenant')->transaction(function () use (&$data) {
             $facturalo = new Facturalo();
             $facturalo->save($data);
             $facturalo->createXmlUnsigned();

@@ -109,7 +109,9 @@ class ItemController extends Controller
             'lot_code' => 'Código lote',
             'active' => 'Habilitados',
             'inactive' => 'Inhabilitados',
-            'category' => 'Categoria'
+            'category' => 'Categoria',
+            'active_principle' => 'Principio Activo',
+            'pharmaceutical_item_unit_type' => 'Presentación',
         ];
     }
 
@@ -133,6 +135,7 @@ class ItemController extends Controller
 
         // $records = Item::whereTypeUser()->whereNotIsSet();
         $records = $this->getInitialQueryRecords();
+        // dd($records->get());
 
         switch ($request->column)
         {
@@ -146,6 +149,17 @@ class ItemController extends Controller
                 $records->whereHas('category',function($q) use($request){
                                     $q->where('name', 'like', "%{$request->value}%");
                                 });
+                break;
+            
+            case 'active_principle':
+                $records->where('active_principle', 'like', "%{$request->value}%");
+                break;
+
+            case 'pharmaceutical_item_unit_type':
+                $records->whereHas('pharmaceutical_item_unit_type', function($q) use($request){
+                    $q->where('description', 'like', "%{$request->value}%");
+                });
+
                 break;
 
             case 'active':
@@ -503,6 +517,12 @@ class ItemController extends Controller
         $item_file = ItemFile::find($id);
         if($item_file){
             $rutaCompleta = Storage::disk('tenant')->path($item_file->route);
+            /* return json_encode([
+                'success' => false,
+                'message' => 'Archivo no encontrado con el id: '.$id,
+                'data' => $item_file,
+                'ruta' => $rutaCompleta
+            ]); */
             if (!file_exists($rutaCompleta)) {
                 return json_encode([
                     'success' => false,
@@ -593,31 +613,11 @@ class ItemController extends Controller
 
         $item->save();
 
-        /* if ($request->hasFile('item_files')) {
-            foreach ($request->file('item_files') as $file) {
-                $filename = $file->getClientOriginalName();
-                $path = $file->store('public/uploads/items');
-                
-                ItemFile::create([
-                    'item_id' => $item->id,
-                    'filename' => $filename,
-                    'route' => $path,
-                    'user_created_at' => $request->input('user_created_at'),
-                ]);
-            }
-        } */
         $processedLots = [];
         if ($request->lots_enabled) {
-            // Primero eliminar posiciones sin lotes (como está actualmente)
-            ItemPosition::where('item_id', $item->id)
-                ->whereNull('lots_group_id')
-                ->delete();
             
-            // Procesar los lotes recibidos
-            $processedLots = [];
             foreach ($request->lots as $lotData) {
                 if (isset($lotData['id'])) {
-                    // Lote existente - actualizar
                     $lot = ItemLotsGroup::find($lotData['id']);
                     if ($lot) {
                         $lot->update([
@@ -630,7 +630,6 @@ class ItemController extends Controller
                         $processedLots[$lotData['code']] = $lot->id;
                     }
                 } else {
-                    // Lote nuevo - crear
                     $lot = ItemLotsGroup::create([
                         'code' => $lotData['code'],
                         'quantity' => $lotData['quantity'],
@@ -643,11 +642,11 @@ class ItemController extends Controller
                 }
             }
             
-            // Ahora procesar las posiciones con lotes
             if(isset($request->positions_selected)) {
-                // Primero eliminar todas las posiciones con lotes para este item
+                
                 ItemPosition::where('item_id', $item->id)
-                    ->whereNotNull('lots_group_id')
+                    ->whereNull('lots_group_id')
+                    ->where('warehouse_id', $request->warehouse_id)
                     ->delete();
                     
                 foreach ($request->positions_selected as $position) {
@@ -660,23 +659,31 @@ class ItemController extends Controller
                         $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
                         
                         if($inventoryWarehouseLocation) {
-                            // Procesar cada lote en esta posición
+
                             foreach ($position['lots'] as $lot) {
                                 $lotId = $processedLots[$lot['code']] ?? null;
                                 
                                 if ($lotId) {
-                                    ItemPosition::create([
-                                        'item_id' => $item->id,
-                                        'position_id' => $warehouseLocationPosition->id,
-                                        'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
-                                        'location_id' => $request->location_id,
-                                        'stock' => $lot['stock'],
-                                        'lots_group_id' => $lotId,
-                                    ]);
+                                    $countItemPositions = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->count();
                                     
-                                    // Actualizar cantidad usada en la posición
-                                    WarehouseLocationPosition::where('id', $warehouseLocationPosition->id)
+                                    ItemPosition::updateOrCreate(
+                                        [
+                                            'item_id' => $item->id,
+                                            'position_id' => $warehouseLocationPosition->id,
+                                            'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
+                                            'location_id' => $request->location_id,
+                                            'lots_group_id' => $lotId,
+                                        ],
+                                        [
+                                            'stock' => $lot['stock'],
+                                        ]
+                                    );
+
+                                    if($countItemPositions==0){
+                                        WarehouseLocationPosition::where('id', $warehouseLocationPosition->id)
                                         ->increment('quantity_used');
+                                    }
+                                    
                                 }
                             }
                         }
@@ -684,7 +691,6 @@ class ItemController extends Controller
                 }
             }
         } else {
-            // Lógica para cuando no hay lotes habilitados (como está actualmente)
             ItemPosition::whereNotNull('lots_group_id')
                 ->where('item_id', $item->id)
                 ->where('warehouse_id', $request->warehouse_id)

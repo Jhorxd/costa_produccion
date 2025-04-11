@@ -52,7 +52,6 @@
                             <el-input v-model="form.quantity"></el-input>
                             <small class="form-control-feedback" v-if="errors.quantity"
                                    v-text="errors.quantity[0]"></small>
-
                         </div>
                     </div>
                     <div class="col-md-8">
@@ -66,28 +65,20 @@
                                    v-text="errors.warehouse_id[0]"></small>
                         </div>
                     </div>
-                    <div style="padding-top: 3%;" class="col-md-2 col-sm-2" v-if="form.item_id && form.lots_enabled && form.warehouse_id">
+                    <div class="col-md-4 d-flex align-items-end justify-content-center" v-if="form.positions_enabled && !form.lots_enabled">
+                        <el-button type="primary" @click="selectPosition">
+                            Seleccionar Posición
+                        </el-button>
+                    </div>
+                    <div style="padding-top: 3%;" class="col-md-4" v-if="form.item_id && form.lots_enabled && form.warehouse_id">
                         <a href="#" class="text-center font-weight-bold text-info" @click.prevent="clickLotGroup">[&#10004;
                             Seleccionar lote]</a>
                     </div>
-                    <div style="padding-top: 3%;" class="col-md-3 col-sm-3" v-if="form.item_id && form.series_enabled && form.warehouse_id">
-                        <!-- <el-button type="primary" native-type="submit" icon="el-icon-check">Elegir serie</el-button> -->
+                    <!-- <div style="padding-top: 3%;" class="col-md-3 col-sm-3" v-if="form.item_id && form.series_enabled && form.warehouse_id">
                         <a href="#" class="text-center font-weight-bold text-info" @click.prevent="clickSelectLots">[&#10004;
                             Seleccionar series]</a>
-                    </div>
-
-                    <!--<div class="col-md-3" v-show="form.lots_enabled">
-                        <div class="form-group" :class="{'has-danger': errors.date_of_due}">
-                            <label class="control-label">Fec. Vencimiento</label>
-                            <el-date-picker v-model="form.date_of_due" type="date" value-format="yyyy-MM-dd" :clearable="true"></el-date-picker>
-                            <small class="form-control-feedback" v-if="errors.date_of_due" v-text="errors.date_of_due[0]"></small>
-                        </div>
                     </div> -->
 
-                    <!--<div style="padding-top: 3%" class="col-md-4" v-if="form.warehouse_id && form.series_enabled">
-
-                        <a href="#"  class="text-center font-weight-bold text-info" @click.prevent="clickLotcode">[&#10004; Ingresar series]</a>
-                    </div>  -->
                     <div class="col-md-8">
                         <div class="form-group" :class="{'has-danger': errors.inventory_transaction_id}">
                             <label class="control-label">Motivo traslado</label>
@@ -143,23 +134,27 @@
             @addRowSelectLot="addRowSelectLot">
         </select-lots-form>
 
-    </el-dialog>
+        <approve-position
+            :showDialog.sync="showDialogPositions"
+            :warehouse_id="form.warehouse_id"
+            :dataModal="dataModal"
+            :locations_available="locations"
+            :type="'output'"
+            @positions-save="savePositions">
+        </approve-position>
 
+    </el-dialog>
 </template>
 
 <script>
-//  import InputLotsForm from '../../../../../../resources/js/views/tenant/items/partials/lots.vue'
-// import OutputLotsForm from './partials/lots.vue'
-//import LotsGroup from './lots_group.vue'
 import LotsGroup from '../../../../../../resources/js/views/tenant/documents/partials/lots_group.vue'
 import SelectLotsForm from '../../../../../../resources/js/views/tenant/documents/partials/lots.vue'
-//import SelectLotsForm from './lots.vue'
+import approvePosition from './approvePosition.vue';
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
 import { inventory_search_item_barcode } from '../mixins/functions'
 
-
 export default {
-    components: {LotsGroup, SelectLotsForm},
+    components: {LotsGroup, SelectLotsForm, approvePosition},
     props: ['showDialog', 'recordId'],
     mixins: [
         inventory_search_item_barcode,
@@ -172,6 +167,7 @@ export default {
             loading_submit: false,
             showDialogLots: false,
             showDialogSelectLots: false,
+            showDialogPositions: false,
             titleDialog: null,
             resource: 'inventory',
             errors: {},
@@ -180,7 +176,9 @@ export default {
             warehouses: [],
             inventory_transactions: [],
             lotsAll: [],
-            lotsGroupAll: []
+            lotsGroupAll: [],
+            locations: [],
+            dataModal: {}
         }
     },
     created() {
@@ -192,26 +190,66 @@ export default {
             let item = await _.find(this.items, {'id': this.form.item_id})
             this.form.lots_enabled = item.lots_enabled
             this.lotsAll = await _.filter(item.lots, {'warehouse_id': this.form.warehouse_id})
-            // console.log(item)
-            // this.form.lots = lots
             this.form.lots_enabled = item.lots_enabled
             this.form.series_enabled = item.series_enabled
             this.form.lots_group = [];
-
             this.lotsGroupAll = item.lots_group;
+            
+            this.checkPosition();
         },
-        // addRowOutputLot(lots) {
-        //     this.form.lots = lots
-        // },
-        // addRowLot(lots) {
-        //     this.form.lots = lots
-        // },
-        clickLotcode() {
+        
+        async checkPosition(){
+            this.dataModal={};
+            this.form.data_item = { location_id: '', positions: [] };
+            if(!this.form.item_id || !this.form.warehouse_id) return;
+
+            const response = await this.$http.get(`/${this.resource}/checkPositions/${this.form.warehouse_id}/${this.form.item_id}`);
+            if(response.data.success){
+                const data = response.data.data;
+                this.form.positions_enabled = data.positions_enabled;
+                if(this.form.positions_enabled && data.locations.length>0){
+                    this.locations = data.locations;
+                }
+            }            
+        },
+        
+        async savePositions(data){
+            this.dataModal = data;
+        },
+        
+        selectPosition(){
+            if(this.form.quantity==0 || this.form.quantity==''){
+                this.$message.warning("Ingrese la cantidad");
+                return;
+            }
+            
+            this.dataModal = {
+                item_id: this.form.item_id,
+                location_id: this.form.data_item.location_id || '',
+                positions: this.form.data_item.positions || [],
+                stock_necessary: this.form.quantity,
+                has_lots: this.form.lots_enabled,
+                has_positions: this.form.positions_enabled
+            }
+            this.showDialogPositions=true;
+        },
+
+        clickLotGroup() {
             this.showDialogLots = true
         },
-        clickLotcodeOutput() {
-            this.showDialogLotsOutput = true
+        
+        addRowLotGroup(id) {
+            this.form.IdLoteSelected = id
         },
+        
+        async clickSelectLots() {
+            this.showDialogSelectLots = true
+        },
+        
+        addRowSelectLot(lots) {
+            this.form.lots = lots
+        },
+        
         initForm() {
             this.errors = {}
             this.form = {
@@ -223,24 +261,30 @@ export default {
                 type: this.type,
                 lot_code: null,
                 lots_enabled: false,
+                positions_enabled: false,
                 series_enabled: false,
                 lots: [],
                 date_of_due: null,
                 IdLoteSelected: null,
                 lots_group: [],
                 created_at: null,
-                comments: null
+                comments: null,
+                data_item: {
+                    location_id: '',
+                    positions: []
+                }
             }
         },
+        
         async initTables() {
             await this.$http.get(`/${this.resource}/tables/transaction/${this.type}`)
                 .then(response => {
-                    // this.items = response.data.items
                     this.warehouses = response.data.warehouses
                     this.inventory_transactions = response.data.inventory_transactions
                 })
             await this.searchRemoteItems('')
         },
+        
         async create() {
             this.loading = true;
             this.titleDialog = 'Salida de producto del almacén'
@@ -248,16 +292,7 @@ export default {
             this.initForm();
             this.loading = false;
         },
-        // async create() {
-        //     this.titleDialog = 'Salida de producto del almacén'
-        //     await this.$http.get(`/${this.resource}/tables/transaction/output`)
-        //         .then(response => {
-        //             // this.items = response.data.items
-        //             this.warehouses = response.data.warehouses
-        //             this.inventory_transactions = response.data.inventory_transactions
-        //         })
-        //
-        // },
+        
         async searchRemoteItems(search) {
             this.loading_search = true;
             this.items = [];
@@ -271,16 +306,16 @@ export default {
                 .then(response => {
                     let items = response.data.items;
                     if (items.length > 0) {
-                        this.items = items; //filterWords(search, items);
+                        this.items = items;
                     }
 
                     this.enabledSearchItemsBarcode()
                 })
             this.loading_search = false;
         },
+        
         async submit() {
             if (this.form.lots.length > 0 && this.form.series_enabled) {
-                //let select_lots = await _.filter(this.form.lots, {'has_sale': true})
                 if (this.form.lots.length !== parseInt(this.form.quantity)) {
                     return this.$message.error('La cantidad ingresada es diferente a las series seleccionadas');
                 }
@@ -289,21 +324,20 @@ export default {
                 if (!this.form.IdLoteSelected)
                     return this.$message.error('Debe seleccionar un lote.');
             }
+            
+            if(this.dataModal && this.dataModal.positions.length>0){
+                this.form.data_item.location_id = this.dataModal.location_id;
+                this.form.data_item.positions = [...this.dataModal.positions.filter(element => element.is_selected)];
+            }
 
-            // let _lots_group = [];
-            // _.forEach(this.form.lots_group, row => {
-            //     _lots_group.push({
-            //         'checked': row.checked,
-            //         'code': row.code,
-            //         'date_of_due': row.date_of_due,
-            //         'id': row.id,
-            //         'quantity': row.quantity,
-            //     })
-            // })
-            //this.form.lots_group = _.head(this.form.lots_group);
+            if(this.form.positions_enabled && !this.form.lots_enabled){
+                if(this.form.data_item.positions.length==0)
+                    return this.$message.error('Selecciona las posiciones');
+            }
+
             this.loading_submit = true
             this.form.type = this.type
-            // console.log(this.form)
+            
             await this.$http.post(`/${this.resource}/transaction`, this.form)
                 .then(response => {
                     if (response.data.success) {
@@ -317,7 +351,6 @@ export default {
                 .catch(error => {
                     if (error.response.status === 422) {
                         this.errors = error.response.data
-                        // console.log(error.response.data)
                     } else {
                         console.log(error)
                     }
@@ -326,24 +359,11 @@ export default {
                     this.loading_submit = false
                 })
         },
+        
         close() {
             this.$emit('update:showDialog', false)
             this.initForm()
-        },
-        clickLotGroup() {
-            this.showDialogLots = true
-        },
-        addRowLotGroup(id) {
-            console.log(id);
-            this.form.IdLoteSelected = id
-        },
-        async clickSelectLots() {
-            this.showDialogSelectLots = true
-        },
-        addRowSelectLot(lots) {
-            console.log(lots);
-            this.form.lots = lots
-        },
+        }
     }
 }
 </script>

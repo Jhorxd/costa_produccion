@@ -6,27 +6,31 @@
       @open="create"
     >
       <div class="position-container">
-        <div class="boxes-container">
-          <div v-for="(row, rowIndex) in matrix" :key="rowIndex" class="row-container">
-            <div v-for="(box, colIndex) in row" :key="colIndex" class="position-box">
-              <div class="box-content">
-                <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
-                <p>Cantidad disponible: {{ box.stock_available }}</p>
-                <div class="content-stock d-flex justify-content-center" v-if="box.is_selected && !lots_enabled">
-                    <el-input type="number" class="form-control-feedback input-stock" v-model="box.stock" dusk="stock" placeholder="Cantidad" min="1"></el-input>
+        <div class="boxes-scroll">
+          <div class="boxes-container">
+            <div v-for="(row, rowIndex) in matrix" :key="rowIndex" class="row-container">
+              <div v-for="(box, colIndex) in row" :key="colIndex" class="position-box">
+                <div class="box-content">
+                  <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
+                  <p v-if="!has_sales">Cantidad disponible: {{ box.stock_available }}</p>
+                  <p v-else>Stock en uso: {{ box.stock }}</p>
+                  <div class="content-stock d-flex justify-content-center" v-if="box.is_selected && !lots_enabled">
+                      <el-input type="number" class="form-control-feedback input-stock" v-model="box.stock" dusk="stock" placeholder="Cantidad" min="1"></el-input>
+                  </div>
+                  <el-button
+                    type="primary"
+                    @click="selectBox(box)"
+                    :class="{ 'selected-button': box.is_selected }"
+                    :disabled="has_sales && !lots_enabled"
+                  >
+                    {{ box.is_selected ? 'Seleccionado' : 'Seleccionar' }}
+                  </el-button>
                 </div>
-                <el-button
-                  type="primary"
-                  @click="selectBox(box)"
-                  :class="{ 'selected-button': box.is_selected }"
-                >
-                  {{ box.is_selected ? 'Seleccionado' : 'Seleccionar' }}
-                </el-button>
               </div>
             </div>
           </div>
         </div>
-        <div class="form-actions text-right pt-2 mt-2">
+        <div class="form-actions text-right pt-2 mt-2 buttons-fixed">
           <el-button class="second-buton" @click.prevent="close">Cancelar</el-button>
           <el-button @click.prevent="saveChanges" type="primary">Guardar</el-button>
         </div>
@@ -52,7 +56,8 @@ export default {
         'positions',
         'stock',
         'lots_enabled', //si usamos lotes(bool)
-        'lots'
+        'lots',
+        'has_sales'
     ],
     data() {
         return {
@@ -79,7 +84,6 @@ export default {
         },
         async create() {
             this.buildMatrix(this.positions);
-            
             this.selects_temp = [...this.positions_selected];
         },
         buildMatrix(positions) {
@@ -238,46 +242,46 @@ export default {
 
 <style scoped>
 .position-container {
-  width: 100%;
-  height: 100%;
-  padding: 10px;
   display: flex;
   flex-direction: column;
-  overflow-x: auto;
+  max-height: 70vh;
+  padding: 0px 15px;
+}
+
+.boxes-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.buttons-fixed {
+  background: #fff;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
 }
 
 .boxes-container {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .row-container {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  margin-bottom: 10px;
-  width: max-content;
-  max-width: 100%;
-  padding: 10px 20px;
-  box-sizing: border-box;
+  flex-direction: row;
+  margin-bottom: 1rem;
 }
 
 .position-box {
-  flex: 0 0 160px;
   border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 5px;
-  text-align: center;
-  box-sizing: border-box;
+  padding: 1rem;
+  margin-right: 1rem;
+  min-width: 200px;
+  flex-shrink: 0;
 }
 
 .box-content {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  align-items: center;
 }
 
 .text-right {

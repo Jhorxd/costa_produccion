@@ -42,4 +42,9 @@ class ItemPosition extends ModelTenant
     {
         return $this->belongsTo(ItemLotsGroup::class, 'lots_group_id');
     }
+
+    public function get_code_lots_group()
+    {
+        return $this->belongsTo(ItemLotsGroup::class, 'lots_group_id')->select('id','code');
+    }
 }

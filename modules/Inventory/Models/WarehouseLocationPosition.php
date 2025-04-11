@@ -73,7 +73,7 @@ class WarehouseLocationPosition extends ModelTenant
     public function lots()
     {
         return $this->hasMany(ItemPosition::class, 'position_id')
-            ->whereNotNull('lots_group_id')->select('id','stock','lots_group_id','position_id');
+            ->whereNotNull('lots_group_id')->select('id','item_id','stock','lots_group_id','position_id')->with('get_code_lots_group');
     }
 
     public function itemPositions()

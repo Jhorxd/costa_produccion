@@ -10,6 +10,7 @@ use Modules\Inventory\Http\Requests\WarehouseRequest;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
 use App\Models\Tenant\Establishment;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class WarehouseController extends Controller
@@ -93,6 +94,18 @@ class WarehouseController extends Controller
                 'success' => true,
                 'message' => 'Almacén eliminado con éxito'
             ];
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede eliminar el almacén porque tiene otros registros relacionados.'
+                ]);
+            }
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
         } catch (\Exception $e) {
             return [
                 'success' => false,

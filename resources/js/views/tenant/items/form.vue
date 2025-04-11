@@ -453,7 +453,7 @@
                             </div>
                         </div>
                         <div class="col-md-3 d-flex align-items-end" v-if="recordId">
-                            <el-button class="second-buton" @click.prevent="clickItemLocation()">Elegir posición</el-button>
+                            <el-button class="second-buton" @click.prevent="clickItemLocation()">{{form.has_sales?'Mostrar posiciones':'Elegir posición'}}</el-button>
                         </div>
                         
 
@@ -881,7 +881,7 @@
                     </div> 
                 </el-tab-pane>
 
-                <el-tab-pane class
+                <!-- <el-tab-pane class
                              v-if="!isService"
                              name="second">
                     <span slot="label">Almacenes</span>
@@ -903,18 +903,18 @@
                                                       type="number"></el-input>
                                         </td>
                                     </tr>
-                                    <!-- <tr v-for="w in warehouses" :key="w.id">
+                                    <tr v-for="w in warehouses" :key="w.id">
                                         <td>{{ w.description }}</td>
                                         <td width="150">
                                             <el-input placeholder="Precio" v-model="w.price" type="number" min="0" step="0.01"></el-input>
                                         </td>
-                                    </tr> -->
+                                    </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
-                </el-tab-pane>
+                </el-tab-pane> -->
                 <el-tab-pane class  v-if="!isService" name="third">
                     <span slot="label">Presentaciones</span>
                     <div class="row">
@@ -1219,7 +1219,7 @@
                         </div>
                     </div>
                 </el-tab-pane>
-                <el-tab-pane class
+                <!-- <el-tab-pane class
                              v-if="!isService"
                              name="five">
                     <span slot="label">Compra</span>
@@ -1284,7 +1284,7 @@
                             </div>
                         </div>
 
-                        <!-- isc compras -->
+                        isc compras
                         <div class="col-md-4">
                             <div :class="{'has-danger': errors.purchase_has_isc}"
                                  class="form-group">
@@ -1332,10 +1332,10 @@
                                 </div>
                             </div>
                         </template>
-                        <!-- isc compras -->
+                        isc compras
 
                     </div>
-                </el-tab-pane>
+                </el-tab-pane> -->
 
                 <el-tab-pane v-if="canShowExtraData"
                              class
@@ -1581,6 +1581,7 @@
             :stock="form.stock"
             :lots_enabled="form.lots_enabled"
             :lots="form.lots"
+            :has_sales="form.has_sales"
             @positions-save="saveDataPosition">
         </item-location>
 
@@ -1922,6 +1923,8 @@ export default {
                 this.$message.error("Seleccione una ubicación");
                 return;
             }
+            console.log(this.positions_selected);
+            
             await this.$http.get(`/${this.resource}/positions/${this.location_id}/${this.recordId}`)
                 .then(response => {
                     if (response.data.success) {
@@ -1931,15 +1934,15 @@ export default {
                         
                         if(this.positions_selected.length==0){
                             this.positions_selected = data.item_positions;
-                            this.positions_selected.forEach(element => {
-                                const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
-                                if(position_finded){
-                                    position_finded.stock = parseInt(element.stock);
-                                }else{
-                                    position_finded.stock = 0;
-                                }
-                            });
                         }
+                        this.positions_selected.forEach(element => {
+                            const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
+                            if(position_finded){
+                                position_finded.stock = parseInt(element.stock);
+                            }else{
+                                position_finded.stock = 0;
+                            }
+                        });
                         
                         if(this.form.location_id!=this.location_id || this.lots_enabled_init_aux != this.form.lots_enabled){
                             this.positions_selected = [];
@@ -2032,6 +2035,7 @@ export default {
                 stock_total: 0,
                 has_igv: true,
                 has_perception: false,
+                has_sales: false,
                 item_unit_types: [],
                 percentage_of_profit: 0,
                 percentage_perception: null,
@@ -2113,6 +2117,12 @@ export default {
 
         },
         resetForm() {
+            this.positions_selected = [];
+            this.positions = [];
+            this.item_files_deleted = [];
+            this.form.item_files = [];
+            this.location_id = null;
+            this.lots_enabled_init_aux = null;
             this.initForm()
             this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
             this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
@@ -2144,7 +2154,7 @@ export default {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data;
-                        this.form.stock_old = this.form.stock; 
+                        this.form.stock_old = this.form.stock;
                         if(this.form.lots.length>0){
                             this.form.lots.forEach(lot => {
                                 lot.selected_global = false;
@@ -2153,10 +2163,18 @@ export default {
                         this.lots_enabled_init_aux = this.form.lots_enabled;
                         if(response.data.data.positions_selected.length>0){
                             response.data.data.positions_selected.forEach(position_selected => {
+                                const lots = position_selected.lots.map(lot_element => {
+                                    return {
+                                        ...lot_element,
+                                        code: lot_element.get_code_lots_group.code
+                                    };
+                                });  
                                 this.positions_selected.push({
                                     row: position_selected.row,
                                     column: position_selected.column,
                                     stock: position_selected.stock,
+                                    id: position_selected.id,
+                                    lots: lots
                                 });
                             });
                         }
@@ -2318,20 +2336,22 @@ export default {
             if (this.recordId && this.form.lots_enabled && this.positions_selected.length==0) {
                 return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
-
+            console.log(this.positions_selected);
+            
             this.form.positions_selected = this.positions_selected;
             
             this.form.location_id = this.location_id;
 
             this.loading_submit = true
-
+            console.log(this.form);
+            
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(async response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message)
                         const item_id = response.data.id;
                         this.positions_selected=[];
-                        this.initForm();
+                        
                         if (this.form.item_files.length > 0 || this.recordId)  {
                             let formData = new FormData();
                             
@@ -2367,7 +2387,8 @@ export default {
                         } else {
                             this.$eventHub.$emit('reloadData')
                         }
-                        this.close()
+                        this.initForm();
+                        this.close();
                     } else {
                         this.$message.error(response.data.message)
                     }
@@ -2385,9 +2406,12 @@ export default {
                     this.loading_submit = false
                 })
         },
-        async downloadFile(file_id){
-            await this.$http.get(`/${this.resource}/fileDownload/${file_id}`, this.form)
-            .then(response => {
+        async downloadFile(file_id) {
+            try {
+                const response = await this.$http.get(`/${this.resource}/fileDownload/${file_id}`, {
+                    responseType: 'blob', // <-- Este es el punto clave
+                });
+
                 const contentDisposition = response.headers['content-disposition'];
                 const filename = contentDisposition
                     ? contentDisposition.split('filename=')[1].replace(/['"]/g, '')
@@ -2397,10 +2421,15 @@ export default {
                 const link = document.createElement('a');
                 link.href = window.URL.createObjectURL(blob);
                 link.download = filename;
+                document.body.appendChild(link); // <-- Importante para Firefox
                 link.click();
+                document.body.removeChild(link);
 
                 this.$message.success("Archivo descargado correctamente");
-            });
+            } catch (error) {
+                console.error("Error al descargar el archivo:", error);
+                this.$message.error("Error al descargar el archivo");
+            }
         },
         close() {
             this.resetForm();

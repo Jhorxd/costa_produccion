@@ -36,7 +36,7 @@
                         <th class="text-center">Cantidad Total Productos</th>
                         <th class="text-center">Estado</th>
                         <th class="text-center">PDF</th>
-                        <th class="text-center">Acciones</th>
+                        <th class="text-center" v-if="(typeUser === 'admin')">Acciones</th>
                     </tr>
                     <tr></tr>
                     <tr slot-scope="{ index, row }">
@@ -104,7 +104,7 @@
                             >
                                 Generar Guía
                             </a>
-                            <a v-if="row.state === 'Pendiente'"
+                            <a v-if="(row.state === 'Pendiente') && (typeUser === 'admin')"
                                 class="btn waves-effect waves-light btn-xs btn-success"
                                 :href="`/${resource}/approve_transfer/${row.id}`"
                             >
@@ -144,6 +144,7 @@ import {deletable} from "../../../../../../resources/js/mixins/deletable";
 import InventoriesForm from "./form.vue";
 
 export default {
+    props: ['typeUser'],
     components: {DataTable, InventoriesForm},
     mixins: [deletable],
     data() {
