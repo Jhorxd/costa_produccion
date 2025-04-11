@@ -2,6 +2,8 @@
 
 @section('content')
 
-<physical-inventory-list></physical-inventory-list>
+<physical-inventory-list
+    :type-user="{{json_encode(Auth::user()->type)}}"
+></physical-inventory-list>
 
 @endsection

@@ -109,7 +109,9 @@ class ItemController extends Controller
             'lot_code' => 'Código lote',
             'active' => 'Habilitados',
             'inactive' => 'Inhabilitados',
-            'category' => 'Categoria'
+            'category' => 'Categoria',
+            'active_principle' => 'Principio Activo',
+            'pharmaceutical_item_unit_type' => 'Presentación',
         ];
     }
 
@@ -133,6 +135,7 @@ class ItemController extends Controller
 
         // $records = Item::whereTypeUser()->whereNotIsSet();
         $records = $this->getInitialQueryRecords();
+        // dd($records->get());
 
         switch ($request->column)
         {
@@ -146,6 +149,17 @@ class ItemController extends Controller
                 $records->whereHas('category',function($q) use($request){
                                     $q->where('name', 'like', "%{$request->value}%");
                                 });
+                break;
+            
+            case 'active_principle':
+                $records->where('active_principle', 'like', "%{$request->value}%");
+                break;
+
+            case 'pharmaceutical_item_unit_type':
+                $records->whereHas('pharmaceutical_item_unit_type', function($q) use($request){
+                    $q->where('description', 'like', "%{$request->value}%");
+                });
+
                 break;
 
             case 'active':
