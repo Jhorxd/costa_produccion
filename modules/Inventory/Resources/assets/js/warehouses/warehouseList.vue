@@ -105,27 +105,25 @@
           }
       },
       created() {                    
-          this.title = 'Listado Almacen'
+          this.title = 'Listado Almacén'
 
           this.$http.get('/warehouses/recordsCustom')
-    .then(response => {
-        console.log(response.data); // Muestra los datos en la consola
-
-        console.log(response.data.data);
-    })
-    .catch(error => {
-        console.error("Error al obtener los datos:", error);
-    });          
+            .then(response => {
+            })
+            .catch(error => {
+                console.error("Error al obtener los datos:", error);
+            });          
       },
       methods: { 
           clickCreate(recordId = null) {
             this.recordId = recordId
             this.showDialog = true          
           }, 
-          clickDelete(id) {                
-                this.destroy(`/warehouses/destroy/${id}`).then(() =>
-                    this.$eventHub.$emit('reloadData')
-                )             
+          async clickDelete(id) {                
+                await this.destroy(`/warehouses/destroy/${id}`);
+                    
+                this.$eventHub.$emit('reloadData')
+                            
           }
       }
   }

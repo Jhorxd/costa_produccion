@@ -1368,8 +1368,9 @@ class InventoryController extends Controller
     public function list(Request $request)
     {
         $establishment_id = auth()->user()->establishment_id;
-        $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
-        $query = InventoryWarehouseLocation::where('warehouse_id', $warehouse_user_active->id);
+        $warehouses = Warehouse::where('establishment_id', $establishment_id)->pluck('id')->toArray();
+
+        $query = InventoryWarehouseLocation::whereIn('warehouse_id', $warehouses);
 
         if ($request->has('column') && $request->has('value')) {
             $query->where($request->column, 'like', '%' . $request->value . '%');

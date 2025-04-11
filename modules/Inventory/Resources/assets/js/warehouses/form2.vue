@@ -82,13 +82,13 @@
       <div class="row">
         <div class="col-md-12">
           <h3>Ubicaciones</h3>
-          <div class="right-wrapper pull-right">
+          <div class="right-wrapper pull-right mb-3">
               <a :href="`/${resourceDataTable}/create/${recordId}`" class="btn btn-custom btn-sm mt-2 mr-2">
                   <i class="fa fa-plus-circle"></i> Nuevo
               </a>
           </div>
           <div class="card-body">
-              <data-table :resource="resourceDataTable" :idWarehouse="recordId">
+              <data-table ref="dataTable" :resource="resourceDataTable" :idWarehouse="recordId">
                   <tr slot="heading">
                       <th>Nombre</th>
                       <th>Código</th>
@@ -140,7 +140,7 @@
         created() {
             this.initForm(),
             this.getTypes();
-        },
+          },
         methods: {
             initForm() {
                 this.errors = {}
@@ -149,26 +149,28 @@
                     description: null
                 }
             },
-            create() {
-
+            async create() {
                 this.$http.get('/warehouses/getEstablishments')
-                .then(response => {                    
-                    this.establishments = response.data;
-                })
-                .catch(error => {
-                    console.error("Error al obtener los datos:", error);
-                });
+                  .then(response => {                    
+                      this.establishments = response.data;
+                  })
+                  .catch(error => {
+                      console.error("Error al obtener los datos:", error);
+                  });
                 this.titleDialog = (this.recordId)? 'Editar Almacén':'Nuevo Almacén'
                 if (this.recordId) {
                     this.$http.get(`/warehouses/getWarehouse/${this.recordId}`)
                         .then(response => {
                             this.form = response.data;
-                            console.log(this.form);
                         })                        
                 }
+                this.$nextTick(() => {
+                  if (this.$refs.dataTable) {
+                    this.$refs.dataTable.refreshData();
+                  }
+                });
             },
             submit() {
-                console.log(this.form);
                 this.loading_submit = true
                 this.$http.post(`/warehouses/storeWarehouse`, this.form)
                     .then(response => {

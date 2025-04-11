@@ -231,12 +231,12 @@ export default {
 
                 const response = await this.$http.put(`/${this.resource}/${this.form.id}`, payload);
                 
-                /* if (response.data.success) {
+                if (response.data.success) {
                     this.$message.success('Ubicación y posiciones actualizadas correctamente.');
                     this.close();
                 } else {
                     this.$message.error(response.data.message || 'Error al actualizar la ubicación.');
-                } */
+                }
             } catch (error) {
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data.errors || {};
