@@ -332,6 +332,13 @@
                             </button>
                             <button
                                 type="button"
+                                class="btn waves-effect waves-light btn-xs btn-success m-1__2"
+                                @click.prevent="clickReceptionItem(row.id)"
+                            >
+                                Recepción de productos
+                            </button>
+                            <button
+                                type="button"
                                 :disabled="disableGuideBtn"
                                 class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
                                 @click.prevent="clickGuide(row.id)"
@@ -387,6 +394,12 @@
             :recordId="recordId"
             :showClose="true"
         ></purchase-options>
+
+        <purchase-details
+            :key="idPurchaseSelected"
+            :showDialog.sync="showDialogPurchaseDetails"
+            :purchase_id="idPurchaseSelected">
+        </purchase-details>
     </div>
 </template>
 
@@ -400,6 +413,7 @@ import { deletable } from "../../../mixins/deletable";
 import PurchaseImport from "./import.vue";
 import PurchasePayments from "@viewsModulePurchase/purchase_payments/payments.vue";
 import PurchaseOptions from "./partials/options.vue";
+import purchaseDetails from "./partials/purchaseDetails.vue";
 
 export default {
     mixins: [deletable],
@@ -408,7 +422,8 @@ export default {
         DataTable,
         PurchaseImport,
         PurchasePayments,
-        PurchaseOptions
+        PurchaseOptions,
+        purchaseDetails
     },
     props: ["typeUser", "configuration"],
     data() {
@@ -416,6 +431,8 @@ export default {
             disableGuideBtn: true,
             showModalGuide: false,
             showDialogVoided: false,
+            showDialogPurchaseDetails: false,
+            idPurchaseSelected:0,
             resource: "purchases",
             recordId: null,
             showDialogOptions: false,
@@ -475,6 +492,10 @@ export default {
         this.getDocumentTypes();
     },
     methods: {
+        clickReceptionItem(purchase_id){
+            this.idPurchaseSelected = purchase_id;
+            this.showDialogPurchaseDetails = true;
+        },
         formatDate(date) {
             if (!date) return null;
             return moment(date).format("DD-MM-YYYY");

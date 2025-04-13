@@ -5,6 +5,8 @@ namespace App\Http\Resources\Tenant;
 use App\Models\Tenant\Purchase;
 use Modules\Inventory\Models\Warehouse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
+use Modules\Inventory\Models\WarehouseLocationPosition;
 
 class PurchaseResource extends JsonResource
 {
@@ -63,6 +65,7 @@ class PurchaseResource extends JsonResource
                 'purchase_id' => $row->purchase_id,
                 'item_id' => $row->item_id,
                 'item' => $row->item,
+                'data_position' => self::getTransformDataPosition($row->item), 
                 'lot_code' => $row->lot_code,
                 'item_lot_group_id' => $row->item_lot_group_id,
                 'quantity' => $row->quantity,
@@ -99,6 +102,26 @@ class PurchaseResource extends JsonResource
             ];
         });
 
+    }
+
+    public static function getTransformDataPosition($item){
+        if(isset($item->position_data) && !empty($item->position_data->position_id)){
+            $warehouse = Warehouse::find($item->position_data->warehouse_id);
+            $location = InventoryWarehouseLocation::find($item->position_data->location_id);
+            $position = WarehouseLocationPosition::find($item->position_data->position_id);
+            $position->code = $location->code;
+            return [
+                'warehouse_name' => $warehouse->description,
+                'location_name' => $location->name,
+                'position' => $position
+            ];
+        }else{
+            return [
+                'warehouse_name' => null,
+                'location_name' => null,
+                'position' => null
+            ];
+        }
     }
 
     public static function getWarehouse($establishment_id){

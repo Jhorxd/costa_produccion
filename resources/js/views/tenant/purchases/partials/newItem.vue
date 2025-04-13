@@ -402,16 +402,6 @@
                         </div>
                     </div>
 
-                    <div v-if="showLots"
-                         class="col-md-3 col-sm-3"
-                         style="padding-top: 1%;">
-                        <a class="text-center font-weight-bold text-info"
-                           href="#"
-                           @click.prevent="clickLotGroup">[&#10004;
-                            Seleccionar
-                            lote]</a>
-                    </div>
-
                     <div v-if="showSeries"
                          class="col-md-3 col-sm-3"
                          style="padding-top: 1%;">
@@ -759,23 +749,6 @@
             :customer_id="this.customerId"
             :type="true"
         ></history-sales-form>
-        <lots-group
-            :lots-group="form.lots_group"
-            :itemId="form.item_id"
-            :quantity="form.quantity"
-            :showDialog.sync="showDialogLots"
-            @addRowLotGroup="addRowLotGroup">
-        </lots-group>
-
-<!--        <lots-group-->
-<!--            :showDialog.sync="showDialogLots"-->
-<!--            :itemId="form.item_id"-->
-<!--            :lots-group-all="lotsGroupAll"-->
-<!--            :lots_group="form.lots_group"-->
-<!--            :quantity="form.quantity"-->
-<!--            @addRowLotGroup="addRowLotGroup"-->
-<!--            :compromise-all-quantity="true">-->
-<!--        </lots-group>-->
 
         <select-lots-form
             :showDialog.sync="showDialogSelectLots"
@@ -815,7 +788,6 @@
 <script>
 
 import ItemForm from '../../items/form.vue'
-import LotsGroup from './lots_group.vue'
 
 import {calculateRowItem} from '../../../../helpers/functions'
 import WarehousesDetail from './select_warehouses.vue'
@@ -829,6 +801,7 @@ import Keypress from "vue-keypress";
 import HistorySalesForm from "../../../../../../modules/Pos/Resources/assets/js/views/history/sales.vue";
 import { checkPermissionEditPrices } from '@mixins/check-permission-edit-prices'
 import WeightedAverageCost from '@components/items/WeightedAverageCost.vue'
+import { forEach } from 'lodash'
 
 
 export default {
@@ -858,7 +831,6 @@ export default {
         ItemForm,
         WarehousesDetail,
         Keypress,
-        LotsGroup,
         SelectLotsForm,
         HistorySalesForm,
         'vue-ckeditor': VueCkeditor.component,
@@ -902,7 +874,6 @@ export default {
             showListStock: false,
             search_item_by_barcode: false,
             isUpdateWarehouseId: null,
-            showDialogLots: false,
             showDialogSelectLots: false,
             lots: [],
             editors: {
@@ -1110,7 +1081,6 @@ export default {
         async filterItemsBrand() {
             this.items = this.all_items.filter(item => {
                 const matchesBrand = this.form.brand === 'Todos' || item.brand === this.form.brand;
-                console.log(matchesBrand);
                 const matchesDescription = !this.form.description || item.description.toLowerCase().includes(this.form.description.toLowerCase());
                 return matchesBrand && matchesDescription;
             });
@@ -1167,8 +1137,6 @@ export default {
         },
         getTables() {
             this.$http.get(`/${this.resource}/item/tables`).then(response => {
-                console.log(response.data);
-                
                 let data = response.data
                 this.all_items = data.items
                 this.operation_types = data.operation_types
@@ -1272,6 +1240,19 @@ export default {
                 await this.$http.get(`/${this.resource}/search-items/`, {params})
                     .then(response => {
                         this.items = response.data.items
+                        this.items.map(item_element => {
+                            return{
+                                ...item_element,
+                                position_data:{
+                                    expiration_date:'',
+                                    lot_name:'',
+                                    warehouse_id:'',
+                                    location_id:'',
+                                    position_id:''
+                                },
+                            }
+                        });
+                        
                         this.loading_search = false
                         this.enabledSearchItemsBarcode(input)
                         this.enabledSearchItemBySeries(input)
@@ -1763,10 +1744,10 @@ export default {
             // }
             this.validateQuantity()
 
-            if (this.form.item.lots_enabled) {
+            /* if (this.form.item.lots_enabled) {
                 if (!this.form.IdLoteSelected)
                     return this.$message.error('Debe seleccionar lote.');
-            }
+            } */
             let extra = this.form.item.extra
 
             if (this.validateTotalItem().total_item) return;
@@ -1986,18 +1967,6 @@ export default {
             }
 
             this.calculateQuantity()
-        },
-        addRowLotGroup(id) {
-            this.form.IdLoteSelected = id
-        },
-        clickLotGroup() {
-            if(this.form.lots_group && this.form.lots_group > 0)
-            {
-                this.form.lots_group.forEach((row) => {
-                    row.compromise_quantity = this.form.quantity
-                })
-            }
-            this.showDialogLots = true
         },
         async clickSelectLots() {
             this.showDialogSelectLots = true
