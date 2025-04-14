@@ -139,7 +139,7 @@
 
         <!-- Cambiar col-auto por col -->
         <div class="col d-flex align-items-center justify-content-center ">
-          <button type="button" @click.prevent="sendForm()" class="btn btn-primary w-75">Confirmar</button>
+          <el-button type="button" @click.prevent="sendForm()" class="btn btn-primary w-75" :loading="loadingSubmit">Confirmar</el-button>
         </div>
       </div>
     </div>
@@ -203,7 +203,8 @@
               checked: true,
               seleccionado: "inventario",
               categories: [],
-              selectedCategory: null    
+              selectedCategory: null,
+              loadingSubmit: false
           }
       },
       created() {
@@ -346,14 +347,16 @@
                return;
             }
             //selectedCategory
-            let url = '/physical-inventory/store';           
+            let url = '/physical-inventory/store';
+            this.loadingSubmit = true;
             return this.$http
             .post(url,this.form)
             .then(response => { 
               this.$message.success(response.data.message);
-              /* setTimeout(() => {
+              setTimeout(() => {
                 window.location.href = "/physical-inventory";
-              }, 1000);  */
+              }, 1000); 
+              this.loadingSubmit = false;
             })
             .catch(error => {
                 

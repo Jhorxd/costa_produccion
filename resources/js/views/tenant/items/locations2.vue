@@ -27,7 +27,7 @@
           </div>
         </div>
         <div class="form-actions text-right pt-2 mt-2">
-          <el-button class="second-buton" @click.prevent="close">Cancelar2</el-button>
+          <el-button class="second-buton" @click.prevent="close">Cancelar</el-button>
           <el-button @click.prevent="saveChanges" type="primary">Guardar</el-button>
         </div>
       </div>
@@ -174,7 +174,6 @@ export default {
              // this.$message.error("Aun falta colocar la siguiente cantidad de stock: "+(parseInt(this.stock)-parseInt(stock_total)));
             //}
            // else if(stock_total==this.stock){
-              alert(JSON.stringify( this.selects_temp)+ "el stock es "+stock_total);
               this.$emit('positions-save', this.selects_temp);
               this.close();
             //}else{

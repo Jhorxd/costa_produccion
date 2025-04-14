@@ -539,6 +539,7 @@ if ($hostname) {
             Route::get('purchases/tables', 'Tenant\PurchaseController@tables');
             Route::get('purchases/table/{table}', 'Tenant\PurchaseController@table');
             Route::post('purchases', 'Tenant\PurchaseController@store');
+            Route::post('purchases/updatePosition', 'Tenant\PurchaseController@updatePosition');
             Route::post('purchases/update', 'Tenant\PurchaseController@update');
             Route::get('purchases/record/{document}', 'Tenant\PurchaseController@record');
             Route::get('purchases/edit/{id}', 'Tenant\PurchaseController@edit');
@@ -781,7 +782,8 @@ if ($hostname) {
             Route::post('general-upload-temp-image', 'Controller@generalUploadTempImage');
 
             Route::get('general-get-current-warehouse', 'Controller@generalGetCurrentWarehouse');
-
+            Route::get('warehouses-by-active-establishment', 'Tenant\PositionController@getWarehousebyActiveEstablishment');
+            Route::get('get-position-add-item/{location_id}/{item_id}', 'Tenant\PositionController@getPositionsForAddItem');
             // test theme
             // Route::get('testtheme', function () {
             //     return view('tenant.layouts.partials.testtheme');

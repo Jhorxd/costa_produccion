@@ -71,12 +71,14 @@
                 <label class="control-label">Ubicación<span class="text-danger">*</span></label>
                 <el-select
                     v-model="location_id"
-                    filterable>
+                    filterable
+                    @change="changeLocation">
                     <el-option
                         v-for="option in locations"
                         :key="option.id"
                         :label="option.name"
                         :value="option.id"
+                        
                     ></el-option>
                 </el-select>
               </div>
@@ -323,36 +325,42 @@
                 this.loading_submit = false;
             }); 
         },
-        clickItemLocation() {
-          if (!this.location_id) {
+        changeLocation(){
+            this.positions_selected = [];
+            this.positions = [];
+        },
+        async clickItemLocation() {
+            if (!this.location_id) {
                 this.$message.error("Seleccione una ubicación");
                 return;
             }
-            this.positions_selected = [];
-            this.positions = [];
-            this.$http.get(`/items/positions/${this.location_id}/${this.form.item_id}`)
-                .then(response => {
-                    if (response.data.success) {
-                        const data = response.data.data;
-                        this.positions_selected = data.item_positions;
-                        this.temp_positions = JSON.parse(JSON.stringify(this.positions_selected));                     
-                        this.positions = data.positions;
-                        console.log( JSON.stringify(this.positions_selected));
-                        console.log( JSON.stringify(this.positions));
-                        this.positions_selected.forEach(element => {
-                            const position_finded = this.positions.find(position => {return position.row == element.row && position.column == element.column});
-                            if(position_finded){
-                                position_finded.stock = parseInt(element.stock);
-                            }else{
-                                position_finded.stock = 0;
-                            }
-                        });
-                        //if(this.form.location_id!=this.location_id){
-                          ///  this.positions_selected = [];
-                        //}
-                        this.showDialogLocation = true;
+            //this.positions_selected = [];
+            //this.positions = [];
+            if(this.positions.length==0){
+              const response = await this.$http.get(`/items/positions/${this.location_id}/${this.form.item_id}`);
+              console.log(response);
+              
+              if (response.data.success) {
+                const data = response.data.data;
+                this.positions_selected = data.item_positions;
+                this.temp_positions = JSON.parse(JSON.stringify(this.positions_selected));                     
+                this.positions = data.positions;
+                console.log( JSON.stringify(this.positions_selected));
+                console.log( JSON.stringify(this.positions));
+                this.positions.forEach(element => {
+                    const position_finded = this.positions_selected.find(position => {return position.row == element.row && position.column == element.column});
+                    if(position_finded){
+                        element.stock = parseInt(position_finded.stock);
+                    }else{
+                        element.stock = 0;
                     }
                 });
+                //if(this.form.location_id!=this.location_id){
+                  ///  this.positions_selected = [];
+                //}
+              }
+            }
+            this.showDialogLocation = true;
         },
         /*saveDataPosition(data) {
             if(data.length>0){
@@ -362,54 +370,32 @@
             console.log(this.positions_selected);
         },*/
         saveDataPosition(data) {
-          
-          //alert(JSON.stringify(this.positions_selected));
           let totalStockAssigned = 0;
-              this.temp_positions.forEach(position => {
-                  totalStockAssigned += position.stock; // Sumamos los valores de stock de cada posición seleccionada
+          this.temp_positions.forEach(position => {
+            totalStockAssigned += position.stock; // Sumamos los valores de stock de cada posición seleccionada
           });
-          //total de stock del data
-          const totalStock = data.reduce((total, item) => total + item.stock, 0);
+          let total_stock_new = 0;
+          if(data.length>0){
+            data.forEach(element => {
+              total_stock_new += parseInt(element.stock);
+              const temp_position_finded = this.positions.findIndex(position_element => position_element.id == element.id);
+              if(temp_position_finded!=-1){
+                this.positions[temp_position_finded].stock = parseInt(element.stock);
+              }
+            });
+          }
+          
+          
+          console.log(totalStockAssigned);
+          console.log(total_stock_new);
+          const difference_stock = parseInt(total_stock_new) - parseInt(totalStockAssigned);
+          console.log(difference_stock);
+          
+          this.form.counted_quantity= parseInt(this.form.system_quantity)+difference_stock;
           this.form.json_position = {
               location_id:this.location_id,  // Aquí agregas location_id dentro del JSON
               positions: data // Aquí mantienes el arreglo
           };
-          //this.form.json_position=data;
-          //this.form.location_id=this.location_id;
-          
-          console.log(JSON.stringify(this.temp_positions));
-          console.log(totalStock);
-          console.log(totalStockAssigned);
-          console.log(JSON.stringify(data));
-          //alert(totalStock>totalStockAssigned);
-          if(data.length==0){
-            //alert(totalStockAssigned);
-            this.form.counted_quantity -= totalStockAssigned;            
-          }else if(totalStock>totalStockAssigned){
-              const result=totalStock-totalStockAssigned;
-              this.form.counted_quantity+=result;
-          }else{
-              const result2=totalStockAssigned-totalStock;
-              this.form.counted_quantity-=result2;
-          }
-          // Si hay posiciones seleccionadas
-          /*if (data.length > 0) {
-              this.positions_selected = data; // Actualizas las posiciones seleccionadas
-              
-              // Calculamos el stock total basado en las posiciones seleccionadas
-              let totalStockAssigned = 0;
-              this.positions_selected.forEach(position => {
-                  totalStockAssigned += position.stock; // Sumamos los valores de stock de cada posición seleccionada
-              });
-
-              // En lugar de restar, asignamos el stock basado en lo seleccionado
-              this.form.counted_quantity = totalStockAssigned;
-
-              console.log("Stock actualizado después de seleccionar posiciones: ", this.form.counted_quantity);
-          } else {
-              // Si no se seleccionaron posiciones, el stock sigue igual
-              console.log("No positions selected. Stock remains: ", this.form.counted_quantity);
-          }*/
       }              
     }
   }

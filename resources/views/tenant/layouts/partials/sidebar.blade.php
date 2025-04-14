@@ -728,7 +728,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     <path d="M9 16h6" />
                                 </svg>
                                 <span>Comprobantes avanzados</span>
-                            </a>f
+                            </a>
                             <ul class="nav nav-children" style="">
                                 @if(in_array('advanced_retentions', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'retentions') ? 'nav-active' : '' }}">

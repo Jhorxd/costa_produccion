@@ -59,7 +59,7 @@
                                 </div>
                             </div>
     
-    
+
                             <div class="col-lg-2">
                                 <div :class="{'has-danger': errors.date_of_issue}"
                                      class="form-group">
@@ -455,7 +455,7 @@
                                 <div class="form-group">
                                     <button class="btn waves-effect waves-light btn-primary"
                                             type="button"
-                                            @click.prevent="showDialogAddItem = true">+ Agregar Producto
+                                            @click.prevent="clickAddItemPurchase">+ Agregar Producto
                                     </button>
                                 </div>
                             </div>
@@ -522,6 +522,10 @@
                                                 <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                         type="button"
                                                         @click.prevent="clickRemoveItem(index)">x
+                                                </button>
+                                                <button class="btn waves-effect waves-light btn-xs btn-success"
+                                                        type="button"
+                                                        @click.prevent="clickSelectPosition(row)">Posición
                                                 </button>
                                             </td>
                                         </tr>
@@ -672,12 +676,34 @@
                 </form>
             </div>
     
-            <purchase-form-item :currency-type-id-active="form.currency_type_id"
+            <!-- <purchase-form-item :currency-type-id-active="form.currency_type_id"
                                 :exchange-rate-sale="form.exchange_rate_sale"
                                 :showDialog.sync="showDialogAddItem"
                                 :localHasGlobalIgv="localHasGlobalIgv"
                                 :percentage-igv="percentage_igv"
-                                @add="addRow"></purchase-form-item>
+                                @add="addRow"></purchase-form-item> -->
+
+            <purchase-form-item
+                :configuration="config"
+                :currency-type-id-active="form.currency_type_id"
+                :documentId="0"
+                :editNameProduct="config.edit_name_product"
+                :exchange-rate-sale="form.exchange_rate_sale"
+                :isEditItemNote="false"
+                :operation-type-id="'0101'"
+                :recordItem="null"
+                :showDialog.sync="showDialogAddItem"
+                :typeUser="typeUser"
+                :customer-id="form.customer_id"
+                :currency-types="currency_types"
+                :is-from-invoice="true"
+                :percentage-igv="percentage_igv"
+                :isUpdateDocument="false"
+                :permissionEditItemPrices="true"
+                ref="form_add_item"
+                :selectedOptionPrice="1"
+                @add="addRow">
+            </purchase-form-item>
     
             <person-form :external="true"
                          :input_person="input_person"
@@ -699,6 +725,14 @@
                 :rowIndex="rowIndex"
                 @saveInputLotGroup="saveInputLotGroup">
             </input-lot-group>
+
+            <positions
+                :key="keyPosition"
+                :dataModal="modalDataPositions"
+                :showDialog.sync="showDialogSelectPosition"
+                @positions-save="savePositionsData"
+                ref="positions">
+            </positions>
     
         </div>
     </div>
@@ -706,7 +740,8 @@
 
 <script>
 
-import PurchaseFormItem from './partials/item.vue'
+//import PurchaseFormItem from './partials/item.vue'
+import PurchaseFormItem from './partials/newItem.vue'
 import PersonForm from '../persons/form.vue'
 import PurchaseOptions from './partials/options.vue'
 import {exchangeRate, functions, fnPaymentsFee, operationsForDiscounts} from '../../../mixins/functions'
@@ -714,10 +749,11 @@ import {calculateRowItem, showNamePdfOfDescription} from '../../../helpers/funct
 import SeriesForm from './partials/series'
 import {mapActions, mapState} from "vuex";
 import InputLotGroup from '@components/secondary/InputLotGroup.vue'
+import positions from './partials/positions.vue'
 
 export default {
     props: ['purchase_order_id'],
-    components: {PurchaseFormItem, PersonForm, PurchaseOptions, SeriesForm, InputLotGroup},
+    components: {PurchaseFormItem, PersonForm, PurchaseOptions, SeriesForm, InputLotGroup, positions},
     mixins: [functions, exchangeRate, fnPaymentsFee, operationsForDiscounts],
     computed: {
         ...mapState([
@@ -783,6 +819,12 @@ export default {
             showDialogInputLotGroup: false,
             rowItem: null,
             rowIndex: -1,
+            typeUser: null,
+            showDialogSelectPosition:false,
+            modalDataPositions:[],
+            stock_positions:[],
+            item_selected: null,
+            keyPosition:0
         }
     },
     async mounted() {
@@ -841,6 +883,49 @@ export default {
         this.initGlobalIgv()
     },
     methods: {
+        clickAddItemPurchase(){
+            const typeUser = localStorage.getItem("userType");
+            if(typeUser=="admin") this.typeUser="Administrador"            
+            this.showDialogAddItem = true
+        },
+        initModalDataPosition(){
+            return {
+                item_data:{
+                    item_id:'',
+                    item_name:'',
+                    quantity:0,
+                    has_lot:'',
+                },
+                position_data:{
+                    expiration_date:'',
+                    lot_name:'',
+                    warehouse_id:'',
+                    location_id:'',
+                    position_id:''
+                },
+                stock_positions:[]
+            }
+        },
+        clickSelectPosition(data){            
+            this.modalDataPositions = this.initModalDataPosition();
+            this.modalDataPositions.item_data.item_id = data.item_id;
+            this.modalDataPositions.item_data.item_name = data.item.description;
+            this.modalDataPositions.item_data.quantity = parseInt(data.quantity);
+            this.modalDataPositions.item_data.has_lot = data.item.lots_enabled;
+            this.modalDataPositions.stock_positions = this.stock_positions;
+            if(data.item.position_data!=undefined){
+                this.modalDataPositions.position_data = data.item.position_data;
+            }
+            this.item_selected = data;
+            this.dialogKey = Date.now();            
+
+            this.showDialogSelectPosition=true;
+        },
+        savePositionsData(data){
+            this.item_selected.item.position_data = data.position_data;
+            this.stock_positions = data.stock_positions;
+            this.modalDataPositions = this.initModalDataPosition();
+        },
         saveInputLotGroup(params)
         {
             this.form.items[params.index].lot_code = params.data.lot_code
@@ -1260,7 +1345,7 @@ export default {
             this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
             this.form.establishment_id = this.establishment.id
             this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
-
+            this.$refs.positions.resetData();
             this.changeDateOfIssue()
             this.changeDocumentType()
             this.changeCurrencyType()
