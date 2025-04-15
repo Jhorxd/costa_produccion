@@ -789,7 +789,7 @@
 
 import ItemForm from '../../items/form.vue'
 
-import {calculateRowItem} from '../../../../helpers/functions2'
+import {calculateRowItem} from '../../../../helpers/functions'
 import WarehousesDetail from './select_warehouses.vue'
 import SelectLotsForm from './lots.vue'
 
