@@ -789,7 +789,7 @@
 
 import ItemForm from '../../items/form.vue'
 
-import {calculateRowItem} from '../../../../helpers/functions'
+import {calculateRowItem} from '../../../../helpers/functions2'
 import WarehousesDetail from './select_warehouses.vue'
 import SelectLotsForm from './lots.vue'
 
@@ -1621,6 +1621,7 @@ export default {
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
             this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            
             this.form.quantity = 1;
             this.cleanTotalItem();
             this.showListStock = true

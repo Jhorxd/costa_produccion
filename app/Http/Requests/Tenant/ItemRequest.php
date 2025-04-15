@@ -76,11 +76,6 @@ class ItemRequest extends FormRequest
             'pharmaceutical_unit_type_id' => [
                 'required'
             ],
-            'sale_price' => [
-                'required',
-                'numeric',
-                'gt:0'
-            ],
             // 'category_id' => [
             //     'required_if:is_set,false',
             // ],

@@ -10,7 +10,6 @@ class PharmaceuticalItemUnitType extends ModelTenant
     use UsesTenantConnection;
     
     protected $fillable = [
-        'id',
         'active',
         'description'
     ];

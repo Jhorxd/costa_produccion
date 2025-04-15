@@ -181,7 +181,7 @@
                                     ></el-table-column>
                                     <!-- <el-table-column width="220" property="description" label="Nombre"></el-table-column> -->
 
-                                    <el-table-column width="220" label="Nombre">
+                                    <el-table-column width="90" label="Nombre">
                                         <template slot-scope="scope">
                                             <template
                                                 v-if="
@@ -205,6 +205,26 @@
                                         width="90"
                                         property="quantity"
                                         label="Cantidad"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="name_location"
+                                        label="Ubicación"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="position"
+                                        label="Posición"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="lot"
+                                        label="Lote"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="100"
+                                        property="date_of_due"
+                                        label="Fecha de vencimiento"
                                     ></el-table-column>
                                 </el-table>
                                 <el-button
