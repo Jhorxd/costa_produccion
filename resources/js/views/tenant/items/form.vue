@@ -182,15 +182,15 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div :class="{'has-danger': errors.sale_price}"
+                            <div :class="{'has-danger': errors.sale_unit_price}"
                                  class="form-group">
-                                <label class="control-label">Precio de venta <span class="text-danger">*</span></label>
-                                <el-input v-model="form.sale_price"
-                                          dusk="sale_price"
+                                <label class="control-label">Precio de Venta <span class="text-danger">*</span></label>
+                                <el-input v-model="form.sale_unit_price"
+                                          dusk="sale_unit_price"
                                           @input="calculatePercentageOfProfitBySale"></el-input>
-                                <small v-if="errors.sale_price"
+                                <small v-if="errors.sale_unit_price"
                                        class="form-control-feedback"
-                                       v-text="errors.sale_price[0]"></small>
+                                       v-text="errors.sale_unit_price[0]"></small>
                             </div>
                         </div>
                         <div v-show="form.unit_type_id !='ZZ'"
@@ -341,7 +341,19 @@
                                        v-text="errors.unit_type_id[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.supplier_id}"
+                                 class="form-group">
+                                <label class="control-label">Laboratorio</label>
+                                <el-input v-model="form.laboratory"
+                                          dusk="laboratory"></el-input>
+                                <small
+                                    v-if="errors.laboratory"
+                                    class="form-control-feedback"
+                                    v-text="errors.laboratory[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div :class="{'has-danger': errors.supplier_id}"
                                  class="form-group">
                                 <label class="control-label">Proveedor</label>
@@ -357,9 +369,9 @@
                                     ></el-option>
                                 </el-select>
                                 <small
-                                    v-if="errors.sale_affectation_igv_type_id"
+                                    v-if="errors.supplier_id"
                                     class="form-control-feedback"
-                                    v-text="errors.sale_affectation_igv_type_id[0]"></small>
+                                    v-text="errors.supplier_id[0]"></small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -384,15 +396,15 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div :class="{'has-danger': errors.sale_unit_price}"
+                            <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
                                 <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
-                                <el-input v-model="form.sale_unit_price"
-                                          dusk="sale_unit_price"
+                                <el-input v-model="form.purchase_unit_price"
+                                          dusk="purchase_unit_price"
                                           @input="calculatePercentageOfProfitBySale"></el-input>
-                                <small v-if="errors.sale_unit_price"
+                                <small v-if="errors.purchase_unit_price"
                                        class="form-control-feedback"
-                                       v-text="errors.sale_unit_price[0]"></small>
+                                       v-text="errors.purchase_unit_price[0]"></small>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -1923,7 +1935,6 @@ export default {
                 this.$message.error("Seleccione una ubicación");
                 return;
             }
-            console.log(this.positions_selected);
             
             await this.$http.get(`/${this.resource}/positions/${this.location_id}/${this.recordId}`)
                 .then(response => {
@@ -2019,7 +2030,7 @@ export default {
                 item_files: [],
                 currency_type_id: 'PEN',
                 sale_unit_price: 0,
-                sale_price: 0,
+                unit_price: 0,
                 purchase_unit_price: 0,
                 has_isc: false,
                 system_isc_type_id: null,
@@ -2336,14 +2347,12 @@ export default {
             if (this.recordId && this.form.lots_enabled && this.positions_selected.length==0) {
                 return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
-            console.log(this.positions_selected);
             
             this.form.positions_selected = this.positions_selected;
             
             this.form.location_id = this.location_id;
 
             this.loading_submit = true
-            console.log(this.form);
             
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(async response => {

@@ -129,7 +129,7 @@ use Modules\Item\Models\ItemLotsGroup;
                 'currency_type_id' => $this->currency_type_id,
                 'sale_unit_price' => $this->getFormatSaleUnitPrice(),
                 // 'sale_unit_price' => $this->sale_unit_price,
-                'sale_price' => $this->getFormatSalePrice(),
+                'purchase_unit_price' => $this->getFormatPurchaseUnitPrice(),
                 'active_principle' => $this->active_principle,
                 'concentration' => $this->concentration,
                 'pharmaceutical_unit_type_id' => $this->pharmaceutical_unit_type_id,

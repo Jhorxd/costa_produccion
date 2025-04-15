@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use Modules\Purchase\Models\PurchaseOrder;
 use stdClass;
 use Illuminate\Database\Eloquent\Collection;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
+use Modules\Inventory\Models\WarehouseLocationPosition;
 
 /**
  * Class Purchase
@@ -560,12 +562,42 @@ class Purchase extends ModelTenant
                 ];
             }),
             'items'                          => $this->items->transform(function ($row, $key) {
+
+                $position_data = $row->item->position_data;
+                $location_name = null;
+                $position_name = null;
+                if(isset($position_data->location_id)){
+                    $location = InventoryWarehouseLocation::find($position_data->location_id);
+                    $location_name = $location->name;
+                    
+                    if(isset($position_data->position_id)){
+                        $position = WarehouseLocationPosition::find($position_data->position_id);
+                        if($position) {
+                            // Generar el formato de posición directamente
+                            $column_number = $position->column;
+                            $column_letter = '';
+                            $temp_number = $column_number;
+                            
+                            while ($temp_number > 0) {
+                                $remainder = ($temp_number - 1) % 26;
+                                $column_letter = chr(65 + $remainder) . $column_letter;
+                                $temp_number = (int)(($temp_number - 1) / 26);
+                            }
+                            
+                            $position_name = $location->code . '-' . $position->row . '-' . $column_letter;
+                        }
+                    }
+                }
                 return [
                     'key'         => $key + 1,
                     'id'          => $row->id,
                     'description' => $row->item->description,
                     'name_product_pdf' => $row->name_product_pdf,
-                    'quantity'    => round($row->quantity, 2)
+                    'quantity'    => round($row->quantity, 2),
+                    'name_location' => $location_name,
+                    'position' => $position_name,
+                    'lot' => $position_data->lot_name ?? '-',
+                    'date_of_due' => ($this->date_of_due) ? $this->date_of_due->format('Y-m-d') : '-',
                 ];
             }),
             'print_a4'                       => url('')."/purchases/print/{$this->external_id}/a4",

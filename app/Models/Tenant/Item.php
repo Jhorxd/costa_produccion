@@ -194,13 +194,13 @@ class Item extends ModelTenant
         'concentration',
         'sales_condition_id',
         'pharmaceutical_unit_type_id',
-        'sale_price',
         'lot',
         'supplier_id',
         'inventory_state_id',
         'stock_max',
         'average_usage',
-        'days_to_alert'
+        'days_to_alert',
+        'laboratory'
         // 'warehouse_id'
     ];
 
@@ -1358,9 +1358,9 @@ class Item extends ModelTenant
         return ((int)$this->sale_unit_price != $this->sale_unit_price) ? $this->sale_unit_price : round($this->sale_unit_price);
     }
 
-    public function getFormatSalePrice()
+    public function getFormatPurchaseUnitPrice()
     {
-        return ((int)$this->sale_price != $this->sale_price) ? $this->sale_price : round($this->sale_price);
+        return ((int)$this->purchase_unit_price != $this->purchase_unit_price) ? $this->purchase_unit_price : round($this->purchase_unit_price);
     }
 
 

@@ -1758,6 +1758,10 @@ export default {
                 if (parseFloat(this.form.unit_price_value) <= 0) return this.$message.error('El Precio Unitario debe ser mayor a 0');
             }
 
+            if (parseInt(this.form.quantity)>parseInt(this.selectedRow.stock)){
+                return this.$message.error('El stock requerido supera al stock disponible');
+            }
+
             // if(this.form.quantity < this.getMinQuantity()){
             //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);
             // }

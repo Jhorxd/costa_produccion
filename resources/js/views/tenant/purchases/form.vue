@@ -518,14 +518,13 @@
                                                         @click.prevent="clickOpenSeries(index, row.quantity, row.lots)">
                                                     Series
                                                 </button>
-    
-                                                <button class="btn waves-effect waves-light btn-xs btn-danger"
-                                                        type="button"
-                                                        @click.prevent="clickRemoveItem(index)">x
-                                                </button>
                                                 <button class="btn waves-effect waves-light btn-xs btn-success"
                                                         type="button"
                                                         @click.prevent="clickSelectPosition(row)">Posición
+                                                </button>
+                                                <button class="btn waves-effect waves-light btn-xs btn-danger"
+                                                        type="button"
+                                                        @click.prevent="clickRemoveItem(index)">x
                                                 </button>
                                             </td>
                                         </tr>
