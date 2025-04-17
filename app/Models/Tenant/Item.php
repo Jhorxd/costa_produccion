@@ -201,7 +201,6 @@ class Item extends ModelTenant
         'average_usage',
         'days_to_alert',
         'laboratory'
-        // 'warehouse_id'
     ];
 
     protected $casts = [

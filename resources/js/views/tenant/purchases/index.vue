@@ -175,7 +175,7 @@
                             >
                                 <el-table :data="row.items">
                                     <el-table-column
-                                        width="80"
+                                        width="70"
                                         property="key"
                                         label="#"
                                     ></el-table-column>

@@ -102,11 +102,13 @@
                     if(element.selected)
                         stock_total++;
                 }); 
-                if(this.stock_necessary>stock_total){
+                /* if(this.stock_necessary>stock_total){
                     const differenceStock = parseInt(this.stock_necessary)-parseInt(stock_total);
                     this.$message.warning("Aun falta que seleccione "+differenceStock+" lote(s)");
                     return;
-                }else if(stock_total>this.stock_necessary){
+                } */
+                
+                if(stock_total>this.stock_necessary){
                     this.$message.warning("Lotes seleccionados de forma excesiva, la cantidad necesaria es "+this.stock_necessary+" lote(s)");
                     return;
                 }
