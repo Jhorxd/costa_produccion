@@ -263,8 +263,6 @@ class ItemController extends Controller
     public function tables()
     {
         $establishment_id = auth()->user()->establishment_id;
-        $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
-
         $unit_types = UnitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
@@ -305,7 +303,6 @@ class ItemController extends Controller
         $pharmaceutical_item_unit_types = PharmaceuticalItemUnitType::where('active', 1)->get();
 
         
-        $locations = InventoryWarehouseLocation::where('warehouse_id', $warehouse_user_active->id)->get();
         $states = InventoryState::all();
         /*
         $configuration = Configuration::select(
@@ -316,7 +313,6 @@ class ItemController extends Controller
         */
         return compact(
             'pharmaceutical_item_unit_types',
-            'locations',
             'states',
             'unit_types',
             'currency_types',
@@ -343,6 +339,21 @@ class ItemController extends Controller
             'suppliers'
         );
     }
+
+    public function getLocationsByWarehouse($warehouse_id){
+        $locations = InventoryWarehouseLocation::where('warehouse_id', $warehouse_id)->get();
+        if(empty($locations)){
+            return response()->json([
+                'success' => false,
+                'message' => 'Ubicación no encontrada',
+            ], 404);
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Ubicaciones encontradas',
+            'data' => $locations
+        ], 200);
+    }
     
     public function getLocations(Request $request){        
         $locations = ItemPosition::where('warehouse_id', $request->warehouse_id)
@@ -353,6 +364,7 @@ class ItemController extends Controller
         $datos= InventoryWarehouseLocation::whereIn('id', $locations)->get();        
         return $datos;        
     }
+    
     public function positions($location_id, $item_id = null)
     {
         $location = InventoryWarehouseLocation::find($location_id);
@@ -733,6 +745,13 @@ class ItemController extends Controller
                 }
             }
         }
+        return [
+            'success' => true,
+            'message' => ($id)?'Producto editado con éxito':'Producto registrado con éxito',
+            'isset' => isset($request->warehouse_id),
+            'item' => $item,
+            'request' => $request->warehouse_id
+        ];
 
         foreach ($request->item_unit_types as $value) {
 

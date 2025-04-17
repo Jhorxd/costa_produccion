@@ -176,7 +176,7 @@ export default {
             },
         };
     },
-    created() {
+    async created() {
         if(this.pharmacy !== undefined && this.pharmacy === true){
             this.fromPharmacy = true;
         }
@@ -190,6 +190,7 @@ export default {
             this.getRecords();
         });
         this.$root.$refs.DataTable = this;
+        await this.getRecords();
     },
     async mounted() {
         let column_resource = _.split(this.resource, "/");
@@ -214,10 +215,12 @@ export default {
         },
         getRecords() {
             this.loading_submit = true;
+            
             return this.$http
                 .get(`/${this.resource}/records?${this.getQueryParameters()}`)
                 .then(response => {
                     this.records = response.data.data;
+                    
                     this.pagination = response.data.meta;
                     this.pagination.per_page = parseInt(
                         response.data.meta.per_page
@@ -256,7 +259,6 @@ export default {
             let response = await this.$http.post(`/${this.resource}/visibleMassive`,{
                 resource: this.fromRestaurant ? 'restaurant' : 'ecommerce',
             });
-            console.log(response);
                 
             if (response.status === 200) {
                 this.$message.success(response.data.message);

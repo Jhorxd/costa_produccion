@@ -237,6 +237,7 @@ if ($hostname) {
             Route::get('items/export/barcode/print_x', 'Tenant\ItemController@printBarCodeX')->name('tenant.items.export.barcode.print.x');
             Route::get('items/export/barcode/last', 'Tenant\ItemController@itemLast')->name('tenant.items.last');
             Route::post('get-items', 'Tenant\ItemController@getAllItems');
+            Route::get('items/getLocations/{warehouse_id}', 'Tenant\ItemController@getLocationsByWarehouse');
             
             Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
             //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');

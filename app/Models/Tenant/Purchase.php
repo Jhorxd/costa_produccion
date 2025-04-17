@@ -563,7 +563,7 @@ class Purchase extends ModelTenant
             }),
             'items'                          => $this->items->transform(function ($row, $key) {
 
-                $position_data = $row->item->position_data;
+                $position_data = $row->item->position_data ?? null;
                 $location_name = null;
                 $position_name = null;
                 if(isset($position_data->location_id)){
@@ -594,8 +594,8 @@ class Purchase extends ModelTenant
                     'description' => $row->item->description,
                     'name_product_pdf' => $row->name_product_pdf,
                     'quantity'    => round($row->quantity, 2),
-                    'name_location' => $location_name,
-                    'position' => $position_name,
+                    'name_location' => $location_name ?? '-',
+                    'position' => $position_name ?? '-',
                     'lot' => $position_data->lot_name ?? '-',
                     'date_of_due' => ($this->date_of_due) ? $this->date_of_due->format('Y-m-d') : '-',
                 ];

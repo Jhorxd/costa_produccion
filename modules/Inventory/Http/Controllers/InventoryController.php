@@ -213,10 +213,7 @@ class InventoryController extends Controller
                         $type = 1;
                         $quantity_new = $detail['counted_quantity'] - $detail['system_quantity'];
                         
-                        if ($detail['counted_quantity'] < $detail['system_quantity']) {
-                            $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
-                            $type = null;
-                        }
+                        
                         
                         $item = Item::find($detail['item_id']);
                         if($item){
@@ -225,6 +222,11 @@ class InventoryController extends Controller
                             }
                             $item->stock += $quantity_new;
                             $item->save();
+                        }
+
+                        if ($detail['counted_quantity'] < $detail['system_quantity']) {
+                            $quantity_new = $detail['system_quantity'] - $detail['counted_quantity'];
+                            $type = 3;
                         }
                         
                         $physicalInventory = PhysicalInventory::find($detail['physical_inventory_id']);
@@ -262,12 +264,10 @@ class InventoryController extends Controller
                                 }
                             }
                         } else if (!empty($detail['json_position'])) {
-                            Log::debug("entramos1");
                             $decodedJson = json_decode($detail['json_position'], true);
                             
                             if (is_array($decodedJson) && isset($decodedJson['positions'])) {
                                 $positions = $decodedJson['positions'];
-                                //Log::debug("entramos2");
                                 
                                 $positionsCount = count($positions);
                                 
@@ -280,8 +280,6 @@ class InventoryController extends Controller
                                     foreach ($itemPostion as $position) {
                                         $position->delete();
                                     }
-                                    
-                                    Log::debug("entramos");
                                 } else if ($positionsCount > 0) {
                                     $inventoryWarehouseLocation = InventoryWarehouseLocation::find($decodedJson['location_id']);
 

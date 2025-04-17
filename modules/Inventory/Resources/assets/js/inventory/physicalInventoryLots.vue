@@ -23,7 +23,7 @@
                             <tr v-for="(row, index) in lots_aux" :key="index" width="100%">
                                 <td>
                                     <div class="form-group mb-2 mr-2"  >
-                                        <el-input v-model="row.code" disabled></el-input>
+                                        <el-input v-model="row.code" readonly></el-input>
                                     </div>
                                 </td>
                                 <td>
@@ -33,7 +33,7 @@
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2" >
-                                        <el-date-picker v-model="row.date_of_due" type="date" value-format="yyyy-MM-dd" :clearable="false" disabled></el-date-picker>
+                                        <el-date-picker v-model="row.date_of_due" type="date" value-format="yyyy-MM-dd" :clearable="false" readonly></el-date-picker>
                                     </div>
                                 </td>
                                 <br>

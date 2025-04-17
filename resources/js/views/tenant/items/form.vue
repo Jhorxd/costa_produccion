@@ -1768,47 +1768,7 @@ export default {
             this.fromPharmacy = true;
         }
         await this.initForm();
-
-        await this.$http.get(`/${this.resource}/tables`)
-            .then(response => {
-                let data = response.data;
-                this.unit_types = data.unit_types;
-                this.pharmaceutical_unit_types = data.pharmaceutical_item_unit_types;
-                this.sales_conditions = data.sales_conditions
-                this.suppliers = data.suppliers
-                this.accounts = data.accounts
-                this.currency_types = data.currency_types
-                this.system_isc_types = data.system_isc_types
-                this.affectation_igv_types = data.affectation_igv_types
-                this.warehouses = data.warehouses
-                this.categories = data.categories
-                this.brands = data.brands
-                this.attribute_types = data.attribute_types
-                this.locations = data.locations;
-                this.states = data.states;
-                if(response.data.states.length>0)
-                    this.form.inventory_state_id = response.data.states[0].id;
-                
-                // this.config = data.configuration
-                if (this.canShowExtraData) {
-                    this.$store.commit('setColors', data.colors);
-                    this.$store.commit('setCatItemSize', data.CatItemSize);
-                    this.$store.commit('setCatItemUnitsPerPackage', data.CatItemUnitsPerPackage);
-                    this.$store.commit('setCatItemStatus', data.CatItemStatus);
-                    this.$store.commit('setCatItemMoldCavity', data.CatItemMoldCavity);
-                    this.$store.commit('setCatItemMoldProperty', data.CatItemMoldProperty);
-                    this.$store.commit('setCatItemUnitBusiness', data.CatItemUnitBusiness);
-                    this.$store.commit('setCatItemPackageMeasurement', data.CatItemPackageMeasurement);
-                    this.$store.commit('setCatItemProductFamily', data.CatItemPackageMeasurement);
-                }
-                this.$store.commit('setConfiguration', data.configuration);
-
-
-                this.loadConfiguration()
-                this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-                this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-                this.inventory_configuration = data.inventory_configuration;
-            })
+        await this.getDataTables();
 
         this.$eventHub.$on('submitPercentagePerception', (data) => {
             this.form.percentage_perception = data
@@ -2211,11 +2171,65 @@ export default {
                         //     });
                         // }
                     })
-
+                    await this.getLocationsByWarehouse(this.form.warehouse_id);
+            }else{
+                await this.getDataTables();
             }
 
             this.setDataToItemWarehousePrices()
 
+        },
+        async getLocationsByWarehouse(warehouse_id){
+            try {
+                const response = await this.$http.get(`/${this.resource}/getLocations/${warehouse_id}`);
+                if(response.data.success){
+                    this.locations = response.data.data;
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        },
+        async getDataTables(){
+            const response = await this.$http.get(`/${this.resource}/tables`);
+            let data = response.data;
+            this.unit_types = data.unit_types;
+            this.pharmaceutical_unit_types = data.pharmaceutical_item_unit_types;
+            this.sales_conditions = data.sales_conditions
+            this.suppliers = data.suppliers
+            this.accounts = data.accounts
+            this.currency_types = data.currency_types
+            this.system_isc_types = data.system_isc_types
+            this.affectation_igv_types = data.affectation_igv_types
+            this.warehouses = data.warehouses
+            this.categories = data.categories
+            this.brands = data.brands
+            this.attribute_types = data.attribute_types
+            
+            this.states = data.states;
+            if(this.states.length>0)
+                this.form.inventory_state_id = this.states[0].id;
+            if(this.pharmaceutical_unit_types.length>0)
+                this.form.pharmaceutical_unit_type_id = this.pharmaceutical_unit_types[0].id;
+            
+            // this.config = data.configuration
+            if (this.canShowExtraData) {
+                this.$store.commit('setColors', data.colors);
+                this.$store.commit('setCatItemSize', data.CatItemSize);
+                this.$store.commit('setCatItemUnitsPerPackage', data.CatItemUnitsPerPackage);
+                this.$store.commit('setCatItemStatus', data.CatItemStatus);
+                this.$store.commit('setCatItemMoldCavity', data.CatItemMoldCavity);
+                this.$store.commit('setCatItemMoldProperty', data.CatItemMoldProperty);
+                this.$store.commit('setCatItemUnitBusiness', data.CatItemUnitBusiness);
+                this.$store.commit('setCatItemPackageMeasurement', data.CatItemPackageMeasurement);
+                this.$store.commit('setCatItemProductFamily', data.CatItemPackageMeasurement);
+            }
+            this.$store.commit('setConfiguration', data.configuration);
+
+
+            this.loadConfiguration()
+            this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+            this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+            this.inventory_configuration = data.inventory_configuration;
         },
         setDataToItemWarehousePrices() {
 

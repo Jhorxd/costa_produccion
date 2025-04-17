@@ -50,6 +50,7 @@
     use Throwable;
     use App\Models\Tenant\GeneralPaymentCondition;
 use App\Models\Tenant\ItemPosition;
+use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
 use Modules\Inventory\Models\WarehouseLocationPosition;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
@@ -359,7 +360,15 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                                 }
         
                                 $position->save();
-                                
+
+                                $purchase_item = PurchaseItem::where('purchase_id', $data['id'])->where('item_id', $row['item_id'])->first();
+                                if ($purchase_item) {
+                                    $itemData = (array)$purchase_item->item;
+                                    $itemData['position_data'] = $position_data;
+                                    
+                                    $purchase_item->item = $itemData;
+                                    $purchase_item->save();
+                                }
                             }
                         }
                     }

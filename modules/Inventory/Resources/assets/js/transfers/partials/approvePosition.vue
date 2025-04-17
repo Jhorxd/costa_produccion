@@ -217,7 +217,20 @@ export default {
       }
     },
     saveChanges() {
-      
+      let stock_total = 0;
+      this.positions.forEach(position_element => {
+        position_element.lots_group_list.forEach(element => {
+          if(element.selected){
+            stock_total++;
+          }
+        });
+      });
+
+      if(this.stock_necessary>stock_total){
+        const differenceStock = parseInt(this.stock_necessary)-parseInt(stock_total);
+        this.$message.warning("Aun falta que seleccione "+differenceStock+" lote(s)");
+        return; 
+      }
       if (!this.location_id) {
         this.$message.error("Debes seleccionar una ubicación");
         return;
