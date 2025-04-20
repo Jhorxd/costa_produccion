@@ -1045,6 +1045,7 @@ class Item extends ModelTenant
                                              ]),
             'category'                         => $detail['category'],
             'stock'                            => $stock,
+            'stock_max'                        => $this->stock_max,
             'internal_id'                      => $this->internal_id,
             'description'                      => $this->description,
             'currency_type_id'                 => $this->currency_type_id,

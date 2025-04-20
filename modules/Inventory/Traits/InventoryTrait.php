@@ -207,6 +207,8 @@ trait InventoryTrait
             }
             return [
                 'id' => $row->id,
+                'stock_max' => (int)$row->stock_max,
+                'stock_total' => (int)$row->stock,
                 'description' => $description,
                 'text_filter' => $row->text_filter,
                 'lots_enabled' => (bool)$row->lots_enabled,

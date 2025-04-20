@@ -919,9 +919,15 @@ export default {
             this.dialogKey = Date.now();            
 
             this.showDialogSelectPosition=true;
+            
         },
         savePositionsData(data){
             this.item_selected.item.position_data = data.position_data;
+            this.item_selected.is_delivered = true;
+            this.form.real_amount_due += parseFloat(this.item_selected.total);
+            console.log(this.item_selected);
+            console.log(this.form);
+            
             this.stock_positions = data.stock_positions;
             this.modalDataPositions = this.initModalDataPosition();
         },
@@ -1319,7 +1325,7 @@ export default {
                 has_payment: false,
                 payment_condition_id: '01',
                 fee: [],
-
+                real_amount_due: 0
             }
 
             // this.clickAddPayment()

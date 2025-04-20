@@ -118,6 +118,7 @@ class Purchase extends ModelTenant
         'total_canceled',
         'payment_condition_id',
         'observation',
+        'real_amount_due'
     ];
 
     protected $casts = [
@@ -548,7 +549,7 @@ class Purchase extends ModelTenant
             'total'                          => self::NumberFormat($total),
             'state_type_id'                  => $this->state_type_id,
             'state_type_description'         => $this->state_type->description,
-            'state_type_payment_description' => $this->total_canceled ? 'Pagado' : 'Pendiente de pago',
+            'state_type_payment_description' => $this->total_canceled ? 'Pagado' : self::calculateState($this->id),
             // 'payment_method_type_description' => isset($this->purchase_payments['payment_method_type']['description'])?$this->purchase_payments['payment_method_type']['description']:'-',
             'created_at'                     => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at'                     => $this->updated_at->format('Y-m-d H:i:s'),
@@ -603,6 +604,21 @@ class Purchase extends ModelTenant
             'print_a4'                       => url('')."/purchases/print/{$this->external_id}/a4",
             'filename'                         => $this->filename,
         ];
+    }
+
+    public static function calculateState($purchase_id){
+        $payments = PurchasePayment::where('purchase_id', $purchase_id)->get();
+        $total_payments = 0;
+        if(!empty($payments)){
+            foreach ($payments as $element_payment) {
+                $total_payments += (float)$element_payment->payment;
+            }
+        }
+        if($total_payments==0){
+            return "Pago pendiente a realizar";
+        }else {
+            return "Pago parcial";
+        }
     }
 
 

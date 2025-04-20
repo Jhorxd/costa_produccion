@@ -35,14 +35,14 @@ class PurchasePaymentController extends Controller
         $purchase = Purchase::find($purchase_id);
 
         $total_paid = collect($purchase->payments)->sum('payment');
-        $total = $purchase->total;
-        $total_difference = round($total - $total_paid, 2);
+        $total_difference = round($purchase->real_amount_due - $total_paid, 2);
 
         return [
             'number_full' => $purchase->number_full,
             'total_paid' => $total_paid,
-            'total' => $total,
-            'total_difference' => $total_difference
+            'total' => $purchase->total,
+            'total_difference' => $total_difference,
+            'real_amount_due' => $purchase->real_amount_due
         ];
 
     }
@@ -51,12 +51,28 @@ class PurchasePaymentController extends Controller
     public function store(PurchasePaymentRequest $request)
     {
         $id = $request->input('id');
+        $purchase_id = $request->input('purchase_id');
 
-        DB::connection('tenant')->transaction(function () use ($id, $request) {
+        DB::connection('tenant')->transaction(function () use ($id, $purchase_id, $request) {
 
             $record = PurchasePayment::firstOrNew(['id' => $id]);
             $record->fill($request->all());
             $record->save();
+            $purchasePayments = PurchasePayment::where('purchase_id', $purchase_id)->get();
+            $payment_total = 0; 
+            if (!empty($purchasePayments)){
+                foreach ($purchasePayments as $element_payment) {
+                    $payment_total += (float)$element_payment->payment;
+                }
+            }
+            $purchase = Purchase::find($purchase_id);
+            if($purchase){
+                $amount_pedding = (float)$purchase->real_amount_due-(float)$payment_total;
+                if($amount_pedding<=0){
+                    $purchase->total_canceled=true;
+                    $purchase->save();
+                }
+            }
             $this->createGlobalPayment($record, $request->all());
             $this->saveFiles($record, $request, 'purchases');
 

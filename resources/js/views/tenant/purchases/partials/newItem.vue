@@ -302,7 +302,7 @@
                             <td class="text-left">{{ row.id }}</td>
                             <td class="text-left">{{ row.description }}</td>
                             <td class="text-left">{{ row.category }}</td>
-                            <td class="text-left">{{ row.sale_unit_price }}</td>
+                            <td class="text-left">{{ row.purchase_unit_value }}</td>
                             <td class="text-left">{{ row.stock }}</td>
                             <td class="text-left">
                                 <div v-for="(location, i) in row.locations" :key="i">
@@ -443,7 +443,7 @@
                         <div class="col-md-4" v-if="form.item">
                             <div class="form-group">
                                 <label class="control-label">Costo unitario</label>
-                                <el-input :value="form.item.purchase_unit_price" readonly>
+                                <el-input :value="form.item.purchase_unit_value" readonly>
                                 </el-input>
                             </div>
                         </div>
@@ -760,6 +760,10 @@
             :inputSearch="input_search_by_serie">
         </select-lots-form>
 
+        <confirm-price
+            :showDialog.sync="showDialogConfirmPrice"
+            @responseModal="getResponseModalConfirmPrice">
+        </confirm-price>
 
     </el-dialog>
 </template>
@@ -801,7 +805,8 @@ import Keypress from "vue-keypress";
 import HistorySalesForm from "../../../../../../modules/Pos/Resources/assets/js/views/history/sales.vue";
 import { checkPermissionEditPrices } from '@mixins/check-permission-edit-prices'
 import WeightedAverageCost from '@components/items/WeightedAverageCost.vue'
-import { forEach } from 'lodash'
+import { forEach } from 'lodash';
+import confirmPrice from './confirmPrice.vue'
 
 
 export default {
@@ -834,7 +839,8 @@ export default {
         SelectLotsForm,
         HistorySalesForm,
         'vue-ckeditor': VueCkeditor.component,
-        WeightedAverageCost
+        WeightedAverageCost,
+        confirmPrice
     },
     mixins: [
         checkPermissionEditPrices
@@ -893,7 +899,9 @@ export default {
             various_item: false,
             various_item_barcode: 'VARIOUS_ITEM',
             // GB
-            selectedRow: null
+            selectedRow: null,
+            showDialogConfirmPrice: false,
+            confirmProductPurchase: false, 
         }
     },
     created() {
@@ -1604,12 +1612,12 @@ export default {
             this.form.item = this.setExtraFieldOfitem(this.form.item);
             this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types;
 
-            this.form.unit_price_value = this.form.item.sale_unit_price;
+            this.form.unit_price_value = this.form.item.purchase_unit_value;
             if(!this.configuration.enable_list_product && this.selectedOptionPrice !== 1) {
                 if(this.form.item_unit_types.length) {
                     let first_list = this.form.item_unit_types[0];
                     let priceSelected = first_list[this.selectedOptionPrice];
-                    // row.sale_unit_price = priceSelected;
+                    // row.purchase_unit_value = priceSelected;
                     this.form.unit_price_value = priceSelected;
                 } else {
                     this.form.unit_price_value = "0"
@@ -1698,6 +1706,14 @@ export default {
         cleanTotalItem() {
             this.total_item = null
         },
+        getResponseModalConfirmPrice(responseBoolean){
+            if(!responseBoolean){
+                this.form.unit_price_value = parseFloat(this.selectedRow.purchase_unit_value);
+            }else{
+                this.confirmProductPurchase = true;
+                this.clickAddItem();
+            }
+        },
         async validateCurrentStock() {
             this.loading_dialog = true
 
@@ -1719,26 +1735,33 @@ export default {
         },
         async clickAddItem()
         {
+            console.log(this.selectedRow);
+            
             if(this.isRestrictedForSale) return this.$message.error('No puede agregar el producto, está restringido para venta.')
+
+            if (this.form.unit_price_value < this.form.item.purchase_unit_value && !this.confirmProductPurchase){
+                this.showDialogConfirmPrice = true;
+                return;
+            }
+            
+            if(this.selectedRow.stock_max!=null){
+                const stock_available = parseInt(this.selectedRow.stock_max)-parseInt(this.selectedRow.stock);
+                if(parseInt(this.form.quantity)>stock_available){
+                    return this.$message.error('La cantidad requerida supera al stock máximo disponible: '+stock_available);
+                }
+            }
+
 
             if (this.applyValidateStock()) {
                 const validate_current_stock = await this.validateCurrentStock()
                 if (!validate_current_stock.success) return this.$message.error(validate_current_stock.message)
             }
 
-            if(this.config.condition_sale_purchase_price_to_item) {
-                if (this.form.unit_price_value < this.form.item.purchase_unit_value) return this.$message.error('El Precio Unitario debe ser mayor o igual al costo de compra');
-            }
-
             if (!this.form.item.description || !this.form.item.description.trim().length) {
                 return this.$message.error('La descripción es requerida');
             }
 
-            if (this.isNoteErrorDescription) {
-                if (parseFloat(this.form.unit_price_value) < 0) return this.$message.error('El Precio Unitario debe ser mayor o igual 0');
-            } else {
-                if (parseFloat(this.form.unit_price_value) <= 0) return this.$message.error('El Precio Unitario debe ser mayor a 0');
-            }
+            if (parseFloat(this.form.unit_price_value) <= 0) return this.$message.error('El Precio Unitario debe ser mayor a 0');
 
             // if(this.form.quantity < this.getMinQuantity()){
             //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);
@@ -1774,7 +1797,7 @@ export default {
             //validar precio compra y venta
             if (this.configuration) {
                 if (this.configuration.validate_purchase_sale_unit_price) {
-                    let val_purchase_unit_price = parseFloat(this.form.item.purchase_unit_price)
+                    let val_purchase_unit_price = parseFloat(this.form.item.purchase_unit_value)
 
                     if (val_purchase_unit_price > parseFloat(unit_price)) {
                         return this.$message.error(`El precio de compra no puede ser superior al precio de venta (P. Compra: ${val_purchase_unit_price})`)
@@ -1830,6 +1853,7 @@ export default {
 
             this.row.IdLoteSelected = IdLoteSelected
             this.row.document_item_id = document_item_id
+            this.row.is_delivered = false;
 
             this.showMessageDetraction()
 
@@ -1840,6 +1864,7 @@ export default {
             this.form.quantity=0;
             this.form.unit_price_value=0;
             this.readonly_total=0;
+            this.confirmProductPurchase=false;
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()
@@ -1937,8 +1962,8 @@ export default {
             if (this.isSelectedPrice(row) && !amount) {
                 this.form.item_unit_type_id = null
                 this.item_unit_type = {}
-                this.form.unit_price = this.form.item.sale_unit_price
-                this.form.unit_price_value = this.form.item.sale_unit_price
+                this.form.unit_price = this.form.item.purchase_unit_value
+                this.form.unit_price_value = this.form.item.purchase_unit_value
                 this.form.item.unit_type_id = this.form.item.original_unit_type_id
 
             } else {

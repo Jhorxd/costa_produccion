@@ -185,10 +185,10 @@
                                         @click.prevent="clickLotcodeOutput"
                                     >[&#10004; Seleccionar series]</a>
     
-                                    <div class="col-md-4 mt-4" v-if="form_add.item_id && form_add.lots_enabled">
+                                    <!-- <div class="col-md-4 mt-4" v-if="form_add.item_id && form_add.lots_enabled">
                                         <a href="#" class="text-center font-weight-bold text-info"
                                            @click.prevent="clickSelectLotsGroup">[&#10004; Seleccionar lotes]</a>
-                                    </div>
+                                    </div> -->
                                 </template>
     
                                 <el-checkbox class="mt-2" v-model="search_item_by_barcode"
@@ -238,22 +238,22 @@
                                    width="100%">
                                 <thead>
                                 <tr width="100%">
-                                    <th width="10%">#</th>
-                                    <th width="20%">Cód. Barras</th>
-                                    <th width="30%">Producto</th>
-                                    <th width="30%">Cantidad</th>
-                                    <th width="15%">Costo</th>
-                                    <th width="10%">Importe Costo</th>
+                                    <th width="10%" class="text-center">#</th>
+                                    <th width="20%" class="text-center">Cód. Barras</th>
+                                    <th width="30%" class="text-center">Producto</th>
+                                    <th width="25%" class="text-center">Cantidad</th>
+                                    <th width="15%" class="text-center">Costo</th>
+                                    <th width="15%" class="text-center">Acciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <tr v-for="(row, index) in form.items"
                                     :key="index"
                                     width="100%">
-                                    <td>{{ index + 1 }}</td>
-                                    <td>{{ row.barcode }}</td>
-                                    <td>{{ row.description }}</td>
-                                    <td>
+                                    <td class="text-center">{{ index + 1 }}</td>
+                                    <td class="text-center">{{ row.barcode || '---' }}</td>
+                                    <td class="text-center">{{ row.description }}</td>
+                                    <td class="text-center">
                                         <!-- {{ row.quantity }} -->
     
                                         <el-input-number v-model="row.quantity"
@@ -261,7 +261,7 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
-                                    <td>{{ row.purchase_unit_price }}</td>
+                                    <td class="text-center">{{ row.purchase_unit_price }}</td>
     
                                     <td class="series-table-actions text-center">
                                         <button
