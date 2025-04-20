@@ -398,7 +398,7 @@
                         <div class="col-md-3">
                             <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
-                                <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
+                                <label class="control-label">Precio unitario de costo<span class="text-danger">*</span></label>
                                 <el-input v-model="form.purchase_unit_price"
                                           dusk="purchase_unit_price"
                                           @input="calculatePercentageOfProfitBySale"></el-input>
