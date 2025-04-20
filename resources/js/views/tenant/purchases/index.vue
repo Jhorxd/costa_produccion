@@ -155,7 +155,7 @@
                             :class="
                                 row.state_type_payment_description == 'Pagado'
                                     ? 'text-success'
-                                    : 'text-warning'
+                                    : (row.state_type_payment_description == 'Pago parcial'?'text-warning':'text-danger')
                             "
                         >
                             {{ row.state_type_payment_description }}
@@ -406,6 +406,7 @@
         <purchase-payments
             :showDialog.sync="showDialogPurchasePayments"
             :purchaseId="recordId"
+            :key="key"
             :external="true"
         ></purchase-payments>
 
@@ -455,6 +456,7 @@ export default {
             idPurchaseSelected:0,
             resource: "purchases",
             recordId: null,
+            key:Date.now(),
             showDialogOptions: false,
             showDialogPurchasePayments: false,
             showImportDialog: false,

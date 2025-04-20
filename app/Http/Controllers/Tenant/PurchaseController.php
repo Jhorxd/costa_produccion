@@ -82,6 +82,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 'date_of_due' => 'Fecha de vencimiento',
                 'date_of_payment' => 'Fecha de pago',
                 'name' => 'Nombre proveedor',
+                'state_type_payment_description' => 'Estado de pago'
             ];
         }
 
@@ -105,6 +106,16 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                         ->whereTypeUser()
                         ->latest();
 
+                    break;
+
+                case 'state_type_payment_description':
+                    // Filtro especial para el estado de pago (calculado)
+                    $records = Purchase::whereTypeUser()
+                        ->latest();
+                    
+                    $records->where(function($q) use ($request) {
+                            $q->whereRaw('CASE WHEN total_canceled > 0 THEN "Pagado" ELSE "Pendiente de pago" END LIKE ?', ["%{$request->value}%"]);
+                        });
                     break;
 
                 case 'date_of_payment':
@@ -529,15 +540,18 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                                 
                             }
                         }
+                        $it = Item::find((int)$row['item_id']);
+                        if($it != null){
+                            if((int)$row['unit_value'] < (int)$it->purchase_unit_price){
+                                $it->purchase_unit_price = (int)$row['unit_value'];
+                                $it->save();
+                            }
+                        }
                         
 
                         if (isset($row['update_date_of_due'], $row['date_of_due']) && $row['update_date_of_due'] && !empty($row['date_of_due'])) {
-                            $item_id = (int)$row['item_id'];
-                            $it = Item::find($item_id);
-                            if ($it != null) {
-                                $it->date_of_due = $row['date_of_due'];
-                                $it->push();
-                            }
+                            $it->date_of_due = $row['date_of_due'];
+                            $it->push();
                         }
 
                         if (array_key_exists('lots', $row)) {
