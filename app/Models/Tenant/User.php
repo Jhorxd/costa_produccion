@@ -215,7 +215,8 @@ class User extends Authenticatable
         'multi_user_id',
         'permission_edit_item_prices',
         'restaurant_pin',
-
+        'pin_2fa',
+        
     ];
 
     /**
