@@ -66,6 +66,8 @@ use setasign\Fpdi\Fpdi;
 use Modules\Inventory\Models\InventoryConfiguration;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+#Importación Momentanea para abastecer la solicitud de notificaciones
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -304,6 +306,89 @@ class ItemController extends Controller
             'CatItemUnitsPerPackage',
             'inventory_configuration'
         );
+    }
+
+    //GEORGE
+    public function notifications(){
+        $top_products = Item::productsWithoutRotation()->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+            ];
+        });;
+
+
+        //$records = $this->getInitialQueryRecords();
+        //$top_products = $records->whereNotService();
+
+        //dd(tenant());
+        /*$top_products = DB::table('items')
+                        ->where('status', 1) // Filtrar por status 1
+                        ->select('id', 'name') // Seleccionar id y name
+                        ->get(); // Obtener los resultados*/
+
+         // Productos sin rotación (últimos 30 días), formateados para JSON
+        $productos_sin_rotacion = collect(Item::getProductsWithoutRecentSales(30))->map(function ($item) {
+            return [
+                'codigo' => $item->id,
+                'nombre' => $item->name,
+                'fecha' => '—',
+                'lote' => '—',
+            ];
+        });
+
+        $facturas_vencidas = collect(Item::getOverduePurchaseInvoices())->map(function ($item) {
+            return [
+                'codigo' => $item->series . '-' . $item->number,
+                'nombre' => 'Factura vencida',
+                'fecha' => $item->date_of_due,
+                'lote' => '—',
+            ];
+        });
+
+        return response()->json([
+            'top-products' => $top_products,
+            'notificaciones' => [
+                [
+                    'titulo' => 'Productos sin Rotación en los último 30 Días:',
+                    'accion' => 'Tomar acción',
+                    'url' => './documents/create',
+                    'productos' => $productos_sin_rotacion,
+                ],
+                [
+                    'titulo' => 'Pagos Vencidos a Proveedores:',
+                    'accion' => 'Tomar acción',
+                    'url' => './purchases',
+                    'productos' => $facturas_vencidas,
+                ],
+                [
+                    'titulo' => 'Productos próximos a vencer:',
+                    'accion' => 'Tomar acción',
+                    'url' => 'https://facebook.com',
+                    'productos' => [
+                        ['codigo' => '100200', 'nombre' => 'PARACETAMOL', 'fecha' => '19/04/2025', 'lote' => 'LT1201'],
+                        ['codigo' => '100201', 'nombre' => 'IBUPROFENO', 'fecha' => '22/04/2025', 'lote' => 'LT1202'],
+                    ],
+                ],
+                [
+                    'titulo' => 'Productos sin stock (Jairo):',
+                    'accion' => 'Revisar inventario',
+                    'url' => 'https://facebook.com',
+                    'productos' => [
+                        ['codigo' => '200101', 'nombre' => 'AMOXICILINA', 'fecha' => '—', 'lote' => '—'],
+                        ['codigo' => '200102', 'nombre' => 'NAPROXENO', 'fecha' => '—', 'lote' => '—'],
+                    ],
+                ],
+                [
+                    'titulo' => 'Productos observados por auditoría:',
+                    'accion' => 'Ver detalles',
+                    'url' => 'https://facebook.com',
+                    'productos' => [
+                        ['codigo' => '300301', 'nombre' => 'CLORHIDRATO', 'fecha' => '15/03/2025', 'lote' => 'LT1234'],
+                    ],
+                ],
+            ]
+        ]);
     }
 
     public function record($id)
