@@ -745,13 +745,6 @@ class ItemController extends Controller
                 }
             }
         }
-        return [
-            'success' => true,
-            'message' => ($id)?'Producto editado con éxito':'Producto registrado con éxito',
-            'isset' => isset($request->warehouse_id),
-            'item' => $item,
-            'request' => $request->warehouse_id
-        ];
 
         foreach ($request->item_unit_types as $value) {
 
