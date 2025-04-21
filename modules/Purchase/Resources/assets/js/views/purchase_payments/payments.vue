@@ -108,17 +108,17 @@
                             <tfoot>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">{{ purchase.total_paid }}</td>
+                                <td class="text-right">{{ formatMoney(purchase.total_paid) }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">{{ purchase.total }}</td>
+                                <td class="text-right">{{ formatMoney(purchase.real_amount_due) }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">{{ purchase.total_difference }}</td>
+                                <td class="text-right">{{ formatMoney(purchase.total_difference) }}</td>
                                 <td></td>
                             </tr>
                             </tfoot>
@@ -151,17 +151,9 @@
                 headers: headers_token,
                 index_file: null,
                 fileList: [],
-                showAddButton: true,
+                showAddButton: false,
                 purchase: {}
             }
-        },
-        async created() {
-            await this.initForm();
-            await this.$http.get(`/${this.resource}/tables`)
-                .then(response => {
-                    this.payment_destinations = response.data.payment_destinations
-                    this.payment_method_types = response.data.payment_method_types;
-                })
         },
         methods: {
             clickDownloadFile(filename) {
@@ -203,21 +195,21 @@
             initForm() {
                 this.records = [];
                 this.fileList = [];
-                this.showAddButton = true;
             },
             async getData() {
-                this.initForm();
-                await this.$http.get(`/${this.resource}/purchase/${this.purchaseId}`)
-                    .then(response => {
-                        this.purchase = response.data;
-                        this.title = 'Pagos de la compra: '+this.purchase.number_full;
-                    });
-                await this.$http.get(`/${this.resource}/records/${this.purchaseId}`)
-                    .then(response => {
-                        this.records = response.data.data
-                    });
+                await this.initForm();
+                const response = await this.$http.get(`/${this.resource}/tables`);
+                console.log(response);
+                this.payment_destinations = response.data.payment_destinations;
+                this.payment_method_types = response.data.payment_method_types;
+                const response_purchase = await this.$http.get(`/${this.resource}/purchase/${this.purchaseId}`);
+                this.purchase = response_purchase.data;
+                console.log(this.purchase);
+                this.title = 'Pagos de la compra: '+this.purchase.number_full;
+                const response_records = await this.$http.get(`/${this.resource}/records/${this.purchaseId}`);
+                this.records = response_records.data.data;
                 this.$eventHub.$emit('reloadDataToPay')
-
+                this.showAddButton = true;
             },
             clickAddRow() {
                 this.records.push({
@@ -279,7 +271,14 @@
                         }
                     })
             }, 
+            resetData(){
+                this.payment_destinations = [];
+                this.payment_method_types = [];
+                this.purchase = {};
+                this.records = [];
+            },
             close() {
+                this.resetData();
                 this.$emit('update:showDialog', false);
             },
             clickDelete(id) {
@@ -288,6 +287,10 @@
                         this.$eventHub.$emit('reloadData')
                     }
                 )
+            },
+            formatMoney(value) {
+                const num = Number(value || 0)
+                return isNaN(num) ? '0.00' : num.toFixed(2)
             }
         }
     }

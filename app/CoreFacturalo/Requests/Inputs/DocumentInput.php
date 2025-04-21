@@ -215,6 +215,7 @@ class DocumentInput
                         'purchase_unit_price' => $item->purchase_unit_price ?? 0,
                         'exchanged_for_points' => $row['item']['exchanged_for_points'] ?? false,
                         'used_points_for_exchange' => $row['item']['used_points_for_exchange'] ?? null,
+                        'item_positions_used' => $row['item']['item_positions_used'] ?? [],
                     ],
                     'quantity' => $row['quantity'],
                     'unit_value' => $row['unit_value'],

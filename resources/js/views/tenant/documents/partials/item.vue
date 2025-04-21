@@ -5,7 +5,8 @@
                :visible="showDialog"
                top="7vh"
                @close="close"
-               @open="create">
+               @open="create"
+               width="85%">
         <Keypress
             key-event="keyup"
             @success="checkKey"
@@ -213,7 +214,7 @@
                             </div>
                         </template>
                     </div>
-                    <div class="col-md-4 col-sm-4">
+                    <div class="col-md-2 col-sm-2">
                         <div :class="{'has-danger': errors.category}"
                              class="form-group">
                             <label class="control-label">Categoria</label>
@@ -228,7 +229,22 @@
                             </el-select>
                         </div>
                     </div>
-                    <div class="col-md-4 col-sm-4">
+                    <div class="col-md-2 col-sm-2">
+                        <div :class="{'has-danger': errors.brand}"
+                             class="form-group">
+                            <label class="control-label">Marca</label>
+                            <el-select v-model="form.brand"
+                                       filterable>
+                                       <!--:disabled="!change_affectation_igv_type_id"-->
+                                <el-option
+                                    v-for="option in uniqueBrands"
+                                    :key="option"
+                                    :label="option"
+                                    :value="option"></el-option>
+                            </el-select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-3">
                         <div :class="{'has-danger': errors.affectation_igv_type_id}"
                              class="form-group">
                             <label class="control-label">Afectación Igv</label>
@@ -251,11 +267,14 @@
                         </div>
                     </div>
                     <!-- DATA TABLE -->
-                    <data-table :resource="resource" class="TablaCustom" style="overflow-x: auto; max-width: 100%;">
+                    <data-table :resource="resource" class="TablaCustom" style="overflow-x: auto; 
+                            max-height: 300px;
+                            overflow-y: auto;"
+                        >
                         <tr slot="heading">
                             <th class="text-left" style="min-width: 95px;">Acciones</th>
-                            <th class="text-left" style="min-width: 80px;">Código</th>
-                            <th class="text-left" style="min-width: 130px;">Producto</th>
+                            <th class="text-left" style="min-width: 75px;">Código</th>
+                            <th class="text-left" style="min-width: 120px;">Producto</th>
                             <th class="text-left" style="min-width: 95px;">Categoria</th>
                             <th class="text-left" style="min-width: 95px;">Precio</th>
                             <th class="text-left" style="min-width: 95px;">Stock</th>
@@ -266,7 +285,7 @@
                             <th class="text-left" style="min-width: 170px;">Forma Farmaceútica</th>
                             <th class="text-left" style="min-width: 130px;">Principio Activo</th>
                             <th class="text-left" style="min-width: 95px;">Estado</th>
-                            <th class="text-left" style="min-width: 95px;">Accion</th>
+                            <!-- <th class="text-left" style="min-width: 95px;">Accion</th> -->
                         </tr>
                         <tr
                             v-for="(row, index) in items"
@@ -285,14 +304,20 @@
                             <td class="text-left">{{ row.category }}</td>
                             <td class="text-left">{{ row.sale_unit_price }}</td>
                             <td class="text-left">{{ row.stock }}</td>
-                            <td class="text-left">{{ row.warehouses[0].warehouse_description }}</td>
+                            <td class="text-left">
+                                <div v-for="(location, i) in row.locations" :key="i">
+                                    <div v-for="(col, idx) in location.columns" :key="idx">
+                                        {{ location.code_location }} - {{ col }} - {{ numberToLetter(col) }}
+                                    </div>
+                                </div>
+                            </td>
                             <td class="text-left">{{ row.cod_digemid }}</td>
-                            <td class="text-left">{{ row.concentracion }}</td>
-                            <td class="text-left">{{ row.condicion_venta }}</td>
-                            <td class="text-left">{{ row.forma_farmaceutica }}</td>
-                            <td class="text-left">{{ row.principio_activo }}</td>
-                            <td class="text-left">{{ row.estado }}</td>
-                            <td class="text-left">{{ row.accion }}</td>
+                            <td class="text-left">{{ row.concentration }}</td>
+                            <td class="text-center">{{ row.sales_condition ? row.sales_condition.description : ''  }}</td>
+                            <td class="text-left">{{ row.pharmaceutical_unit_type ? row.pharmaceutical_unit_type.description : '' }}</td>
+                            <td class="text-left">{{ row.active_principle }}</td>
+                            <td class="text-left">{{ row.inventory_state_description ? row.inventory_state_description : ''  }}</td>
+                            <!-- <td class="text-left">{{ row.accion }}</td> -->
                         </tr>
                         <tr v-if="items.length === 0">
                             <td colspan="7" class="text-center">No hay registros disponibles</td>
@@ -303,9 +328,10 @@
                         <div :class="{'has-danger': errors.quantity}"
                             class="form-group">
                             <label class="control-label">Cantidad</label>
-                            <el-input-number v-model="form.quantity"
-                                        :disabled="form.item.calculate_quantity"
-                                        :min="0.01"></el-input-number>
+                            <el-input v-model="form.quantity" :disabled="form.item.calculate_quantity" @blur="validateQuantity" @input="changeValidateQuantity" ref="inputQuantity">
+                                <el-button style="padding-right: 5px ;padding-left: 12px" slot="prepend" icon="el-icon-minus" @click="clickDecrease" :disabled="form.quantity < 0.01 || form.item.calculate_quantity"></el-button>
+                                <el-button style="padding-right: 5px ;padding-left: 12px" slot="append" icon="el-icon-plus" @click="clickIncrease"  :disabled="form.item.calculate_quantity"></el-button>
+                            </el-input>
                             <small v-if="errors.quantity"
                               class="form-control-feedback"
                               v-text="errors.quantity[0]"></small>
@@ -778,6 +804,12 @@
     width: 59px;
 }
 
+.slide-bar-top{
+    overflow-x: auto;
+    max-width: 100%;
+    height: 20px;
+}
+
 </style>
 
 <script>
@@ -907,6 +939,7 @@ export default {
             }
         }
         this.$set(this.form, 'category', 'Todos'); // Asigna 'Todos' por defecto
+        this.$set(this.form, 'brand', 'Todos')
     },
     mounted() {
         this.getTables()
@@ -1037,14 +1070,25 @@ export default {
             return _.has(this.configuration, 'show_last_price_sale') ? this.configuration.show_last_price_sale : false
         },
         uniqueCategories() {
-            const categories = [...new Set(this.items.map(item => item.category))];
+            const categories = [...new Set(this.items.map(item => item.category)
+                .filter(cat => cat && cat.trim() !== "")
+            )];
             return ['Todos', ...categories]; // Agrega 'Todos' al inicio
+        },
+        uniqueBrands(){
+            const brands = [...new Set(this.items.map(item => item.brand)
+                .filter(bra => bra && bra.trim() !== '')
+            )];
+            return ['Todos', ...brands]
         }
     },
     watch: {
         'form.category'(newCategory) {
             this.filterItemsCategory();
         },
+        'form.brand'(newBrand){
+            this.filterItemsBrand();
+        }
         /*
         'form.description'() {
             // Verifica si la categoría actual sigue existiendo en uniqueCategories
@@ -1061,6 +1105,14 @@ export default {
                 const matchesCategory = this.form.category === 'Todos' || item.category === this.form.category;
                 const matchesDescription = !this.form.description || item.description.toLowerCase().includes(this.form.description.toLowerCase());
                 return matchesCategory && matchesDescription;
+            });
+        },
+        async filterItemsBrand() {
+            this.items = this.all_items.filter(item => {
+                const matchesBrand = this.form.brand === 'Todos' || item.brand === this.form.brand;
+                console.log(matchesBrand);
+                const matchesDescription = !this.form.description || item.description.toLowerCase().includes(this.form.description.toLowerCase());
+                return matchesBrand && matchesDescription;
             });
         },
         // Nueva Lógica para el botón del data-table
@@ -1115,6 +1167,8 @@ export default {
         },
         getTables() {
             this.$http.get(`/${this.resource}/item/tables`).then(response => {
+                console.log(response.data);
+                
                 let data = response.data
                 this.all_items = data.items
                 this.operation_types = data.operation_types
@@ -1197,6 +1251,15 @@ export default {
             this.form.quantity = parseInt(this.form.quantity) + 1
             this.calculateTotal()
         },
+        numberToLetter(number) {
+            let letter = '';
+            while (number > 0) {
+                const remainder = (number - 1) % 26;
+                letter = String.fromCharCode(65 + remainder) + letter;
+                number = Math.floor((number - 1) / 26);
+            }
+            return letter;
+        },
         async searchRemoteItems(input) {
             if (input.length > 2) {
                 this.loading_search = true
@@ -1214,7 +1277,7 @@ export default {
                         this.enabledSearchItemBySeries(input)
                         if (this.items.length == 0) {
                             this.filterItems()
-                            this.items=[];
+                            
                         }
                     })
             } else {
@@ -1315,6 +1378,7 @@ export default {
             this.form = {
                 // category_id: [1],
                 // edit: false,
+                description: '',
                 item_id: null,
                 item: {},
                 affectation_igv_type_id: null,
@@ -1348,6 +1412,7 @@ export default {
             this.item_unit_type = {};
             this.lots = []
             this.has_list_prices = false;
+            this.calculateTotal()
         },
         // initializeFields() {
         //     this.form.affectation_igv_type_id = this.affectation_igv_types[0].id
@@ -1426,7 +1491,7 @@ export default {
                     }
                 }
                 this.calculateQuantity()
-
+                this.calculateTotal()
                 if (this.recordItem.item.exchanged_for_points) this.form.item.exchanged_for_points = this.recordItem.item.exchanged_for_points
 
             } else {
@@ -1548,7 +1613,8 @@ export default {
         },
         close() {
             this.selectedRow = null
-            this.initForm()
+            // this.initForm()
+            this.filterItems()
             this.$emit('update:showDialog', false)
         },
         async changeItem() {
@@ -1618,7 +1684,7 @@ export default {
             }
 
             this.addDescriptionToDocumentItem()
-
+            this.calculateTotal()
             this.getLastPriceItem()
 
         },
@@ -1690,6 +1756,10 @@ export default {
                 if (parseFloat(this.form.unit_price_value) < 0) return this.$message.error('El Precio Unitario debe ser mayor o igual 0');
             } else {
                 if (parseFloat(this.form.unit_price_value) <= 0) return this.$message.error('El Precio Unitario debe ser mayor a 0');
+            }
+
+            if (parseInt(this.form.quantity)>parseInt(this.selectedRow.stock)){
+                return this.$message.error('El stock requerido supera al stock disponible');
             }
 
             // if(this.form.quantity < this.getMinQuantity()){
@@ -1766,8 +1836,13 @@ export default {
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
             }
 
+            if(this.form.item.stock <= 0)
+            {
+                return this.$message.error('El producto no cuenta con stock suficiente');
+            }
+
             // this.row.edit = false;
-            this.initForm();
+            // this.initForm();
             this.row.item.extra = extra;
             //this.initializeFields()
 
@@ -1781,6 +1856,12 @@ export default {
             this.showMessageDetraction()
 
             this.$emit('add', this.row);
+
+            this.form.description = ''
+            this.form.item_id = null
+            this.form.quantity=0;
+            this.form.unit_price_value=0;
+            this.readonly_total=0;
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()
@@ -1914,6 +1995,12 @@ export default {
             this.form.IdLoteSelected = id
         },
         clickLotGroup() {
+            if(this.form.lots_group && this.form.lots_group > 0)
+            {
+                this.form.lots_group.forEach((row) => {
+                    row.compromise_quantity = this.form.quantity
+                })
+            }
             this.showDialogLots = true
         },
         async clickSelectLots() {

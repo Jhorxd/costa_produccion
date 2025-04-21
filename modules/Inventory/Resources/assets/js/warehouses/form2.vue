@@ -1,0 +1,234 @@
+<template>
+    <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create">
+        <form autocomplete="off" @submit.prevent="submit">
+            <div class="form-body">
+                <div class="row">
+                    <div class="col-md-6">
+        <div class="form-group" :class="{'has-danger': errors.description}">
+          <label class="control-label">Nombre</label>
+          <el-input v-model="form.description"></el-input>
+          <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group" :class="{'has-danger': errors.establishment_id}">
+          <label class="control-label">Sucursal</label>
+          <el-select
+      v-model="form.establishment_id"
+      filterable
+      placeholder="Selecciona un establecimiento"
+      @change="handleEstablishmentChange"
+    >
+      <el-option
+        v-for="option in establishments"
+        :key="option.id"
+        :label="option.description"
+        :value="option.id"
+      ></el-option>
+    </el-select>
+          <!-- <el-input v-model="form.sucursal"></el-input>-->
+          <small class="form-control-feedback" v-if="errors.establishment_id" v-text="errors.establishment_id[0]"></small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group" :class="{'has-danger': errors.address}">
+          <label class="control-label">Dirección</label>
+          <el-input v-model="form.address">
+            <template #append>
+              <el-button icon="el-icon-search"></el-button>
+            </template>
+          </el-input>
+          <small class="form-control-feedback" v-if="errors.address" v-text="errors.address[0]"></small>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group" :class="{'has-danger': errors.responsible}">
+          <label class="control-label">Responsable</label>
+          <el-input v-model="form.responsible"></el-input>
+          <small class="form-control-feedback" v-if="errors.responsible" v-text="errors.responsible[0]"></small>
+        </div>
+      </div>
+    </div>
+    
+    <h3 class="text-center">Dimensiones</h3>
+    
+    <div class="row">
+      <div class="col-md-4">
+        <div class="form-group" :class="{'has-danger': errors.length}">
+          <label class="control-label">Longitud (m)</label>
+          <el-input v-model="form.length"></el-input>
+          <small class="form-control-feedback" v-if="errors.length" v-text="errors.length[0]"></small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-group" :class="{'has-danger': errors.width}">
+          <label class="control-label">Ancho (m)</label>
+          <el-input v-model="form.width"></el-input>
+          <small class="form-control-feedback" v-if="errors.width" v-text="errors.width[0]"></small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-group" :class="{'has-danger': errors.height}">
+          <label class="control-label">Altura (m)</label>
+          <el-input v-model="form.height"></el-input>
+          <small class="form-control-feedback" v-if="errors.height" v-text="errors.height[0]"></small>
+        </div>
+      </div>
+    </div>
+    <template v-if="recordId">
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Ubicaciones</h3>
+          <div class="right-wrapper pull-right mb-3">
+              <a :href="`/${resourceDataTable}/create/${recordId}`" class="btn btn-custom btn-sm mt-2 mr-2">
+                  <i class="fa fa-plus-circle"></i> Nuevo
+              </a>
+          </div>
+          <div class="card-body">
+              <data-table ref="dataTable" :resource="resourceDataTable" :idWarehouse="recordId">
+                  <tr slot="heading">
+                      <th>Nombre</th>
+                      <th>Código</th>
+                      <th>Tipo</th>
+                      <th>Estado</th>
+                      <th>Posiciones</th>
+                  </tr>
+                  <tr slot-scope="{ index, row }">
+                      <td>{{ row.name }}</td>
+                      <td>{{ row.code }}</td>
+                      <td>{{ getLocationTypeName(row.type_id) }}</td>
+                      <td>{{ getStatusName(row.status) }}</td>
+                      <td>{{ row.rows * row.columns }}</td>
+                  </tr>
+              </data-table>
+          </div>
+        </div>
+      </div>
+    </template>
+    </div>            
+            <div class="form-actions text-right mt-4">
+                <el-button @click.prevent="close()">Cancelar</el-button>
+                <el-button type="primary" native-type="submit" :loading="loading_submit">Aceptar</el-button>
+            </div>
+        </form>
+    </el-dialog>
+
+</template>
+
+<script>
+    import DataTable from '../../components/DataTableLocationWarehouse.vue';
+    export default {
+        components: { DataTable },
+        props: ['showDialog', 'recordId'],
+        data() {
+            return {
+                loading_submit: false,
+                titleDialog: null,
+                resource: 'warehouses',
+                resourceDataTable : 'locations',
+                errors: {},
+                form: {
+                    establishment_id: null
+                },
+                establishments: [],
+                locationTypes: []
+            }
+        },
+        created() {
+            this.initForm(),
+            this.getTypes();
+          },
+        methods: {
+            initForm() {
+                this.errors = {}
+                this.form = {
+                    id: null,
+                    description: null
+                }
+            },
+            async create() {
+                this.$http.get('/warehouses/getEstablishments')
+                  .then(response => {                    
+                      this.establishments = response.data;
+                  })
+                  .catch(error => {
+                      console.error("Error al obtener los datos:", error);
+                  });
+                this.titleDialog = (this.recordId)? 'Editar Almacén':'Nuevo Almacén'
+                if (this.recordId) {
+                    this.$http.get(`/warehouses/getWarehouse/${this.recordId}`)
+                        .then(response => {
+                            this.form = response.data;
+                        })                        
+                }
+                this.$nextTick(() => {
+                  if (this.$refs.dataTable) {
+                    this.$refs.dataTable.refreshData();
+                  }
+                });
+            },
+            submit() {
+                this.loading_submit = true
+                this.$http.post(`/warehouses/storeWarehouse`, this.form)
+                    .then(response => {
+                        if (response.data.success) {
+                            this.$message.success(response.data.message)
+                            this.$eventHub.$emit('reloadData')
+                            this.close()
+                        } else {
+                            this.$message.error(response.data.message)
+                        }
+                    })
+                    .catch(error => {
+                        if (error.response.status === 422) {                                            
+                            this.errors =error.response.data                            
+                        } else {
+                            console.log(error);
+                        }
+                    })
+                    .then(() => {
+                        this.loading_submit = false
+                    })
+            },
+            close() {
+                this.$emit('update:showDialog', false)
+                this.initForm()
+            },
+            handleEstablishmentChange(value) {
+                //alert("el id del establcimiento es "+ value);
+                // console.log("Establecimiento seleccionado:", value);
+            },
+            async getTypes() {
+              await this.$http.get(`/${this.resourceDataTable}/getTypesLocation`)
+                  .then(response => {
+                      if (response.data.success) {
+                          this.locationTypes = response.data.data;
+                      } else {
+                          this.$message.error('No se pudieron cargar los tipos de ubicación.');
+                      }
+                  })
+                  .catch(error => {
+                      console.log(error);
+                      this.$message.error('Error al cargar los tipos de ubicación.');
+                  });
+            },
+            getLocationTypeName(type_id) {
+              const locationType = this.locationTypes.find(type => type.id === type_id);
+              return locationType ? locationType.name : 'Desconocido';
+            },
+            getStatusName(status) {
+                switch (status) {
+                    case 1:
+                        return 'Venta';
+                    case 2:
+                        return 'Picking';
+                    case 3:
+                        return 'Mermado';
+                }
+            }
+        }
+    }
+</script>

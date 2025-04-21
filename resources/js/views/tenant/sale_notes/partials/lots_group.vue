@@ -86,7 +86,7 @@ export default {
             idSelected: null,
             search: '',
             lots_group_: [],
-            orderT: 'desc'
+            orderT: 'asc'
         };
     },
     async created() {
@@ -105,7 +105,7 @@ export default {
     },
     methods: {
         orderData() {
-            this.orderT =  this.orderT == 'desc' ? 'asc' : 'desc'
+            this.orderT =  this.orderT == 'asc' ? 'desc' : 'asc'
         },
         filter(){
 
@@ -139,6 +139,30 @@ export default {
         },
         async create() {
             await this.filter()
+            
+            if(this.lots_group_ && this.lots_group_.length > 0){
+
+                this.lots_group_.sort((a, b) => new Date(a.date_of_due) - new Date(b.date_of_due));
+
+                let remainingQuantity = this.quantity;
+
+                // Asignar la cantidad pedida priorizando el lote más próximo a vencer
+                this.lots_group_.forEach(row => {
+                    if (remainingQuantity > 0) {
+                        if (remainingQuantity >= row.quantity) {
+                            row.compromise_quantity = row.quantity; // Tomar todo el stock del lote
+                            remainingQuantity -= row.quantity;
+                        } else {
+                            row.compromise_quantity = remainingQuantity; // Solo tomar lo que falta
+                            remainingQuantity = 0;
+                        }
+                    } else {
+                        row.compromise_quantity = 0; // Si ya se cubrió la cantidad, los demás quedan en 0
+                    }
+                });
+
+                
+            }
             await this.checkQuantityUpdate()
         },
         checkQuantityUpdate(){

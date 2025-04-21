@@ -33,8 +33,10 @@
                         <th>Almacen Destino</th>
                         <th>Detalle</th>
                         <th>Detalle Productos</th>
-                        <th class="text-right">Cantidad Total Productos</th>
-                        <th class="text-right">Acciones</th>
+                        <th class="text-center">Cantidad Total Productos</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">PDF</th>
+                        <th class="text-center" v-if="(typeUser === 'admin')">Acciones</th>
                     </tr>
                     <tr></tr>
                     <tr slot-scope="{ index, row }">
@@ -47,7 +49,8 @@
                         <td>
                             <el-popover placement="right"
                                         trigger="click"
-                                        width="500">
+                                        width="500"
+                                        v-if="row.state === 'Aprobado'">
                                 <el-table :data="row.inventory">
                                     <el-table-column label="Producto"
                                                      property="description"
@@ -56,7 +59,7 @@
                                     <el-table-column label="Cantidad"
                                                      property="quantity"></el-table-column>
 
-                                    <el-table-column label="Series/Lotes">
+                                    <!-- <el-table-column label="Series/Lotes">
                                         <template slot-scope="scope"
                                                   width="100">
                                             <ul v-if="scope.row.lots" class="list-unstyled">
@@ -70,15 +73,17 @@
                                                 </li>
                                             </ul>
                                         </template>
-                                    </el-table-column>
+                                    </el-table-column> -->
                                 </el-table>
                                 <el-button slot="reference"
                                            icon="el-icon-zoom-in"></el-button>
                             </el-popover>
                         </td>
-                        <td class="text-right">{{ row.quantity }}</td>
-                        <td class="text-right">
+                        <td class="text-center">{{ row.quantity }}</td>
+                        <td class="text-center">{{ row.state }}</td>
+                        <td class="text-center">
                             <button
+                                v-if="row.state === 'Aprobado'"
                                 class="btn waves-effect waves-light btn-xs btn-info"
                                 type="button"
                                 @click.prevent="clickDownload('pdf',row.id)"
@@ -86,6 +91,25 @@
                                 <i class="fa fa-file-pdf"></i>
                                 PDF
                             </button>
+                        </td>
+                        <td class="text-center">
+                            <a  v-if="row.state === 'Aprobado'"
+                                class="btn waves-effect waves-light btn-xs btn-info"
+                                type="button"
+                                :href="
+                                    `/dispatches/create_new/inventories_transfer/${
+                                        row.id
+                                    }`
+                                "
+                            >
+                                Generar Guía
+                            </a>
+                            <a v-if="(row.state === 'Pendiente') && (typeUser === 'admin')"
+                                class="btn waves-effect waves-light btn-xs btn-success"
+                                :href="`/${resource}/approve_transfer/${row.id}`"
+                            >
+                                Aprobar Traslado
+                            </a>
                         </td>
                         <!--<td class="text-right">
                                          <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
@@ -120,6 +144,7 @@ import {deletable} from "../../../../../../resources/js/mixins/deletable";
 import InventoriesForm from "./form.vue";
 
 export default {
+    props: ['typeUser'],
     components: {DataTable, InventoriesForm},
     mixins: [deletable],
     data() {
@@ -135,8 +160,8 @@ export default {
         this.title = "Traslados";
     },
     methods: {
-        clickCreate(recordId = null) {
-            location.href = `/${this.resource}/create`;
+        clickCreate(recordId = "") {
+            location.href = `/${this.resource}/create/${recordId}`;
             //this.recordId = recordId
             //this.showDialog = true
         },

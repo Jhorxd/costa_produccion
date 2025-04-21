@@ -4,6 +4,8 @@ namespace App\Http\Resources\Tenant;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Collection;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
+use Modules\Inventory\Models\WarehouseLocationPosition;
 
 /**
  * Class PurchaseCollection
@@ -65,11 +67,24 @@ class PurchaseCollection extends ResourceCollection
                     ];
                 }),
                 'items' => $row->items->transform(function($row, $key) {
+                    $position_data = $row->item->position_data;
+                    $location_name = null;
+                    if(isset($position_data->location_id)){
+                        $location_name = InventoryWarehouseLocation::find($position_data->location_id)->name;
+                    }
+                    $position = null;
+                    if(isset($position_data->position_id)){
+                        $location_name = WarehouseLocationPosition::find($position_data->position_id);
+                    }
                     return [
                         'key' => $key + 1,
                         'id' => $row->id,
                         'description' => $row->item->description,
-                        'quantity' => round($row->quantity,2)
+                        'quantity' => round($row->quantity,2),
+                        'name_location' => $location_name,
+                        'position' => $position,
+                        'lot' => $position_data->lot_name ?? null,
+                        'date_of_due' => $this->date_of_due
                     ];
                 }),
                 'print_a4' => url('')."/purchases/print/{$row->external_id}/a4",

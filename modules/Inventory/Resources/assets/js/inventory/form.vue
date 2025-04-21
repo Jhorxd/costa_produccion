@@ -67,13 +67,22 @@
                                    v-text="errors.warehouse_id[0]"></small>
                         </div>
                     </div>
+                    <!-- <div class="col-md-4 d-flex align-items-end justify-content-center" v-if="form.lots_enabled && type=='output'">
+                        <el-button type="primary">
+                            Seleccionar Lotes
+                        </el-button>
+                    </div> -->
+                    <div class="col-md-4 d-flex align-items-end justify-content-center" v-if="form.positions_enabled">
+                        <el-button type="primary" @click="selectPosition">
+                            Seleccionar Posición
+                        </el-button>
+                    </div>
                     <div class="col-md-4" v-if="type == 'input' && form.lots_enabled">
                         <div class="form-group" :class="{'has-danger': errors.lot_code}">
                             <label class="control-label">
                                 Código lote
                             </label>
                             <el-input v-model="form.lot_code">
-                                <!-- <el-button slot="append" icon="el-icon-edit-outline"  @click.prevent="clickLotcode"></el-button> -->
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.lot_code"
                                    v-text="errors.lot_code[0]"></small>
@@ -142,6 +151,15 @@
             @addRowOutputLot="addRowOutputLot">
         </output-lots-form>
 
+        <approve-position
+            :showDialog.sync="showDialogPositions"
+            :warehouse_id="form.warehouse_id"
+            :dataModal="dataModal"
+            :locations_available="locations"
+            :type="'input'"
+            @positions-save="savePositions">
+        </approve-position>
+
     </el-dialog>
 
 </template>
@@ -152,9 +170,10 @@ import InputLotsForm from '../../../../../../resources/js/views/tenant/items/par
 import OutputLotsForm from './partials/lots.vue'
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
 import { inventory_search_item_barcode } from '../mixins/functions'
+import approvePosition from './approvePosition.vue';
 
 export default {
-    components: {InputLotsForm, OutputLotsForm},
+    components: {InputLotsForm, OutputLotsForm, approvePosition},
     props: ['showDialog', 'recordId', 'type'],
     mixins: [
         inventory_search_item_barcode,
@@ -172,8 +191,12 @@ export default {
             form: {},
             items: [],
             warehouses: [],
+            locations: [],
             inventory_transactions: [],
             precision:4,
+            dataModal:{location_id: '', positions: []},
+            showDialogPositions: false,
+            item_selected: {}
         }
     },
     // created() {
@@ -182,6 +205,9 @@ export default {
     methods: {
         async changeItem() {
             if (this.items.length > 0) {
+                this.form.lots_enabled = false;
+                this.form.series_enabled = false;
+                this.checkPosition();
                 if (this.type === 'output') {
                     this.form.lots = []
                     let item = await _.find(this.items, {'id': this.form.item_id})
@@ -193,11 +219,32 @@ export default {
                     this.form.series_enabled = item.series_enabled
                 } else {
                     let item = await _.find(this.items, {'id': this.form.item_id})
-                    this.form.lots_enabled = item.lots_enabled
-                    this.form.series_enabled = item.series_enabled
+                    this.form.lots_enabled = item.lots_enabled;
+                    this.form.series_enabled = item.series_enabled;
+                    this.item_selected = item;
                 }
                 this.ChangePrecision();
             }
+        },
+        async savePositions(data){
+            if(data.location_id!=undefined && data.positions!=undefined && data.positions.length>0)
+                this.dataModal = data;
+            else
+                this.dataModal={location_id: '', positions: []};
+        },
+        async checkPosition(){
+            this.dataModal={ location_id: '', positions: [] };
+            this.form.data_item={ location_id: '', positions: [] };
+            if(!this.form.item_id || !this.form.warehouse_id) return;
+
+            const response = await this.$http.get(`/${this.resource}/checkPositions/${this.form.warehouse_id}/${this.form.item_id}`);
+            if(response.data.success){
+                const data = response.data.data;
+                this.form.positions_enabled =  data.positions_enabled;
+                if(this.form.positions_enabled && data.locations.length>0){
+                    this.locations = data.locations;
+                }
+            }            
         },
         addRowOutputLot(lots) {
             this.form.lots = lots
@@ -212,6 +259,22 @@ export default {
         clickLotcodeOutput() {
             this.showDialogLotsOutput = true
         },
+        selectPosition(){
+            if(this.form.quantity==0 || this.form.quantity==''){
+                this.$message.warning("Ingrese la cantidad");
+                return;
+            }
+            
+            this.dataModal = {
+                item_id: this.form.item_id,
+                location_id: this.form.data_item.location_id || '',
+                positions: this.form.positions || [],
+                stock_necessary: this.form.quantity,
+                has_lots: this.form.lots_enabled,
+                has_positions: this.form.positions_enabled
+            }
+            this.showDialogPositions=true;
+        },
         initForm() {
             this.errors = {}
             this.form = {
@@ -223,12 +286,16 @@ export default {
                 type: this.type,
                 lot_code: null,
                 lots_enabled: false,
+                positions_enabled: false,
                 series_enabled: false,
                 lots: [],
                 date_of_due: null,
                 created_at: null,
-                comments: null
-
+                comments: null,
+                data_item: {
+                    location_id: '',
+                    positions: []
+                }
             }
         },
         ChangePrecision(){
@@ -267,9 +334,11 @@ export default {
             await this.$http.post(`/${this.resource}/search_items`, params)
                 .then(response => {
                     let items = response.data.items;
+                    
                     if(items.length > 0) {
                         this.items = items; //filterWords(search, items);
                     }
+                    console.log(this.items);
 
                     this.enabledSearchItemsBarcode()
                 })
@@ -278,7 +347,29 @@ export default {
         async submit() {
             let total_qty =  this.form.quantity * 1;
             if (this.type === 'input') {
+
+                if(this.item_selected.stock_max>0){
+                    const stock_available = this.item_selected.stock_max-this.item_selected.stock_total;
+                    if(stock_available<=0){
+                        return this.$message.error('Ya se llegó al stock máximo');
+                    }else if((stock_available-parseInt(this.form.quantity)<0)){
+                        return this.$message.error('Solo se tiene disponible el siguiente stock: '+stock_available);
+                    }
+                }
+
+                if(this.dataModal && this.dataModal.positions.length>0){
+                    this.form.data_item.location_id = this.dataModal.location_id;
+                    this.form.data_item.positions = [...this.dataModal.positions.filter(element => element.is_selected)];
+                }
+
+                if(this.form.positions_enabled && !this.form.lots_enabled){
+                    if(this.form.data_item.positions.length==0)
+                        return this.$message.error('Selecciona las posiciones');
+                }
+
                 if (this.form.lots_enabled) {
+                    if(this.form.data_item.positions.length==0)
+                        return this.$message.error('Debe seleccionar una posición');
                     if (!this.form.lot_code)
                         return this.$message.error('Código de lote es requerido');
                     if (!this.form.date_of_due)
@@ -290,6 +381,10 @@ export default {
                         return this.$message.error('La cantidad de series registradas es superior al stock');
                     if (this.form.lots.length !== total_qty)
                         return this.$message.error('La cantidad de series registradas son diferentes al stock');
+                }                
+
+                if(this.form.quantity<=0){
+                    return this.$message.warning('El stock debe ser mayor a 0');
                 }
 
                 /*if(this.form.lots_enabled){
@@ -313,7 +408,6 @@ export default {
 
             this.loading_submit = true
             this.form.type = this.type
-            // console.log(this.form)
             await this.$http.post(`/${this.resource}/transaction`, this.form)
                 .then(response => {
                     if (response.data.success) {

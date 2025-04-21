@@ -41,7 +41,7 @@
                 <th class="fourteen-width text-left">DESCRIPCIÓN PRODUCTO</th>
                 <th class="ten-width">UNIDAD</th>
                 <th class="ten-width">CANTIDAD</th>
-                <th class="ten-width">LOTE/SERIE</th>
+                <th class="ten-width">LOTE</th>
                 <!--        <th width="10%">SERIE</th>-->
             </tr>
             </thead>

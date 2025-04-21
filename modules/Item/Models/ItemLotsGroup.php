@@ -4,6 +4,7 @@ namespace Modules\Item\Models;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\ModelTenant;
+use App\Models\Tenant\Warehouse;
 use Modules\Inventory\Models\InventoryTransferItem;
 
 
@@ -26,7 +27,8 @@ class ItemLotsGroup extends ModelTenant
         'quantity',
         'date_of_due',
         'item_id',
-        'old_quantity'
+        'status',
+        'warehouse_id'
     ];
 
     public function item()
@@ -37,6 +39,11 @@ class ItemLotsGroup extends ModelTenant
     public function inventory_transfer_item()
     {
         return $this->hasMany(InventoryTransferItem::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
     /**
@@ -112,6 +119,17 @@ class ItemLotsGroup extends ModelTenant
     public function setItemId($item_id)
     {
         $this->item_id = $item_id;
+        return $this;
+    }
+
+    /**
+     * @param mixed $status
+     *
+     * @return ItemLotsGroup
+     */
+    public function setStatus($status)
+    {
+        $this->status = $status;
         return $this;
     }
 

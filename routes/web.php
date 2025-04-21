@@ -197,11 +197,16 @@ if ($hostname) {
             Route::get('items/columns', 'Tenant\ItemController@columns');
             Route::get('items/records', 'Tenant\ItemController@records');
             Route::get('items/tables', 'Tenant\ItemController@tables');
+            Route::get('items/getLocations', 'Tenant\ItemController@getLocations');        
             Route::get('items/record/{item}', 'Tenant\ItemController@record');
+            Route::get('items/record2Jack', 'Tenant\ItemController@record2Jack');
+            Route::get('items/getPositionSelected/{item_id}', 'Tenant\ItemController@getPositionsSelected');
+            Route::get('items/fileDownload/{id}', 'Tenant\ItemController@downloadDocument');
             Route::post('items', 'Tenant\ItemController@store');
             Route::delete('items/{item}', 'Tenant\ItemController@destroy');
             Route::delete('items/item-unit-type/{item}', 'Tenant\ItemController@destroyItemUnitType');
             Route::post('items/import', 'Tenant\ItemController@import');
+            Route::post('items/saveDocuments/{id}', 'Tenant\ItemController@saveDocuments');
             Route::post('items/import/restaurant', 'Tenant\ItemController@importRestaurant');
             Route::post('items/catalog', 'Tenant\ItemController@catalog');
             Route::get('items/import/tables', 'Tenant\ItemController@tablesImport');
@@ -229,6 +234,13 @@ if ($hostname) {
             Route::get('items/export/barcode/print_x', 'Tenant\ItemController@printBarCodeX')->name('tenant.items.export.barcode.print.x');
             Route::get('items/export/barcode/last', 'Tenant\ItemController@itemLast')->name('tenant.items.last');
             Route::post('get-items', 'Tenant\ItemController@getAllItems');
+            Route::get('items/getLocations/{warehouse_id}', 'Tenant\ItemController@getLocationsByWarehouse');
+            
+            Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
+            //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
+
+            //InventoryStates
+            Route::get('inventoryStates', 'Tenant\InventoryStateController@getData');
 
             //Persons
             Route::prefix('persons')->group(function () {
@@ -408,7 +420,7 @@ if ($hostname) {
                 Route::get('/search/customers', 'Tenant\DispatchController@searchCustomers');
                 Route::get('/search/customer/{id}', 'Tenant\DispatchController@searchClientById');
                 Route::post('/status_ticket', 'Tenant\Api\DispatchController@statusTicket');
-                Route::get('create_new/{table}/{id}', 'Tenant\DispatchController@createNew');
+                Route::get('/create_new/{table}/{id}', 'Tenant\DispatchController@createNew');
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchController@getOriginAddresses');
                 Route::get('/get_addresses_other_establishments/{establishment_id}', 'Tenant\DispatchController@getAddressesOtherEstablishments');
                 Route::get('/get_delivery_addresses/{person_id}', 'Tenant\DispatchController@getDeliveryAddresses');
@@ -525,6 +537,7 @@ if ($hostname) {
             Route::get('purchases/tables', 'Tenant\PurchaseController@tables');
             Route::get('purchases/table/{table}', 'Tenant\PurchaseController@table');
             Route::post('purchases', 'Tenant\PurchaseController@store');
+            Route::post('purchases/updatePosition', 'Tenant\PurchaseController@updatePosition');
             Route::post('purchases/update', 'Tenant\PurchaseController@update');
             Route::get('purchases/record/{document}', 'Tenant\PurchaseController@record');
             Route::get('purchases/edit/{id}', 'Tenant\PurchaseController@edit');
@@ -767,7 +780,8 @@ if ($hostname) {
             Route::post('general-upload-temp-image', 'Controller@generalUploadTempImage');
 
             Route::get('general-get-current-warehouse', 'Controller@generalGetCurrentWarehouse');
-
+            Route::get('warehouses-by-active-establishment', 'Tenant\PositionController@getWarehousebyActiveEstablishment');
+            Route::get('get-position-add-item/{location_id}/{item_id}', 'Tenant\PositionController@getPositionsForAddItem');
             // test theme
             // Route::get('testtheme', function () {
             //     return view('tenant.layouts.partials.testtheme');

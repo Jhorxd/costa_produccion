@@ -2,6 +2,8 @@
 
 @section('content')
 
-    <inventory-transfers-index></inventory-transfers-index>
+    <inventory-transfers-index
+        :type-user="{{json_encode(Auth::user()->type)}}"
+    ></inventory-transfers-index>
 
 @endsection

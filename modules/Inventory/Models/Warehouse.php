@@ -22,6 +22,11 @@ class Warehouse extends ModelTenant
     protected $fillable = [
         'establishment_id',
         'description',
+        'length', 
+        'width', 
+        'height', 
+        'responsible',
+        'address'
     ];
 
     /**

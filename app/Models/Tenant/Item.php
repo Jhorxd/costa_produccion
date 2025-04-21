@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models\Tenant;
+
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\CatColorsItem;
 use App\Models\Tenant\Catalogs\CatItemMoldCavity;
@@ -12,6 +13,10 @@ use App\Models\Tenant\Catalogs\CatItemUnitBusiness;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\SystemIscType;
 use App\Models\Tenant\Catalogs\UnitType;
+use App\Models\Tenant\ItemSalesCondition;
+use App\Models\Tenant\ItemPosition;
+use Modules\Inventory\Models\WarehouseLocationPosition;
+use Modules\Inventory\Models\InventoryWarehouseLocation;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,7 +39,7 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
 use Modules\Purchase\Models\WeightedAverageCost;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
-use Illuminate\Support\Facades\DB;
+
 /**
  * Class Item
  *
@@ -112,7 +117,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Item extends ModelTenant
 {
-    protected $with = ['item_type', 'unit_type', 'currency_type', 'warehouses','item_unit_types', 'tags','item_lots'];
+    protected $with = ['item_type', 'unit_type', 'currency_type', 'warehouses', 'item_files', 'item_unit_types', 'tags','item_lots'];
 
     public const SERVICE_UNIT_TYPE = 'ZZ';
 
@@ -185,8 +190,17 @@ class Item extends ModelTenant
         'quantity_of_points',
         'factory_code',
         'restrict_sale_cpe',
-
-        // 'warehouse_id'
+        'active_principle',
+        'concentration',
+        'sales_condition_id',
+        'pharmaceutical_unit_type_id',
+        'lot',
+        'supplier_id',
+        'inventory_state_id',
+        'stock_max',
+        'average_usage',
+        'days_to_alert',
+        'laboratory'
     ];
 
     protected $casts = [
@@ -287,6 +301,26 @@ class Item extends ModelTenant
     public function item_type()
     {
         return $this->belongsTo(ItemType::class);
+    }
+
+    public function item_sales_condition()
+    {
+        return $this->belongsTo(ItemSalesCondition::class, 'sales_condition_id');
+    }
+
+    public function pharmaceutical_item_unit_type()
+    {
+        return $this->belongsTo(PharmaceuticalItemUnitType::class, 'pharmaceutical_unit_type_id');
+    }
+
+    public function item_files()
+    {
+        return $this->hasMany(ItemFile::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Person::class);
     }
 
     /**
@@ -813,6 +847,20 @@ class Item extends ModelTenant
         return $lots;
     }
 
+    private function getPositions($location_id, $item_id = null)
+    {
+        $location = InventoryWarehouseLocation::find($location_id);
+
+        $positions = WarehouseLocationPosition::with('lots.lots_group')
+            ->where('location_id', $location_id)
+            ->get();
+
+        foreach ($positions as $position) {
+            $position->stock_available = $location->maximum_stock - $position->quantity_used;
+            $position->code_location = $location->code;
+        }
+    }
+
     /**
      * Devuelve un estandar de estructura para items.
      * Es utilizado en :
@@ -931,6 +979,50 @@ class Item extends ModelTenant
             $purchase_unit_price = $purchase_unit_value * 1.18;
         }
 
+        //Posiciones
+        $locations = ItemPosition::where('item_id', $this->id)->pluck('location_id')->unique();
+        $locations_data = [];
+
+        foreach ($locations as $location_id) {
+            $location = InventoryWarehouseLocation::find($location_id);
+
+            if ($location) {
+            // Obtener todas las posiciones de esta ubicación específica para un item
+                $positions = WarehouseLocationPosition::with('lots.lots_group')
+                    ->where('location_id', $location_id)
+                    ->whereIn('id', function ($query) {
+                        $query->select('position_id')
+                            ->from('item_positions')
+                            ->where('item_id', $this->id);
+                    })
+                    ->get();
+            // Obtener solo las columnas de las posiciones
+                $columns = $positions->pluck('column')->toArray();
+
+            // Agregar a la lista de ubicaciones
+                $locations_data[] = [
+                    'location_name' => $location->name,
+                    'code_location' => $location->code,
+                    'columns' => $columns,
+                ];
+            }
+        }
+
+        $item = Item::where('id', $this->id)
+            ->where('inventory_state_id', $this->inventory_state_id)
+            ->first();
+        
+        $inventory_state_description = null;
+        if($item){
+            $inventory_state = InventoryState::where('id', $item->inventory_state_id)
+                ->first();
+
+            if ($inventory_state) {
+                $inventory_state_description = $inventory_state->description;
+            }
+        }
+        
+
         $data = [
             'id'                               => $this->id,
             'item_code'                    => $this->item_code,
@@ -953,6 +1045,7 @@ class Item extends ModelTenant
                                              ]),
             'category'                         => $detail['category'],
             'stock'                            => $stock,
+            'stock_max'                        => $this->stock_max,
             'internal_id'                      => $this->internal_id,
             'description'                      => $this->description,
             'currency_type_id'                 => $this->currency_type_id,
@@ -1041,12 +1134,19 @@ class Item extends ModelTenant
             'image_url' => $this->getImageUrl(),
             'name' => $this->name,
             // Nuevos valores agregados por el equipo de George
-            'cod_digemid' => 'D1023M2D0',
-            'concentracion' => '500 mg',
-            'condicion_venta' => 'Venta libre',
-            'forma_farmaceutica' => 'Tabletas',
-            'principio_activo' => 'Paracetamol',
-            'estado' => 'Activo',
+            'cod_digemid' => $this->cod_digemid,
+            'concentration' => $this->concentration,
+            'sales_condition' => $this->item_sales_condition ? [
+                'id' => $this->item_sales_condition->id,
+                'description' => $this->item_sales_condition->description,
+            ] : null,
+            'pharmaceutical_unit_type' => $this->pharmaceutical_item_unit_type ? [
+                'id' => $this->pharmaceutical_item_unit_type->id,
+                'description' => $this->pharmaceutical_item_unit_type->description,
+            ] : null,
+            'active_principle' => $this->active_principle,
+            'locations' => $locations_data,
+            'inventory_state_description' => $inventory_state_description,
             'accion' => 'Alergías'
         ];
 
@@ -1256,6 +1356,11 @@ class Item extends ModelTenant
     public function getFormatSaleUnitPrice()
     {
         return ((int)$this->sale_unit_price != $this->sale_unit_price) ? $this->sale_unit_price : round($this->sale_unit_price);
+    }
+
+    public function getFormatPurchaseUnitPrice()
+    {
+        return ((int)$this->purchase_unit_price != $this->purchase_unit_price) ? $this->purchase_unit_price : round($this->purchase_unit_price);
     }
 
 

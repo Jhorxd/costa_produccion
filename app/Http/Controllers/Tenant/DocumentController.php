@@ -316,7 +316,8 @@ class DocumentController extends Controller
     {
         // $items = $this->table('items');
         $items = SearchItemController::getItemsToDocuments();
-        $categories = [];
+        $categories = Category::all();
+        $brands = Brand::all();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $system_isc_types = SystemIscType::whereActive()->get();
         $price_types = PriceType::whereActive()->get();
@@ -358,6 +359,7 @@ class DocumentController extends Controller
         return compact(
             'items',
             'categories',
+            'brands',
             'affectation_igv_types',
             'system_isc_types',
             'price_types',
@@ -684,7 +686,8 @@ class DocumentController extends Controller
     public function storeWithData($data)
     {
         self::setChildrenToData($data);
-        $fact = DB::connection('tenant')->transaction(function () use ($data) {
+        
+        $fact = DB::connection('tenant')->transaction(function () use (&$data) {
             $facturalo = new Facturalo();
             $facturalo->save($data);
             $facturalo->createXmlUnsigned();

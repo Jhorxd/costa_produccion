@@ -155,7 +155,7 @@
                             :class="
                                 row.state_type_payment_description == 'Pagado'
                                     ? 'text-success'
-                                    : 'text-warning'
+                                    : (row.state_type_payment_description == 'Pago parcial'?'text-warning':'text-danger')
                             "
                         >
                             {{ row.state_type_payment_description }}
@@ -175,13 +175,13 @@
                             >
                                 <el-table :data="row.items">
                                     <el-table-column
-                                        width="80"
+                                        width="70"
                                         property="key"
                                         label="#"
                                     ></el-table-column>
                                     <!-- <el-table-column width="220" property="description" label="Nombre"></el-table-column> -->
 
-                                    <el-table-column width="220" label="Nombre">
+                                    <el-table-column width="90" label="Nombre">
                                         <template slot-scope="scope">
                                             <template
                                                 v-if="
@@ -205,6 +205,26 @@
                                         width="90"
                                         property="quantity"
                                         label="Cantidad"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="name_location"
+                                        label="Ubicación"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="position"
+                                        label="Posición"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="lot"
+                                        label="Lote"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="100"
+                                        property="date_of_due"
+                                        label="Fecha de vencimiento"
                                     ></el-table-column>
                                 </el-table>
                                 <el-button
@@ -332,6 +352,13 @@
                             </button>
                             <button
                                 type="button"
+                                class="btn waves-effect waves-light btn-xs btn-success m-1__2"
+                                @click.prevent="clickReceptionItem(row.id)"
+                            >
+                                Recepción de productos
+                            </button>
+                            <button
+                                type="button"
                                 :disabled="disableGuideBtn"
                                 class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
                                 @click.prevent="clickGuide(row.id)"
@@ -379,6 +406,7 @@
         <purchase-payments
             :showDialog.sync="showDialogPurchasePayments"
             :purchaseId="recordId"
+            :key="key"
             :external="true"
         ></purchase-payments>
 
@@ -387,6 +415,12 @@
             :recordId="recordId"
             :showClose="true"
         ></purchase-options>
+
+        <purchase-details
+            :key="idPurchaseSelected"
+            :showDialog.sync="showDialogPurchaseDetails"
+            :purchase_id="idPurchaseSelected">
+        </purchase-details>
     </div>
 </template>
 
@@ -400,6 +434,7 @@ import { deletable } from "../../../mixins/deletable";
 import PurchaseImport from "./import.vue";
 import PurchasePayments from "@viewsModulePurchase/purchase_payments/payments.vue";
 import PurchaseOptions from "./partials/options.vue";
+import purchaseDetails from "./partials/purchaseDetails.vue";
 
 export default {
     mixins: [deletable],
@@ -408,7 +443,8 @@ export default {
         DataTable,
         PurchaseImport,
         PurchasePayments,
-        PurchaseOptions
+        PurchaseOptions,
+        purchaseDetails
     },
     props: ["typeUser", "configuration"],
     data() {
@@ -416,8 +452,11 @@ export default {
             disableGuideBtn: true,
             showModalGuide: false,
             showDialogVoided: false,
+            showDialogPurchaseDetails: false,
+            idPurchaseSelected:0,
             resource: "purchases",
             recordId: null,
+            key:Date.now(),
             showDialogOptions: false,
             showDialogPurchasePayments: false,
             showImportDialog: false,
@@ -475,6 +514,10 @@ export default {
         this.getDocumentTypes();
     },
     methods: {
+        clickReceptionItem(purchase_id){
+            this.idPurchaseSelected = purchase_id;
+            this.showDialogPurchaseDetails = true;
+        },
         formatDate(date) {
             if (!date) return null;
             return moment(date).format("DD-MM-YYYY");

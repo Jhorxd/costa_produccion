@@ -9,8 +9,7 @@ if ($hostname) {
         Route::middleware(['auth', 'redirect.module', 'locked.tenant'])->group(function () {
 
             Route::get('advanced-items-search', 'ItemController@advancedItemsSearch');
-            Route::post('validate-current-item-stock', 'ItemController@validateCurrentItemStock');
-
+            Route::post('validate-current-item-stock', 'ItemController@validateCurrentItemStock');                        
             
             Route::prefix('items')->group(function () {
                 Route::post('import-item-lots-group', 'ItemController@importItemLotsGroup');
@@ -22,10 +21,15 @@ if ($hostname) {
             Route::prefix('warehouses')->group(function () {
                 Route::get('/', 'WarehouseController@index')->name('warehouses.index');
                 Route::get('records', 'WarehouseController@records');
+                Route::get('recordsCustom', 'WarehouseController@recordsByCustomFields');
+                Route::get('getEstablishments', 'WarehouseController@getEstablishments');
+                Route::get('getWarehouse/{id}', 'WarehouseController@getWarehouse');
+                Route::delete('destroy/{warehouse}', 'WarehouseController@destroy');
                 Route::get('columns', 'WarehouseController@columns');
                 Route::get('tables', 'WarehouseController@tables');
                 Route::get('record/{warehouse}', 'WarehouseController@record');
                 Route::post('/', 'WarehouseController@store');
+                Route::post('storeWarehouse', 'WarehouseController@storeWarehouse2');           
                 Route::get('initialize', 'WarehouseController@initialize');
             });
             /**
@@ -125,7 +129,20 @@ if ($hostname) {
                 });
 
             });
-
+            Route::prefix('physical-inventory')->group(function () {
+                Route::get('/', 'InventoryController@indexPhysicalInventoryList')->name('inventory.physicalList'); 
+                Route::get('insertInventory/{id?}', 'InventoryController@indexPhysicalInventory')->name('inventory.physicalInventory');
+                Route::get('getEstablishments', 'InventoryController@getEstablishmentsByName');
+                Route::get('getWarehousesByEstablishment/{id}', 'InventoryController@getWarehousesByEstablishment');
+                Route::get('getProductsByEstablishmentAndWarehouse', 'InventoryController@getProductsByEstablishmentAndWarehouse');
+                Route::get('getAllPhysicalInventoryCategories', 'InventoryController@getAllPhysicalInventoryCategories');
+                Route::post('store', 'InventoryController@storePhysicalInventory');
+                Route::get('getAllPhysicalInventories', 'InventoryController@getAllPhysicalInventories');
+                Route::get('pdf/{id}', 'InventoryController@getPdfInventory');
+                Route::get('getItemPositionsLots/{item_id}/{warehouse_id}', 'InventoryController@getItemPositionsLots');
+            });
+            
+            Route::get('inventory-warehouses', 'InventoryController@indexWarehouses')->name('inventory.index2');
             Route::prefix('inventory')->group(function () {
                 /**
                  * inventory/
@@ -166,6 +183,7 @@ if ($hostname) {
                 Route::get('regularize_stock', 'InventoryController@regularize_stock');
 
                 Route::post('search_items', 'InventoryController@searchItems');
+                Route::get('checkPositions/{warehouse_id}/{item_id}', 'InventoryController@checkPositions');
                 /**
                  * inventory/report/tables
                  * inventory/report/records
@@ -176,8 +194,30 @@ if ($hostname) {
                     Route::get('records', 'ReportInventoryController@records');
                     Route::post('export', 'ReportInventoryController@export');
                 });
+            });
 
+            Route::prefix('locations')->group(function () {
+                Route::get('/', 'InventoryController@location_index')->name('locations.index');
+                Route::get('create', 'InventoryController@create')->name('locations.create');
+                Route::post('/', 'InventoryController@submit')->name('locations.submit');
+                Route::get('records', 'InventoryController@list')->name('locations.list');
+                Route::get('columns', 'InventoryController@locationColumns')->name('locations.locationColumns');
+                Route::get('getTypesLocation', 'InventoryController@getTypes')->name('locations.getTypesLocation');
+                Route::get('/{id}', 'InventoryController@show');
+                Route::put('/{id}', 'InventoryController@update');
+                Route::put('/positions/{id}', 'InventoryController@updatePositions');
+                Route::get('/edit/{id}', 'InventoryController@edit')->name('locations.edit');
+                Route::delete('{id}', 'InventoryController@destroy');
+                Route::get('locations/{id}', 'InventoryController@getLocationsById');
+                Route::get('create/{id}', 'InventoryController@createWarehouse')->name('locations.create.warehouse');
+            });
 
+            Route::get('/listWarehouses', 'InventoryController@warehouses')->name('locations.warehouses');
+
+            Route::prefix('transfers')->group(function () {
+                Route::get('locations/{warehouse_id}', 'PositionController@getLocations');
+                Route::get('positions/{location_id}', 'PositionController@getPositions');
+                Route::get('positions/{location_id}/{item_id}/{warehouse_id}', 'PositionController@getPositions');
             });
 
             Route::prefix('reports')->group(function () {
@@ -288,9 +328,12 @@ if ($hostname) {
                 Route::get('columns', 'TransferController@columns');
                 Route::get('tables', 'TransferController@tables');
                 Route::get('record/{inventory}', 'TransferController@record');
+                Route::get('record2/{inventoryTransfer}','TransferController@record_approve_transfer');
                 Route::post('/', 'TransferController@store');
+                Route::post('/approve_transfer','TransferController@store_approve');
                 Route::delete('{inventory}', 'TransferController@destroy');
                 Route::get('create', 'TransferController@create')->name('transfer.create');
+                Route::get('approve_transfer/{inventory}', 'TransferController@approve_transfer');
                 Route::get('stock/{item_id}/{warehouse_id}', 'TransferController@stock');
                 Route::get('items/{warehouse_id}', 'TransferController@items');
                 Route::post('search-items', 'TransferController@searchItems');

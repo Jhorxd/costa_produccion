@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Tenant\Item;
+use App\Models\Tenant\PharmaceuticalItemUnitType;
 use App\Models\Tenant\Warehouse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
@@ -27,11 +28,18 @@ class ItemsImport implements ToCollection
 
     public function collection(Collection $rows)
     {
-            $total = count($rows);
+            $filteredRows = $rows->reject(function ($row) {
+                return $row->every(function ($value) {
+                    return is_null($value) || $value === '';
+                });
+            });
+            $total = count($filteredRows);
             $warehouse_id_de = request('warehouse_id');
             $registered = 0;
-            unset($rows[0]);
-            foreach ($rows as $row) {
+            unset($filteredRows[0]);
+            foreach ($filteredRows as $row) {
+
+                //-----------------------
                 $description = $row[0];
                 $item_type_id = '01';
                 $internal_id = ($row[1])?:null;
@@ -68,7 +76,12 @@ class ItemsImport implements ToCollection
                 $lot_code = $row[17];
                 $date_of_due = $row[18];
                 $barcode = $row[19] ?? null;
-                $image_url = $row[20] ?? null;
+                $concentration = $row[20] ?? null;
+                $pharmaceutical_unit_type_description = $row[21];
+                $sanitary = $row[22] ?? null;
+                $laboratory = $row[23] ?? null;
+                $active_principle = $row[24] ?? null;
+                $image_url = $row[25] ?? null;
 
                 // image names
                 $file_name = 'imagen-no-disponible.jpg';
@@ -134,10 +147,12 @@ class ItemsImport implements ToCollection
                     $item = null;
                 }
                 // $establishment_id = auth()->user()->establishment->id;
+                $pharmaceutical_unit_type = PharmaceuticalItemUnitType::updateOrCreate(['description' => $pharmaceutical_unit_type_description]);
 
                 if(!$item) {
                     $category = $category_name ? Category::updateOrCreate(['name' => $category_name]):null;
                     $brand = $brand_name ? Brand::updateOrCreate(['name' => $brand_name]):null;
+                    
                     // dd($row, $lot_code ,$date_of_due, $category, $brand);
 
                     if($lot_code && $date_of_due){
@@ -149,6 +164,12 @@ class ItemsImport implements ToCollection
                         $new_item = Item::create([
                             'description' => $description,
                             'model' => $model,
+                            'concentration' => $concentration,
+                            'sanitary' => $sanitary,
+                            'laboratory' => $laboratory,
+                            'active_principle' => $active_principle,
+                            'pharmaceutical_unit_type_id' => $pharmaceutical_unit_type->id,
+                            'inventory_state_id' => 1, 
                             'item_type_id' => $item_type_id,
                             'internal_id' => $internal_id,
                             'item_code' => $item_code,
@@ -180,6 +201,9 @@ class ItemsImport implements ToCollection
                             'code'  => $lot_code,
                             'quantity'  => $stock,
                             'date_of_due'  => $_date_of_due,
+                            'status' => 1,
+                            'item_id' => $new_item->id,
+                            'warehouse_id' => $warehouse_id
                         ]);
 
                     }else{
@@ -189,6 +213,12 @@ class ItemsImport implements ToCollection
                         Item::create([
                             'description' => $description,
                             'model' => $model,
+                            'concentration' => $concentration,
+                            'sanitary' => $sanitary,
+                            'laboratory' => $laboratory,
+                            'active_principle' => $active_principle,
+                            'pharmaceutical_unit_type_id' => $pharmaceutical_unit_type->id,
+                            'inventory_state_id' => 1, 
                             'item_type_id' => $item_type_id,
                             'internal_id' => $internal_id,
                             'item_code' => $item_code,
@@ -229,6 +259,12 @@ class ItemsImport implements ToCollection
                     $item->update([
                         'description' => $description,
                         'model' => $model,
+                        'concentration' => $concentration,
+                        'sanitary' => $sanitary,
+                        'laboratory' => $laboratory,
+                        'active_principle' => $active_principle,
+                        'pharmaceutical_unit_type_id' => $pharmaceutical_unit_type->id,
+                        'inventory_state_id' => 1, 
                         'item_type_id' => $item_type_id,
                         'internal_id' => $internal_id,
                         'item_code' => $item_code,
@@ -284,7 +320,9 @@ class ItemsImport implements ToCollection
                                 'quantity' => $stock,
                                 'old_quantity' => $stock,
                                 'date_of_due' =>  $_date_of_due,
-                                'item_id' => $item->id
+                                'item_id' => $item->id,
+                                'status' => 1,
+                                'warehouse_id' => $warehouse_id
                             ]);
                         }
 

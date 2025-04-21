@@ -3,9 +3,14 @@
     namespace App\Http\Resources\Tenant;
 
     use App\Models\Tenant\Configuration;
-    use App\Models\Tenant\ItemSupply;
-    use Illuminate\Http\Request;
+use App\Models\Tenant\ItemPosition;
+use App\Models\Tenant\ItemSupply;
+use App\Models\Tenant\Kardex;
+use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
+use Modules\Inventory\Models\WarehouseLocationPosition;
+use Modules\Item\Models\ItemLotsGroup;
 
     /**
      * Class ItemResource
@@ -71,8 +76,36 @@
                     return $row-> getCollectionData();
                 });
             }
+            $item_positions = [];
+            if($this->lots_enabled){
+                $item_positions_selected = ItemPosition::where('item_id', $this->id)
+                ->select('position_id', 'location_id', 'warehouse_id', DB::raw('SUM(stock) as stock'))
+                ->groupBy('position_id', 'location_id', 'warehouse_id')
+                ->get();
+            }else{
+                $item_positions_selected = ItemPosition::where('item_id', $this->id)->get();
+            }
+            if($item_positions_selected){
+                foreach($item_positions_selected as $position_selected){
+                    $item_id = $this->id;
+                    $item_position = WarehouseLocationPosition::with(['lots' => function ($query) use ($item_id) {
+                        $query->where('item_id', $item_id);
+                    }])->find($position_selected->position_id);
+                    if($item_position){
+                        $item_position->stock=$position_selected->stock;
+                        array_push($item_positions, $item_position);
+                    }
+                }
+            }
+            $lots = ItemLotsGroup::where('item_id', $this->id)->get();
+            $hasSales = Kardex::where('item_id', $this->id)->where('type', 'sale')->count()>0;
+
             return [
                 'id' => $this->id,
+                'has_sales' => $hasSales,
+                'inventory_state_id' => $this->inventory_state_id,
+                'positions_selected' => $item_positions,
+                'location_id' => $item_positions!= [] ? $item_positions[0]->location_id:null,
                 'is_for_production'=>$this->isIsForProduction(),
                 'description' => $this->description,
                 'technical_specifications' => $this->technical_specifications,
@@ -96,6 +129,15 @@
                 'currency_type_id' => $this->currency_type_id,
                 'sale_unit_price' => $this->getFormatSaleUnitPrice(),
                 // 'sale_unit_price' => $this->sale_unit_price,
+                'purchase_unit_price' => $this->getFormatPurchaseUnitPrice(),
+                'active_principle' => $this->active_principle,
+                'concentration' => $this->concentration,
+                'pharmaceutical_unit_type_id' => $this->pharmaceutical_unit_type_id,
+                'supplier_id' => $this->supplier_id,
+                'sales_condition_id' => $this->sales_condition_id,
+                'lot' => $this->lot,
+                'supplier_id' => $this->supplier_id,
+                'item_files' => $this->item_files,
                 'purchase_unit_price' => $this->purchase_unit_price,
                 'unit_type_id' => $this->unit_type_id,
                 'has_isc' => (bool)$this->has_isc,
@@ -103,7 +145,11 @@
                 'percentage_isc' => $this->percentage_isc,
                 'suggested_price' => $this->suggested_price,
                 'stock' => $this->getStockByWarehouse(),
+                'stock_total' => $this->stock,
                 'stock_min' => $this->stock_min,
+                'stock_max' => $this->stock_max,
+                'average_usage' => $this->average_usage,
+                'days_to_alert' => $this->days_to_alert,
                 'percentage_of_profit' => $this->percentage_of_profit,
                 'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
                 'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,
@@ -127,19 +173,14 @@
                 'commission_amount' => $this->commission_amount,
                 'lot_code' => $this->lot_code,
                 'line' => $this->line,
-                'lots' => $this->lots->transform(function ($row, $key) {
+                'lots' => $lots->transform(function ($row, $key) {
                     return [
                         'id' => $row->id,
-                        'series' => $row->series,
-                        'date' => $row->date,
+                        'code' => $row->code,
+                        'quantity' => $row->quantity,
                         'item_id' => $row->item_id,
-                        'warehouse_id' => $row->warehouse_id,
-                        'item_loteable_type' => $row->item_loteable_type,
-                        'item_loteable_id' => $row->item_loteable_id,
-                        'has_sale' => $row->has_sale,
-                        'state' => $row->state,
-                        'created_at' => $row->created_at,
-                        'updated_at' => $row->updated_at,
+                        'date_of_due' => $row->date_of_due,
+                        'status' => $row->status,
                         'deleted' => false
                     ];
                 }),
