@@ -33,7 +33,9 @@ app/CoreFacturalo/Templates/pdf/personalizada*
 public/templates/pdf/personalizada*
 supervisor.conf
 
-
+app/Models/Tenant/item_bk.php
+env-bk
+resources/views/tenant/layouts/partials/header_bk.blade.php
 
 **/.DS_Store
 public/porto-light/js/bloquear_cliente.js

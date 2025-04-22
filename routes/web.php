@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 
 $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
@@ -15,9 +14,6 @@ if ($hostname) {
         Route::get('buscar', 'Tenant\SearchController@index')->name('search.index');
         Route::get('search/tables', 'Tenant\SearchController@tables');
         Route::post('search', 'Tenant\SearchController@store');
-
-
-
 
         Route::get('downloads/{model}/{type}/{external_id}/{format?}', 'Tenant\DownloadController@downloadExternal')->name('tenant.download.external_id');
         Route::get('print/{model}/{external_id}/{format}/{filename?}', 'Tenant\DownloadController@toPrint');
@@ -197,6 +193,7 @@ if ($hostname) {
             //Items
             Route::get('items', 'Tenant\ItemController@index')->name('tenant.items.index')->middleware('redirect.level');
             Route::get('services', 'Tenant\ItemController@indexServices')->name('tenant.services')->middleware('redirect.level');
+            Route::get('items/notifications', 'Tenant\ItemController@notifications'); //ENDPOINT DE NOTIFICACIÓN ALERTAS PRODUCTOS / PROVEEDOR / OC
             Route::get('items/columns', 'Tenant\ItemController@columns');
             Route::get('items/records', 'Tenant\ItemController@records');
             Route::get('items/tables', 'Tenant\ItemController@tables');
@@ -237,6 +234,7 @@ if ($hostname) {
             Route::get('items/export/barcode/print_x', 'Tenant\ItemController@printBarCodeX')->name('tenant.items.export.barcode.print.x');
             Route::get('items/export/barcode/last', 'Tenant\ItemController@itemLast')->name('tenant.items.last');
             Route::post('get-items', 'Tenant\ItemController@getAllItems');
+            Route::get('items/getLocations/{warehouse_id}', 'Tenant\ItemController@getLocationsByWarehouse');
             
             Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
             //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');

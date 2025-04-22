@@ -182,15 +182,15 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div :class="{'has-danger': errors.sale_price}"
+                            <div :class="{'has-danger': errors.sale_unit_price}"
                                  class="form-group">
-                                <label class="control-label">Precio de venta <span class="text-danger">*</span></label>
-                                <el-input v-model="form.sale_price"
-                                          dusk="sale_price"
+                                <label class="control-label">Precio de Venta <span class="text-danger">*</span></label>
+                                <el-input v-model="form.sale_unit_price"
+                                          dusk="sale_unit_price"
                                           @input="calculatePercentageOfProfitBySale"></el-input>
-                                <small v-if="errors.sale_price"
+                                <small v-if="errors.sale_unit_price"
                                        class="form-control-feedback"
-                                       v-text="errors.sale_price[0]"></small>
+                                       v-text="errors.sale_unit_price[0]"></small>
                             </div>
                         </div>
                         <div v-show="form.unit_type_id !='ZZ'"
@@ -341,7 +341,19 @@
                                        v-text="errors.unit_type_id[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
+                            <div :class="{'has-danger': errors.supplier_id}"
+                                 class="form-group">
+                                <label class="control-label">Laboratorio</label>
+                                <el-input v-model="form.laboratory"
+                                          dusk="laboratory"></el-input>
+                                <small
+                                    v-if="errors.laboratory"
+                                    class="form-control-feedback"
+                                    v-text="errors.laboratory[0]"></small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div :class="{'has-danger': errors.supplier_id}"
                                  class="form-group">
                                 <label class="control-label">Proveedor</label>
@@ -357,9 +369,9 @@
                                     ></el-option>
                                 </el-select>
                                 <small
-                                    v-if="errors.sale_affectation_igv_type_id"
+                                    v-if="errors.supplier_id"
                                     class="form-control-feedback"
-                                    v-text="errors.sale_affectation_igv_type_id[0]"></small>
+                                    v-text="errors.supplier_id[0]"></small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -384,15 +396,15 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div :class="{'has-danger': errors.sale_unit_price}"
+                            <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
-                                <label class="control-label">Precio Unitario <span class="text-danger">*</span></label>
-                                <el-input v-model="form.sale_unit_price"
-                                          dusk="sale_unit_price"
+                                <label class="control-label">Precio unitario de costo<span class="text-danger">*</span></label>
+                                <el-input v-model="form.purchase_unit_price"
+                                          dusk="purchase_unit_price"
                                           @input="calculatePercentageOfProfitBySale"></el-input>
-                                <small v-if="errors.sale_unit_price"
+                                <small v-if="errors.purchase_unit_price"
                                        class="form-control-feedback"
-                                       v-text="errors.sale_unit_price[0]"></small>
+                                       v-text="errors.purchase_unit_price[0]"></small>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -1756,47 +1768,7 @@ export default {
             this.fromPharmacy = true;
         }
         await this.initForm();
-
-        await this.$http.get(`/${this.resource}/tables`)
-            .then(response => {
-                let data = response.data;
-                this.unit_types = data.unit_types;
-                this.pharmaceutical_unit_types = data.pharmaceutical_item_unit_types;
-                this.sales_conditions = data.sales_conditions
-                this.suppliers = data.suppliers
-                this.accounts = data.accounts
-                this.currency_types = data.currency_types
-                this.system_isc_types = data.system_isc_types
-                this.affectation_igv_types = data.affectation_igv_types
-                this.warehouses = data.warehouses
-                this.categories = data.categories
-                this.brands = data.brands
-                this.attribute_types = data.attribute_types
-                this.locations = data.locations;
-                this.states = data.states;
-                if(response.data.states.length>0)
-                    this.form.inventory_state_id = response.data.states[0].id;
-                
-                // this.config = data.configuration
-                if (this.canShowExtraData) {
-                    this.$store.commit('setColors', data.colors);
-                    this.$store.commit('setCatItemSize', data.CatItemSize);
-                    this.$store.commit('setCatItemUnitsPerPackage', data.CatItemUnitsPerPackage);
-                    this.$store.commit('setCatItemStatus', data.CatItemStatus);
-                    this.$store.commit('setCatItemMoldCavity', data.CatItemMoldCavity);
-                    this.$store.commit('setCatItemMoldProperty', data.CatItemMoldProperty);
-                    this.$store.commit('setCatItemUnitBusiness', data.CatItemUnitBusiness);
-                    this.$store.commit('setCatItemPackageMeasurement', data.CatItemPackageMeasurement);
-                    this.$store.commit('setCatItemProductFamily', data.CatItemPackageMeasurement);
-                }
-                this.$store.commit('setConfiguration', data.configuration);
-
-
-                this.loadConfiguration()
-                this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-                this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
-                this.inventory_configuration = data.inventory_configuration;
-            })
+        await this.getDataTables();
 
         this.$eventHub.$on('submitPercentagePerception', (data) => {
             this.form.percentage_perception = data
@@ -1923,7 +1895,6 @@ export default {
                 this.$message.error("Seleccione una ubicación");
                 return;
             }
-            console.log(this.positions_selected);
             
             await this.$http.get(`/${this.resource}/positions/${this.location_id}/${this.recordId}`)
                 .then(response => {
@@ -2019,7 +1990,7 @@ export default {
                 item_files: [],
                 currency_type_id: 'PEN',
                 sale_unit_price: 0,
-                sale_price: 0,
+                unit_price: 0,
                 purchase_unit_price: 0,
                 has_isc: false,
                 system_isc_type_id: null,
@@ -2200,11 +2171,65 @@ export default {
                         //     });
                         // }
                     })
-
+                    await this.getLocationsByWarehouse(this.form.warehouse_id);
+            }else{
+                await this.getDataTables();
             }
 
             this.setDataToItemWarehousePrices()
 
+        },
+        async getLocationsByWarehouse(warehouse_id){
+            try {
+                const response = await this.$http.get(`/${this.resource}/getLocations/${warehouse_id}`);
+                if(response.data.success){
+                    this.locations = response.data.data;
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        },
+        async getDataTables(){
+            const response = await this.$http.get(`/${this.resource}/tables`);
+            let data = response.data;
+            this.unit_types = data.unit_types;
+            this.pharmaceutical_unit_types = data.pharmaceutical_item_unit_types;
+            this.sales_conditions = data.sales_conditions
+            this.suppliers = data.suppliers
+            this.accounts = data.accounts
+            this.currency_types = data.currency_types
+            this.system_isc_types = data.system_isc_types
+            this.affectation_igv_types = data.affectation_igv_types
+            this.warehouses = data.warehouses
+            this.categories = data.categories
+            this.brands = data.brands
+            this.attribute_types = data.attribute_types
+            
+            this.states = data.states;
+            if(this.states.length>0)
+                this.form.inventory_state_id = this.states[0].id;
+            if(this.pharmaceutical_unit_types.length>0)
+                this.form.pharmaceutical_unit_type_id = this.pharmaceutical_unit_types[0].id;
+            
+            // this.config = data.configuration
+            if (this.canShowExtraData) {
+                this.$store.commit('setColors', data.colors);
+                this.$store.commit('setCatItemSize', data.CatItemSize);
+                this.$store.commit('setCatItemUnitsPerPackage', data.CatItemUnitsPerPackage);
+                this.$store.commit('setCatItemStatus', data.CatItemStatus);
+                this.$store.commit('setCatItemMoldCavity', data.CatItemMoldCavity);
+                this.$store.commit('setCatItemMoldProperty', data.CatItemMoldProperty);
+                this.$store.commit('setCatItemUnitBusiness', data.CatItemUnitBusiness);
+                this.$store.commit('setCatItemPackageMeasurement', data.CatItemPackageMeasurement);
+                this.$store.commit('setCatItemProductFamily', data.CatItemPackageMeasurement);
+            }
+            this.$store.commit('setConfiguration', data.configuration);
+
+
+            this.loadConfiguration()
+            this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+            this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+            this.inventory_configuration = data.inventory_configuration;
         },
         setDataToItemWarehousePrices() {
 
@@ -2336,14 +2361,12 @@ export default {
             if (this.recordId && this.form.lots_enabled && this.positions_selected.length==0) {
                 return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
-            console.log(this.positions_selected);
             
             this.form.positions_selected = this.positions_selected;
             
             this.form.location_id = this.location_id;
 
             this.loading_submit = true
-            console.log(this.form);
             
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(async response => {

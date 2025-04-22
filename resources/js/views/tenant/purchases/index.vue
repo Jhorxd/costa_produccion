@@ -155,7 +155,7 @@
                             :class="
                                 row.state_type_payment_description == 'Pagado'
                                     ? 'text-success'
-                                    : 'text-warning'
+                                    : (row.state_type_payment_description == 'Pago parcial'?'text-warning':'text-danger')
                             "
                         >
                             {{ row.state_type_payment_description }}
@@ -175,13 +175,13 @@
                             >
                                 <el-table :data="row.items">
                                     <el-table-column
-                                        width="80"
+                                        width="70"
                                         property="key"
                                         label="#"
                                     ></el-table-column>
                                     <!-- <el-table-column width="220" property="description" label="Nombre"></el-table-column> -->
 
-                                    <el-table-column width="220" label="Nombre">
+                                    <el-table-column width="90" label="Nombre">
                                         <template slot-scope="scope">
                                             <template
                                                 v-if="
@@ -205,6 +205,26 @@
                                         width="90"
                                         property="quantity"
                                         label="Cantidad"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="name_location"
+                                        label="Ubicación"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="position"
+                                        label="Posición"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="90"
+                                        property="lot"
+                                        label="Lote"
+                                    ></el-table-column>
+                                    <el-table-column
+                                        width="100"
+                                        property="date_of_due"
+                                        label="Fecha de vencimiento"
                                     ></el-table-column>
                                 </el-table>
                                 <el-button
@@ -386,6 +406,7 @@
         <purchase-payments
             :showDialog.sync="showDialogPurchasePayments"
             :purchaseId="recordId"
+            :key="key"
             :external="true"
         ></purchase-payments>
 
@@ -435,6 +456,7 @@ export default {
             idPurchaseSelected:0,
             resource: "purchases",
             recordId: null,
+            key:Date.now(),
             showDialogOptions: false,
             showDialogPurchasePayments: false,
             showImportDialog: false,

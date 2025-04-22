@@ -43,7 +43,7 @@
             </div>
             <div class="col-md-6">
               <div class="form-group">
-                <label class="control-label">Precio Unitario</label>
+                <label class="control-label">Precio de venta</label>
                 <el-input v-model="form.sale_unit_price" type="number"></el-input>
               </div>
             </div>

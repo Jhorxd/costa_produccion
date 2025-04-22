@@ -38,6 +38,7 @@ use Modules\Item\Models\WebPlatform;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Modules\Purchase\Models\WeightedAverageCost;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
+
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -194,14 +195,13 @@ class Item extends ModelTenant
         'concentration',
         'sales_condition_id',
         'pharmaceutical_unit_type_id',
-        'sale_price',
         'lot',
         'supplier_id',
         'inventory_state_id',
         'stock_max',
         'average_usage',
-        'days_to_alert'
-        // 'warehouse_id'
+        'days_to_alert',
+        'laboratory'
     ];
 
     protected $casts = [
@@ -1046,6 +1046,7 @@ class Item extends ModelTenant
                                              ]),
             'category'                         => $detail['category'],
             'stock'                            => $stock,
+            'stock_max'                        => $this->stock_max,
             'internal_id'                      => $this->internal_id,
             'description'                      => $this->description,
             'currency_type_id'                 => $this->currency_type_id,
@@ -1358,9 +1359,9 @@ class Item extends ModelTenant
         return ((int)$this->sale_unit_price != $this->sale_unit_price) ? $this->sale_unit_price : round($this->sale_unit_price);
     }
 
-    public function getFormatSalePrice()
+    public function getFormatPurchaseUnitPrice()
     {
-        return ((int)$this->sale_price != $this->sale_price) ? $this->sale_price : round($this->sale_price);
+        return ((int)$this->purchase_unit_price != $this->purchase_unit_price) ? $this->purchase_unit_price : round($this->purchase_unit_price);
     }
 
 
@@ -2966,6 +2967,86 @@ class Item extends ModelTenant
         return $this->unit_type_id === self::SERVICE_UNIT_TYPE;
     }
 
+    //[GEORGE NOTIFICACIONES]
+    /**
+     * @param Builder $query
+     *
+     * @return Builder|\Illuminate\Database\Query\Builder
+     */
+    public function scopeProductsWithoutRotation($query){
+        /*return $query
+            ->whereNotNull('items.cod_digemid')
+            ->select('items.*')
+            ->join('cat_digemid','cat_digemid.item_id','=','items.id')
+            ;*/
+        return $query
+            ->where('items.active', 1)
+            ->select('items.id', 'items.name');
+            //->join('cat_digemid','cat_digemid.item_id','=','items.id')
+            
+    }
 
+    public static function getOverduePurchaseInvoices()
+    {
+        return DB::connection('tenant')
+            ->table('purchases as p')
+            ->select(
+                'p.id',
+                'p.series',
+                'p.number',
+                'p.date_of_due',
+                DB::raw('(p.total_taxed + p.total_exonerated + p.total_unaffected + p.total_igv) as total')
+            )
+            ->whereDate('p.date_of_due', '<', now())
+            ->where('p.total_canceled', '!=', 1)
+            ->where('p.state_type_id', '01')
+            ->whereRaw('(p.total_taxed + p.total_exonerated + p.total_unaffected + p.total_igv) > 0')
+            ->get();
+    }
+
+    public static function getProductsWithoutRecentSales($dias = 30)
+    {
+    return DB::connection('tenant')
+        ->table('items as i')
+        ->select('i.id', 'i.name')
+        ->where('i.active', 1)
+        ->whereNotExists(function ($query) use ($dias) {
+            $query->select(DB::raw(1))
+                ->from('document_items as di')
+                ->join('documents as d', 'd.id', '=', 'di.document_id')
+                ->whereRaw('di.item_id = i.id')
+                ->where('d.date_of_issue', '>=', now()->subDays($dias))
+                ->whereIn('d.state_type_id', ['01', '05']); // Aceptados
+        })
+        ->get();
+
+        /*
+        return DB::connection('tenant')
+        ->table('items as i')
+        ->select('i.id', 'i.name')
+        ->where('i.active', 1)
+        ->whereNotExists(function ($query) use ($dias) {
+            $query->select(DB::raw(1))
+                ->from('sale_note_items as sni')
+                ->join('sale_notes as sn', 'sn.id', '=', 'sni.sale_note_id')
+                ->whereRaw('sni.item_id = i.id')
+                ->where('sn.date_of_issue', '>=', now()->subDays($dias));
+        })
+        ->get();*/
+    }
+
+    public function scopeProductsWithoutRecentSales2($query)
+    {
+        return $query
+            ->where('items.active', 1)
+            ->whereNotExists(function ($subquery) {
+                $subquery->select(DB::raw(1))
+                    ->from('sale_note_items')
+                    ->join('sale_notes', 'sale_notes.id', '=', 'sale_note_items.sale_note_id')
+                    ->whereRaw('sale_note_items.item_id = items.id')
+                    ->where('sale_notes.date_of_issue', '>=', now()->subDays(30));
+            })
+            ->select('items.id', 'items.name');
+    }
 }
 

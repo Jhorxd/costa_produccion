@@ -195,7 +195,8 @@ export default {
             inventory_transactions: [],
             precision:4,
             dataModal:{location_id: '', positions: []},
-            showDialogPositions: false
+            showDialogPositions: false,
+            item_selected: {}
         }
     },
     // created() {
@@ -218,8 +219,9 @@ export default {
                     this.form.series_enabled = item.series_enabled
                 } else {
                     let item = await _.find(this.items, {'id': this.form.item_id})
-                    this.form.lots_enabled = item.lots_enabled
-                    this.form.series_enabled = item.series_enabled
+                    this.form.lots_enabled = item.lots_enabled;
+                    this.form.series_enabled = item.series_enabled;
+                    this.item_selected = item;
                 }
                 this.ChangePrecision();
             }
@@ -332,9 +334,11 @@ export default {
             await this.$http.post(`/${this.resource}/search_items`, params)
                 .then(response => {
                     let items = response.data.items;
+                    
                     if(items.length > 0) {
                         this.items = items; //filterWords(search, items);
                     }
+                    console.log(this.items);
 
                     this.enabledSearchItemsBarcode()
                 })
@@ -343,6 +347,16 @@ export default {
         async submit() {
             let total_qty =  this.form.quantity * 1;
             if (this.type === 'input') {
+
+                if(this.item_selected.stock_max>0){
+                    const stock_available = this.item_selected.stock_max-this.item_selected.stock_total;
+                    if(stock_available<=0){
+                        return this.$message.error('Ya se llegó al stock máximo');
+                    }else if((stock_available-parseInt(this.form.quantity)<0)){
+                        return this.$message.error('Solo se tiene disponible el siguiente stock: '+stock_available);
+                    }
+                }
+
                 if(this.dataModal && this.dataModal.positions.length>0){
                     this.form.data_item.location_id = this.dataModal.location_id;
                     this.form.data_item.positions = [...this.dataModal.positions.filter(element => element.is_selected)];
@@ -355,7 +369,7 @@ export default {
 
                 if (this.form.lots_enabled) {
                     if(this.form.data_item.positions.length==0)
-                        return this.$message.error('Selecciona la posición');
+                        return this.$message.error('Debe seleccionar una posición');
                     if (!this.form.lot_code)
                         return this.$message.error('Código de lote es requerido');
                     if (!this.form.date_of_due)

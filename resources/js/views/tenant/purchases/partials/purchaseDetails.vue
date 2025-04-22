@@ -29,21 +29,17 @@
                             </tr>
                         </thead>
                         <tbody v-if="Object.keys(itemData).length>0">
-                            <tr v-for="(row, index) in itemData.items" :key="index">
+                            <tr v-for="(row, index) in mappedItems" :key="index">
                                 <td class="text-center">{{ row.item.description }}</td>
                                 <td class="text-left">{{ row.data_position.warehouse_name || '-' }}</td>
                                 <td class="text-left">{{ row.data_position.location_name || '-' }}</td>
                                 <td class="text-left">{{row.data_position.position!=null?getNamePosition(row.data_position.position):'-'}}</td>
                                 <td class="text-left">{{ row.lot_code || '-'}}</td>
                                 <td class="text-center">{{ row.item.unit_type_id }}</td>
-                                <td class="text-center" v-if="enabledSelectPosition(row)">
+                                <td class="text-center" v-if="row.isPositionEnabled">
                                     <button class="btn waves-effect waves-light btn-xs btn-success"
                                             type="button"
                                             @click.prevent="clickSelectPosition(row)">Posición
-                                    </button>
-                                    <button class="btn waves-effect waves-light btn-xs btn-danger"
-                                            type="button"
-                                            @click.prevent="clickRemoveItem(index)">x
                                     </button>
                                 </td>
                                 <td class="text-center" v-else> - </td>
@@ -89,6 +85,15 @@ export default {
             stock_positions: [],
             item_selected: ''
         };
+    },
+    computed: {
+        mappedItems() {
+            // Reemplaza el optional chaining con una verificación tradicional
+            return (this.itemData.items && this.itemData.items.map(item => ({
+                ...item,
+                isPositionEnabled: this.enabledSelectPosition(item)
+            }))) || [];
+        }
     },
     async created() {
         await this.getPurchase(this.purchase_id);
@@ -147,15 +152,11 @@ export default {
             }
             return letter;
         },
-        clickRemoveItem(index){
-
-        },
-        enabledSelectPosition(item){
-            if(item.data_position.position!=null){
-                return false;
-            }else{
+        enabledSelectPosition(item) {            
+            if (item.item.position_data==undefined && item.data_position.position == null) {
                 return true;
             }
+            return false;
         },
         clickSelectPosition(item){
             this.item_selected = item;
@@ -175,12 +176,13 @@ export default {
         },
         savePositionsData(data){
             this.stock_positions=data.stock_positions;
-            this.item_selected.item.position_data = data.position_data;
+            this.$set(this.item_selected.item, 'position_data', data.position_data);
             this.positionData = this.initModalDataPosition();
         },
         async saveChanges(){
             const response = await this.$http.post(`/purchases/updatePosition`, this.itemData);
             if(response.data.success){
+                await this.getPurchase(this.purchase_id);
                 this.close();
                 this.$message.success("Cambios registrados correctamente");
             }
