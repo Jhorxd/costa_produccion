@@ -39,6 +39,7 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
 use Modules\Purchase\Models\WeightedAverageCost;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class Item
