@@ -3008,7 +3008,7 @@ class Item extends ModelTenant
     {
     return DB::connection('tenant')
         ->table('items as i')
-        ->select('i.id', 'i.name')
+        ->select('i.id', 'i.name', 'i.description')
         ->where('i.active', 1)
         ->whereNotExists(function ($query) use ($dias) {
             $query->select(DB::raw(1))
@@ -3048,5 +3048,74 @@ class Item extends ModelTenant
             })
             ->select('items.id', 'items.name');
     }
+
+    
+    public static function getItemsWithLowStock()
+    {
+        return DB::connection('tenant')
+            ->table('items')
+            ->select('id', 'name', 'description', 'stock', 'stock_min')
+            ->where('active', 1)
+            ->whereColumn('stock', '<=', 'stock_min')
+            ->get();
+    }
+
+    
+    public static function getItemsNearExpiration()
+{
+        return DB::connection('tenant')
+        ->table('items as i')
+        ->leftJoin('item_lots_group as il', function ($join) {
+            $join->on('il.item_id', '=', 'i.id')
+                 ->where('il.status', 1);
+        })
+        ->select(
+            'i.id',
+            'i.name',
+            'i.description',
+            'i.date_of_due as fecha_item',
+            'il.date_of_due as fecha_lote',
+            'il.code as code_lote',
+            'il.quantity'
+        )
+        ->where('i.active', 1)
+        ->where(function ($query) {
+            $query->whereBetween('il.date_of_due', [
+                        now()->toDateString(),
+                        now()->addDays(30)->toDateString()
+                    ])
+                  ->orWhereBetween('i.date_of_due', [
+                        now()->toDateString(),
+                        now()->addDays(30)->toDateString()
+                    ]);
+        })
+        ->orderByRaw('COALESCE(il.date_of_due, i.date_of_due) ASC')
+        ->get();
+    }
+
+    
+    public static function getDelayedSupplierDeliveries(){
+    return DB::connection('tenant')
+        ->table('purchases as p')
+        ->join('persons as per', 'per.id', '=', 'p.supplier_id')
+        ->select(
+            'p.id',
+            'p.series',
+            'p.number',
+            'p.date_of_due',
+            'per.name as proveedor'
+        )
+        ->whereDate('p.date_of_due', '<=', now()->toDateString())
+        ->where('p.state_type_id', '01')
+        ->where('p.total_canceled', 0)
+        ->whereExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('purchase_items as pi')
+                ->whereRaw('pi.purchase_id = p.id')
+                ->where('pi.is_delivered', 0);
+        })
+        ->get();
+    }
+
 }
 

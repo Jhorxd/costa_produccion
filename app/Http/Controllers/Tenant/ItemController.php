@@ -449,7 +449,7 @@ class ItemController extends Controller
         $productos_sin_rotacion = collect(Item::getProductsWithoutRecentSales(30))->map(function ($item) {
             return [
                 'codigo' => $item->id,
-                'nombre' => $item->name,
+                'nombre' => $item->name ?: $item->description,
                 'fecha' => '—',
                 'lote' => '—',
             ];
@@ -461,6 +461,33 @@ class ItemController extends Controller
                 'nombre' => 'Factura vencida',
                 'fecha' => $item->date_of_due,
                 'lote' => '—',
+            ];
+        });
+
+        $productos_stock_minimo = collect(Item::getItemsWithLowStock())->map(function ($item) {
+            return [
+                'codigo' => $item->id,
+                'nombre' =>  $item->name ?: $item->description,
+                'fecha' => '—',
+                'lote' => 'Stock: ' . $item->stock . ' / Mín: ' . $item->stock_min,
+            ];
+        });
+
+        $productos_por_vencer = collect(Item::getItemsNearExpiration())->map(function ($item) {
+            return [
+                'codigo' => $item->id,
+                'nombre' => $item->name ?: $item->description,
+                'fecha' => $item->fecha_lote ?? $item->fecha_item,
+                'lote' => $item->code_lote ?? '—',
+            ];
+        });
+
+        $proveedores_retraso = collect(Item::getDelayedSupplierDeliveries())->map(function ($item) {
+            return [
+                'codigo' => $item->series . '-' . $item->number,
+                'nombre' => $item->proveedor,
+                'fecha' => $item->date_of_due,
+                'lote' => 'No entregado',
             ];
         });
 
@@ -480,31 +507,23 @@ class ItemController extends Controller
                     'productos' => $facturas_vencidas,
                 ],
                 [
-                    'titulo' => 'Productos próximos a vencer:',
-                    'accion' => 'Tomar acción',
-                    'url' => 'https://facebook.com',
-                    'productos' => [
-                        ['codigo' => '100200', 'nombre' => 'PARACETAMOL', 'fecha' => '19/04/2025', 'lote' => 'LT1201'],
-                        ['codigo' => '100201', 'nombre' => 'IBUPROFENO', 'fecha' => '22/04/2025', 'lote' => 'LT1202'],
-                    ],
-                ],
-                [
-                    'titulo' => 'Productos sin stock (Jairo):',
+                    'titulo' => 'Stock mínimo alcanzado:',
                     'accion' => 'Revisar inventario',
-                    'url' => 'https://facebook.com',
-                    'productos' => [
-                        ['codigo' => '200101', 'nombre' => 'AMOXICILINA', 'fecha' => '—', 'lote' => '—'],
-                        ['codigo' => '200102', 'nombre' => 'NAPROXENO', 'fecha' => '—', 'lote' => '—'],
-                    ],
+                    'url' => './items',
+                    'productos' => $productos_stock_minimo,
                 ],
                 [
-                    'titulo' => 'Productos observados por auditoría:',
-                    'accion' => 'Ver detalles',
-                    'url' => 'https://facebook.com',
-                    'productos' => [
-                        ['codigo' => '300301', 'nombre' => 'CLORHIDRATO', 'fecha' => '15/03/2025', 'lote' => 'LT1234'],
-                    ],
+                    'titulo' => 'Productos próximos a vencer (30 días):',
+                    'accion' => 'Revisar vencimientos',
+                    'url' => './items',
+                    'productos' => $productos_por_vencer,
                 ],
+                [
+                    'titulo' => 'Proveedores con retraso de entrega:',
+                    'accion' => 'Ver órdenes pendientes',
+                    'url' => './purchases',
+                    'productos' => $proveedores_retraso,
+                ]
             ]
         ]);
     }
