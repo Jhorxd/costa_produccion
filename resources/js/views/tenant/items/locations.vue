@@ -5,6 +5,7 @@
       @close="close"
       @open="create"
     >
+      <h5 class="text-center" v-if="has_sales"><b>Este producto ya tiene movimientos, no podrá editar los datos de las posiciones</b></h5>
       <div class="position-container">
         <div class="boxes-scroll">
           <div class="boxes-container">
@@ -14,14 +15,14 @@
                   <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
                   <p v-if="!has_sales">Cantidad disponible: {{ box.stock_available }}</p>
                   <p v-else>Stock en uso: {{ box.stock }}</p>
-                  <div class="content-stock d-flex justify-content-center" v-if="box.is_selected && !lots_enabled">
+                  <div class="content-stock d-flex justify-content-center" v-if="box.is_selected && !lots_enabled && !has_sales">
                       <el-input type="number" class="form-control-feedback input-stock" v-model="box.stock" dusk="stock" placeholder="Cantidad" min="1"></el-input>
                   </div>
                   <el-button
                     type="primary"
                     @click="selectBox(box)"
                     :class="{ 'selected-button': box.is_selected }"
-                    :disabled="has_sales && !lots_enabled"
+                    :disabled="has_sales"
                   >
                     {{ box.is_selected ? 'Seleccionado' : 'Seleccionar' }}
                   </el-button>

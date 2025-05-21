@@ -17,7 +17,8 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
             @if($vc_company->logo)
                 <img src="{{ asset('storage/uploads/logos/' . $vc_company->logo) }}" alt="Logo" />
             @else
-                <img src="{{asset('logo/tulogo.png')}}" alt="Logo" />
+                {{-- <img src="{{asset('logo/tulogo.png')}}" alt="Logo" /> --}}
+                <img src="{{asset('logo/logo-erp.png')}}" alt="Logo" />
             @endif
         </a>
         <div class="d-md-none toggle-sidebar-left" data-toggle-class="sidebar-left-opened" data-target="html"
@@ -179,11 +180,11 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     </li>
                                 @endif
 
-                                @if(in_array('pos', $vc_module_levels))
+                                {{-- @if(in_array('pos', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'pos' && !$secondLevel) ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{ route('tenant.pos.index') }}">Punto de venta</a>
                                     </li>
-                                @endif
+                                @endif --}}
                                 <!-- GB: Hidden
                                 {{-- Venta Rápida --}}
                                 @if(in_array('pos_garage', $vc_module_levels))
@@ -353,7 +354,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                     <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
                                                     <path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
                                                 </svg>
-                                                <span>Productos/Servicios</span>
+                                                <span>Productos</span>
                                             </a>
                                             <ul class="nav nav-children">
                                                 @if(in_array('items', $vc_module_levels))
@@ -384,11 +385,11 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                         <a class="nav-link" href="{{route('tenant.brands.index')}}">Marcas</a>
                                                     </li>
                                                 @endif
-                                                @if(in_array('items_lots', $vc_module_levels))
+                                                {{-- @if(in_array('items_lots', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'item-lots') ? 'nav-active' : '' }}">
                                                         <a class="nav-link" href="{{route('tenant.item-lots.index')}}">Series</a>
                                                     </li>
-                                                @endif
+                                                @endif --}}
 
                                                 <!-- <li class="{{ ($firstLevel === 'zones')?'nav-active':'' }}">
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <a class="nav-link"
@@ -420,13 +421,13 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                             </a>
                                             <ul class="nav nav-children">
                                                 <li class="{{ ($firstLevel === 'inventory-warehouses') ? 'nav-active' : '' }}">
-                                                    <a class="nav-link" href="{{route('inventory.index2')}}">Almacén</a>
+                                                    <a class="nav-link" href="{{route('inventory.index2')}}">Almacenes</a>
                                                 </li>
                                                 <li  class="{{ ($firstLevel === 'physical-inventory') ? 'nav-active' : '' }}">
                                                     <a class="nav-link" href="{{route('inventory.physicalList')}}">Inventario Fisico</a>
                                                 </li>
                                                 <li class="{{ ($firstLevel === 'locations') ? 'nav-active' : '' }}">
-                                                    <a class="nav-link" href="{{route('locations.index')}}">Ubicación</a>
+                                                    <a class="nav-link" href="{{route('locations.index')}}">Ubicaciones</a>
                                                 </li>
                                                 @if(in_array('inventory', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'inventory') ? 'nav-active' : '' }}">
@@ -438,11 +439,11 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                         <a class="nav-link" href="{{route('transfers.index')}}">Traslados</a>
                                                     </li>
                                                 @endif
-                                                @if(in_array('inventory_devolutions', $vc_module_levels))
+                                                {{-- @if(in_array('inventory_devolutions', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'devolutions') ? 'nav-active' : '' }}">
                                                         <a class="nav-link" href="{{route('devolutions.index')}}">Devolucion a proveedor</a>
                                                     </li>
-                                                @endif
+                                                @endif --}}
                                                 @if(in_array('inventory_report_kardex', $vc_module_levels))
                                                     <li
                                                         class="{{(($firstLevel === 'reports') && ($secondLevel === 'kardex')) ? 'nav-active' : ''}}">
@@ -575,11 +576,11 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                             Egresos - M. Pago</a>
                                                     </li>
                                                 @endif
-                                                @if(in_array('purchases_expenses', $vc_module_levels))
+                                                {{-- @if(in_array('purchases_expenses', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'bank_loan') ? 'nav-active' : '' }}">
                                                         <a class="nav-link" href="{{route('tenant.bank_loan.index')}}">Credito Bancario</a>
                                                     </li>
-                                                @endif
+                                                @endif --}}
                                             </ul>
                                         </li>
                     @endif
@@ -610,12 +611,12 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         <a class="nav-link" href="{{route('tenant.dispatches.index')}}">G.R. Remitente</a>
                                     </li>
                                 @endif
-                                @if(in_array('dispatch_carrier', $vc_module_levels))
+                                {{-- @if(in_array('dispatch_carrier', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'dispatch_carrier') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{route('tenant.dispatch_carrier.index')}}">G.R.
                                             Transportista</a>
                                     </li>
-                                @endif
+                                @endif --}}
                                 @if(in_array('dispatchers', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'dispatchers') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{route('tenant.dispatchers.index')}}">Transportistas</a>
@@ -765,7 +766,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                         </li>
                     @endif
 
-                    @if(in_array('accounting', $vc_modules))
+                    {{-- @if(in_array('accounting', $vc_modules))
                         <li
                             class="nav-parent {{ ($firstLevel === 'account' || $firstLevel === 'accounting_ledger' || $firstLevel === 'sire') ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
@@ -825,7 +826,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                 </li>
                             </ul>
                         </li>
-                    @endif
+                    @endif --}}
 
                     @if(in_array('reports', $vc_modules))
                         <li
@@ -1463,7 +1464,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
                                 </path>
                             </svg>
-                            <span>Configuración y más</span>
+                            <span>Configuración General</span>
                         </a>
                     </li>
                 </ul>

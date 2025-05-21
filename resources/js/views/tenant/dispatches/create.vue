@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="page-header pr-0">
+        <div class="page-header pr-0" style="top:-10px">
             <h2><a href="/dispatches">
                 <svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-truck"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg>
             </a></h2>
@@ -409,9 +409,9 @@
                                         <template v-else>
                                             <tr>
                                                 <th>#</th>
-                                                <th class="font-weight-bold">Unidad</th>
-                                                <th class="font-weight-bold">Descripción</th>
-                                                <th class="text-end font-weight-bold">Cantidad</th>
+                                                <th class="font-weight-bold text-center">Unidad</th>
+                                                <th class="font-weight-bold text-center">Descripción</th>
+                                                <th class="font-weight-bold text-center">Cantidad</th>
                                                 <th></th>
                                             </tr>
                                         </template>

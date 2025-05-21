@@ -27,7 +27,7 @@
                 <div class="card-body">
                     <h6 class="card-title">General</h6>
                     <ul class="card-report-links">
-                        @if($vc_company->soap_type_id != '03')
+                        {{-- @if($vc_company->soap_type_id != '03')
                             <li>
                                 <a href="{{route('tenant.consistency-documents.index')}}">
                                     Consistencia documentos
@@ -60,7 +60,7 @@
                             <a href="{{route('tenant.reports.massive-downloads.index')}}">
                                 Descarga masiva - documentos
                             </a>
-                        </li>
+                        </li> --}}
                         <li>
                             <a href="{{route('tenant.reports.download-tray.index')}}">
                                 Bandeja descarga de reportes
@@ -68,7 +68,7 @@
                         </li>
                         
                         {{-- Actividades del sistema --}}
-                        <li>
+                        {{-- <li>
                             <a href="#" data-toggle="collapse" data-target="#system_activity_logs_id">
                                 Actividades del sistema
                             </a>
@@ -85,7 +85,7 @@
                                     Documentos electrónicos
                                 </a>
                             </li>
-                        </ul>
+                        </ul> --}}
                         {{-- Actividades del sistema --}}
 
                     </ul>
@@ -93,7 +93,7 @@
             </div>
         </div>
         <!-- Compras -->
-        <div class="col-6 col-md-4 mb-4">
+        {{-- <div class="col-6 col-md-4 mb-4">
             <div class="card card-dashboard card-reports">
                 <div class="card-body">
                     <h6 class="card-title">Compras</h6>
@@ -122,9 +122,9 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- Ventas -->
-        <div class="col-6 col-md-4 mb-4">
+        {{-- <div class="col-6 col-md-4 mb-4">
             <div class="card card-dashboard card-reports">
                 <div class="card-body">
                     <h6 class="card-title">Ventas</h6>
@@ -183,9 +183,9 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- Ventas/Comisiones -->
-        <div class="col-6 col-md-4 mb-4">
+        {{-- <div class="col-6 col-md-4 mb-4">
             <div class="card card-dashboard card-reports">
                 <div class="card-body">
                     <h6 class="card-title">Ventas/Comisiones</h6>
@@ -202,9 +202,9 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- Pedidos -->
-        <div class="col-6 col-md-4 mb-4">
+        {{-- <div class="col-6 col-md-4 mb-4">
             <div class="card card-dashboard card-reports">
                 <div class="card-body">
                     <h6 class="card-title">Pedidos</h6>
@@ -220,9 +220,9 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- Guias -->
-        <div class="col-6 col-md-4 mb-4">
+        {{-- <div class="col-6 col-md-4 mb-4">
             <div class="card card-dashboard card-reports">
                 <div class="card-body">
                     <h6 class="card-title">Guias</h6>
@@ -235,6 +235,6 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </div> --}}
     </div>
 @endsection

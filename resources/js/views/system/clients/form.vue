@@ -235,7 +235,7 @@
                             </div>
                             <div class="col-md-6">
                                 <span>
-                                    Habilitar apps
+                                    Habilitar Módulos
                                 </span>
                                 <div class="form-group tree-container-admin">
                                     <el-tree

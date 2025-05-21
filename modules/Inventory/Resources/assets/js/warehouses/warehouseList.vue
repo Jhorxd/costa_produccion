@@ -8,7 +8,7 @@
               <li class="active"><span>{{ title }}</span></li>
           </ol>
           <div class="right-wrapper pull-right">
-                <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i>Nuevo</button>
+                <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
                 <!--  <a href="/dashboard" class="btn btn-custom btn-sm mt-2 mr-2">
                     <i class="fa fa-plus-circle"></i>Agregar nuevo almacen</a>-->
           </div>
@@ -105,7 +105,7 @@
           }
       },
       created() {                    
-          this.title = 'Listado Almacén'
+          this.title = 'Almacenes'
 
           this.$http.get('/warehouses/recordsCustom')
             .then(response => {

@@ -49,11 +49,12 @@
     use Symfony\Component\HttpFoundation\StreamedResponse;
     use Throwable;
     use App\Models\Tenant\GeneralPaymentCondition;
-use App\Models\Tenant\ItemPosition;
-use Illuminate\Support\Facades\Log;
+    use App\Models\Tenant\ItemPosition;
+use App\Models\Tenant\Kardex;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
-use Modules\Inventory\Models\WarehouseLocationPosition;
-use Modules\Purchase\Helpers\WeightedAverageCostHelper;
+    use Modules\Inventory\Models\WarehouseLocationPosition;
+    use Modules\Inventory\Traits\InventoryTrait;
+    use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
 
     class PurchaseController extends Controller
@@ -62,6 +63,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
         use FinanceTrait;
         use StorageDocument;
         use OfflineTrait;
+        use InventoryTrait;
 
         public function index()
         {
@@ -310,6 +312,31 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             return view('tenant.purchases.form_edit', compact('resourceId'));
         }
 
+        public function saveKardex($type, $item_id, $id, $quantity, $relation) {
+
+            $kardex = Kardex::create([
+                'type' => $type,
+                'date_of_issue' => date('Y-m-d'),
+                'item_id' => $item_id,
+                'document_id' => ($relation == 'document') ? $id : null,
+                'purchase_id' => ($relation == 'purchase') ? $id : null,
+                'purchase_settlement_id' => ($relation == 'purchase_settlement') ? $id : null,
+                'sale_note_id' => ($relation == 'sale_note') ? $id : null,
+                'quantity' => $quantity,
+            ]);
+    
+            return $kardex;
+    
+        }
+
+        public function updateItemStock($item_id, $quantity, $is_sale){
+        
+            $item = Item::find($item_id);
+            $item->stock = ($is_sale) ? $item->stock - $quantity : $item->stock + $quantity;
+            $item->save();
+    
+        }
+
         public function updatePosition(Request $data){
             try {
                 DB::connection('tenant')->transaction(function () use ($data) {
@@ -379,6 +406,23 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                                     
                                     $purchase_item->item = $itemData;
                                     $purchase_item->save();
+
+                                    $purchase = Purchase::find($purchase_item->purchase_id);
+
+                                    $purchase->real_amount_due += (float) $purchase_item->total;
+
+                                    $purchase->save();
+
+                                    $presentationQuantity = (!empty($itemData['presentation'])) ? $itemData['presentation']['quantity_unit'] : 1;
+    
+                                    $warehouse = ($purchase_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id) : $this->findWarehouse();
+
+                                    $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+                                    $this->updateStock($purchase_item->item_id, ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+
+                                    $kardex = $this->saveKardex('purchase', $purchase_item->item_id, $purchase_item->purchase_id, $purchase_item->quantity, 'purchase');
+    
+                                    $this->updateItemStock($purchase_item->item_id, $kardex->quantity, false);
                                 }
                             }
                         }

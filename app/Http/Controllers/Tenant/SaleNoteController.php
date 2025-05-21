@@ -66,7 +66,8 @@ use Modules\Finance\Traits\FilePaymentTrait;
 // use App\Http\Resources\Tenant\SaleNoteGenerateDocumentResource;
 // use App\Models\Tenant\Warehouse;
 use App\CoreFacturalo\HelperFacturalo;
-
+use App\Models\Tenant\DocumentNumberSequence;
+use Illuminate\Support\Facades\Log;
 
 class SaleNoteController extends Controller
 {
@@ -614,6 +615,71 @@ class SaleNoteController extends Controller
         return $this->storeWithData($request->all());
     }
 
+    public function updateStockForSaleNote(&$items, $operation = 'subtract'){
+        foreach ($items as &$item_element) {
+            if(isset($item_element['IdLoteSelected'])){
+                if ($operation == 'add') {
+                    $item = Item::find($item_element['item_id']);
+                    if($item){
+                        $item->stock += (int) $item_element['quantity'];
+                        $item->save();
+                    }
+                }
+                foreach ($item_element['IdLoteSelected'] as $lot_element) {
+                    $lot_position = ItemPosition::where('lots_group_id', $lot_element['id'])->where('item_id', $item_element['item_id'])->first();
+                    if($lot_position){
+                        $quantity = (int)$lot_element['compromise_quantity'];
+    
+                        if ($operation === 'subtract') {
+                            $lot_position->stock -= $quantity;
+                        } elseif ($operation === 'add') {
+                            $lot_position->stock += $quantity;
+                        }
+                        $lot_position->save();
+                    }
+                }
+            }else{
+                $establishment_id = auth()->user()->establishment_id;
+                $warehouse_user_active = Warehouse::where('establishment_id', $establishment_id)->first();
+                if ($operation == 'subtract') {
+                    $item_positions = ItemPosition::where('warehouse_id', $warehouse_user_active->id)->where('item_id', $item_element['item_id'])->get();
+                    $processed_item_position_ids = [];
+                    if(!empty($item_positions)){
+                        $missing_quantity=(int)$item_element['quantity'];
+                        foreach ($item_positions as $item_position_element) {
+                            if($missing_quantity<=(int)$item_position_element->stock){
+                                $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => (int)$missing_quantity];
+                                $item_position_element->stock -= $missing_quantity;
+                                $item_position_element->save();
+                                break;
+                            }else{
+                                $processed_item_position_ids[] = ['id' => (int)$item_position_element['id'], 'stock' => $item_position_element->stock];
+                                $missing_quantity -= $item_position_element->stock;
+                                $item_position_element->stock = 0;
+                                $item_position_element->save();
+                            }
+                        }
+                        $item_element['item']['item_positions_used'] = $processed_item_position_ids;
+                    }
+                } elseif ($operation == 'add') {
+                    $item = Item::find($item_element['item_id']);
+                    if($item){
+                        $item->stock += (int) $item_element['quantity'];
+                        $item->save();
+                    }
+                    if(isset($item_element['item']['item_positions_used'])){
+                        foreach ($item_element['item']['item_positions_used'] as $position_used_element) {
+                            $item_position = ItemPosition::find($position_used_element['id']);
+                            if($item_position){
+                                $item_position->stock += (int)$position_used_element['stock'];
+                                $item_position->save(); 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public function storeWithData($inputs)
     {
@@ -626,28 +692,31 @@ class SaleNoteController extends Controller
             }
             $data = $this->mergeData($inputs);
             $this->sale_note =  SaleNote::query()->updateOrCreate(['id' => $inputs['id']], $data);
-
+            
+            //$this->updateStockForSaleNote($data['items']);
+            
             $this->deleteAllPayments($this->sale_note->payments);
-
+            
             //se elimina los items para activar el evento deleted del modelo y controlar el inventario
             $this->deleteAllItems($this->sale_note->items);
-
-
+            
+            
             foreach($data['items'] as $row)
             {
-
+                
                 // $item_id = isset($row['id']) ? $row['id'] : null;
                 $item_id = isset($row['record_id']) ? $row['record_id'] : null;
                 $sale_note_item = SaleNoteItem::query()->firstOrNew(['id' => $item_id]);
-
+                
                 if(isset($row['item']['lots'])){
                     $row['item']['lots'] = isset($row['lots']) ? $row['lots']:$row['item']['lots'];
                 }
-
+                
                 $this->setIdLoteSelectedToItem($row);
                 $sale_note_item->fill($row);
                 $sale_note_item->sale_note_id = $this->sale_note->id;
                 $sale_note_item->save();
+                Log::info("Llegue");
 
                 if(isset($row['lots'])){
 
@@ -697,7 +766,7 @@ class SaleNoteController extends Controller
 
             //pagos
             $this->savePayments($this->sale_note, $data['payments'], $isUpdate);
-
+            
             $this->setFilename();
             $this->createPdf($this->sale_note,"a4", $this->sale_note->filename);
             $this->regularizePayments($data['payments']);
@@ -928,13 +997,40 @@ class SaleNoteController extends Controller
 //        $this->createPdf();
 //    }
 
+    public static function newNumberFromSequence($document_type_id, $series)
+    {
+        return DB::transaction(function () use ($document_type_id, $series) {
+            // Bloqueamos la secuencia para esta serie y tipo de documento
+            $sequence = DocumentNumberSequence::where('type', $document_type_id)
+                                            ->where('serie', $series)
+                                            ->lockForUpdate()
+                                            ->first();
+
+            if (!$sequence) {
+                // Si la secuencia no existe, la creamos con el número inicial en 1
+                $sequence = DocumentNumberSequence::create([
+                    'type' => $document_type_id,
+                    'serie' => $series,
+                    'next_number' => 1,
+                ]);
+            }
+
+            // Obtenemos el número actual y actualizamos la secuencia
+            $nextNumber = (int)$sequence->next_number;
+            $sequence->next_number = $nextNumber + 1;
+            $sequence->save();
+
+            return $nextNumber;
+        });
+    }
+
     private function setFilename()
     {
-        $name = [$this->sale_note->series,$this->sale_note->number,date('Ymd')];
+        $number = self::newNumberFromSequence($this->sale_note->soap_type_id, $this->sale_note->series);
+        $name = [$this->sale_note->series, $number, date('Ymd')];
         $this->sale_note->filename = join('-', $name);
-
-        $this->sale_note->unique_filename = $this->sale_note->filename; //campo único para evitar duplicados
-
+        $this->sale_note->number = $number;
+        $this->sale_note->unique_filename = $this->sale_note->filename;
         $this->sale_note->save();
     }
 
@@ -1652,7 +1748,7 @@ class SaleNoteController extends Controller
             // dd($id);
             $obj =  SaleNote::find($id);
             // dd($obj);
-            $this->updateStockForAnnulmentSaleNote($obj);
+            $this->updateStockForAnnulmentSaleNote($id);
             $obj->state_type_id = 11;
             $obj->save();
 
@@ -1684,11 +1780,14 @@ class SaleNoteController extends Controller
 
     public function updateStockForAnnulmentSaleNote($id)
     {
-        $sale_note_item = SaleNoteItem::where('sale_note_id', $id)->first();
+        $sale_note_item = SaleNoteItem::where('sale_note_id', $id)->get();
+        Log::info($id);
+        Log::info($sale_note_item);
         if(!empty($sale_note_item)){
             foreach($sale_note_item as $element)
             {
                 $itemParsed = json_decode(json_encode($element['item']),true);
+                Log::info($itemParsed);
                 $item = Item::find($element['item_id']);
                 if($item){
                     $item->stock += (int)$element['quantity'];

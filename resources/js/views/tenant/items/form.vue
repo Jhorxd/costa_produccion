@@ -58,7 +58,7 @@
                                 </div>
                             </div>
                         </div> -->
-                        <div class="col-12">
+                        <div class="col-12" v-if="recordId!=null">
                             <div class="table-responsive">
                                 <table class="table table-sm mb-0 table-borderless">
                                     <thead>
@@ -467,11 +467,6 @@
                         <div class="col-md-3 d-flex align-items-end" v-if="recordId">
                             <el-button class="second-buton" @click.prevent="clickItemLocation()">{{form.has_sales?'Mostrar posiciones':'Elegir posición'}}</el-button>
                         </div>
-                        
-
-                        
-
-
 
                         <!-- <div class="col-md-3">
                             <div :class="{'has-danger': errors.currency_type_id}"
@@ -1813,6 +1808,8 @@ export default {
             if(data.length>0){
                 this.positions_selected = [];
                 this.positions_selected = data;
+                console.log(this.positions_selected);
+                
             }
         },
         setDefaultConfiguration() {
@@ -1913,11 +1910,16 @@ export default {
                             }else{
                                 position_finded.stock = 0;
                             }
+                            if (this.form.lots_enabled) {
+                                if (element.lots.length>0){
+                                    position_finded.lots = element.lots;
+                                }
+                            }
                         });
                         
-                        if(this.form.location_id!=this.location_id || this.lots_enabled_init_aux != this.form.lots_enabled){
+                        /* if(this.form.location_id!=this.location_id || this.lots_enabled_init_aux != this.form.lots_enabled){
                             this.positions_selected = [];
-                        }
+                        } */
                         
                         
                     }

@@ -40,20 +40,27 @@
 
         public function tables()
         {
-
+            $modulesToExclude = [10,11,15,16,19,20,21,22,23,24,26];
+            $levelsToExclude = [10,11,13,5,9,15,84,37,38,24,25,28,41,44,75,91,77,78];
             $url_base = '.' . config('tenant.app_url_base');
             $plans = Plan::all();
             $types = [['type' => 'admin', 'description' => 'Administrador'], ['type' => 'integrator', 'description' => 'Listar Documentos']];
-            $modules = Module::with('levels')
+            $modules = Module::with(['levels' => function ($query) use ($levelsToExclude) {
+                $query->whereNotIn('id', $levelsToExclude);
+            }])
                 ->where('sort', '<', 14)
+                ->whereNotIn('id', $modulesToExclude)
                 ->orderBy('sort')
                 ->get()
                 ->each(function ($module) {
                     return $this->prepareModules($module);
                 });
 
-            $apps = Module::with('levels')
+            $apps = Module::with(['levels' => function ($query) use ($levelsToExclude) {
+                $query->whereNotIn('id', $levelsToExclude);
+            }])
                 ->where('sort', '>', 13)
+                ->whereNotIn('id', $modulesToExclude)
                 ->orderBy('sort')
                 ->get()
                 ->each(function ($module) {

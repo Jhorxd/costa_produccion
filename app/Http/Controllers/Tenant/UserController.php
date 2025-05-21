@@ -63,12 +63,17 @@ class UserController extends Controller
                              ->pluck('module_level_id')
                              ->toArray();
 
+        $modulesToExclude = [10,11,15,16,19,20,21,22,23,24,26];
+        $levelsToExclude = [10,11,13,5,9,15,84,37,38,24,25,28,41,44,75,91,77,78];
 
-        $modules = Module::with(['levels' => function ($query) use ($levelsTenant) {
-            $query->whereIn('id', $levelsTenant);
+
+        $modules = Module::with(['levels' => function ($query) use ($levelsTenant, $levelsToExclude) {
+            $query->whereIn('id', $levelsTenant)
+                ->whereNotIn('id', $levelsToExclude);
         }])
                          ->orderBy('order_menu')
                          ->whereIn('id', $modulesTenant)
+                         ->whereNotIn('id', $modulesToExclude)
                          ->get()
                          ->each(function ($module) {
                              return $this->prepareModules($module);

@@ -944,6 +944,12 @@ class ItemController extends Controller
             /****************************** SECCION PARA EDITAR ITEM_LOTS_GROUP **********************************************/
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
             $warehouse = Warehouse::where('establishment_id',$establishment->id)->first();
+
+            $item_warehouse = ItemWarehouse::where('item_id', $id)->where('warehouse_id', $warehouse->id)->first();
+            if($item_warehouse){
+                $item_warehouse->stock = (int)$request->stock;
+                $item_warehouse->save();
+            }
             //Eliminar lotes que ya no estan
             /* $v_lots = isset($request->lots) ? $request->lots:[];
             $lots = ItemLotsGroup::where('item_id', $item->id)->get();

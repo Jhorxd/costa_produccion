@@ -200,6 +200,11 @@
                             <div class="form-group">
                                 <label class="control-label">Cantidad Actual</label>
                                 <el-input v-model="form_add.stock"
+                                          v-if="!form_add.lots_enabled"
+                                          @change="clearStockNumber"
+                                          :readonly="true"></el-input>
+                                <el-input v-model="form_add.quantity_lots"
+                                          v-else
                                           @change="clearStockNumber"
                                           :readonly="true"></el-input>
                             </div>
@@ -425,7 +430,7 @@ export default {
                     this.loading_item = false;
                 });
 
-            let row = this.items.find(x => x.id == this.form_add.item_id);
+            let row = this.items.find(x => x.id == this.form_add.item_id);            
 
             // this.form = _.clone(data);
             // this.form.lots = []; //Object.values(response.data.data.lots)
@@ -434,6 +439,8 @@ export default {
             // this.form = Object.assign({}, this.form, {'quantity_remove': 0});
 
             // this.form_add.lots = row.lots;
+            this.form_add.quantity_lots = row.lots_group.length;
+            
             this.form_add.lots_enabled = row.lots_enabled;
             this.form_add.series_enabled = row.series_enabled;
 
@@ -563,25 +570,34 @@ export default {
             /* if (!this.form_add.item_id) {
               return;
             }*/
+            if(this.form_add.lots_enabled){
+                if (parseInt(this.form_add.quantity_lots) < this.form_add.quantity) {
+                    return this.$message.error("La cantidad de lotes disponible es menor a la cantidad de traslado.");
+                }
 
-            if (parseFloat(this.form_add.stock) < 1) {
-                return this.$message.error("El stock debe ser mayor o igual a 1");
+                if (parseInt(this.form_add.quantity_lots) < 1) {
+                    return this.$message.error("La cantidad de lotes debe ser mayor o igual a 1");
+                }
+            }else{
+                if (parseInt(this.form_add.stock) < 1) {
+                    return this.$message.error("El stock debe ser mayor o igual a 1");
+                }
+
+                if (parseInt(this.form_add.stock) < this.form_add.quantity) {
+                    return this.$message.error("El stock es menor a la cantidad de traslado.");
+                }
             }
+            
 
             if (this.form_add.quantity < 1) {
                 return this.$message.error("La cantidad debe ser mayor o igual a 1");
             }
 
-            if (parseFloat(this.form_add.stock) < this.form_add.quantity) {
-                return this.$message.error("El stock es menor a la cantidad de traslado.");
-            }
-
-            if (this.form_add.series_enabled) {
-                //let selected_lots = this.form_add.lots.filter(x => x.has_sale == true).length;
+            /* if (this.form_add.series_enabled) {
                 if (parseInt(this.form_add.quantity) !== this.form_add.lots.length) {
                     return this.$message.error("La cantidad de series seleccionadas es diferente a la cantidad de traslado");
                 }
-            }
+            } */
 
             let dup = this.form.items.find(x => x.id == this.form_add.item_id);
             if (dup) {

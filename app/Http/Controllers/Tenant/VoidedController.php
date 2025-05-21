@@ -13,7 +13,8 @@ use App\Http\Requests\Tenant\VoidedRequest;
 use Carbon\Carbon;
 use App\Models\Tenant\{
     Document,
-    Configuration
+    Configuration,
+    VoidedDocument
 };
 
 
@@ -58,10 +59,13 @@ class VoidedController extends Controller
     {
         $validate = $this->validateVoided($request);
         if(!$validate['success']) return $validate;
-        
+        /* return [
+            'success' => true,
+            'message' => $request->documents,
+            'all' => $request->all()
+        ]; */
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
-            $facturalo->updateStockForAnnulmentSale($request->documents);
             $inputs = $request->all();
             $facturalo->save($inputs);
             $facturalo->createXmlUnsigned();
@@ -123,9 +127,11 @@ class VoidedController extends Controller
     public function status($voided_id)
     {
         $document = Voided::find($voided_id);
+        $documents_voided = VoidedDocument::where('voided_id', $voided_id)->first();
 
-        $fact = DB::connection('tenant')->transaction(function () use($document) {
+        $fact = DB::connection('tenant')->transaction(function () use($document, $documents_voided) {
             $facturalo = new Facturalo();
+            $facturalo->updateStockForAnnulmentSale($documents_voided->document_id);
             $facturalo->setDocument($document);
             $facturalo->setType('voided');
             $facturalo->statusSummary($document->ticket);

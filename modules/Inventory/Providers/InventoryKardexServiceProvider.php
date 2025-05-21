@@ -17,7 +17,7 @@ use Modules\Item\Models\ItemLotsGroup;
 use Modules\Item\Models\ItemLot;
 use Modules\Inventory\Models\DevolutionItem;
 use App\Models\Tenant\DispatchItem;
-
+use Illuminate\Support\Facades\Log;
 
 /**
  * Se debe tener en cuenta este provider para llevar el control de Kardex
@@ -55,15 +55,16 @@ class InventoryKardexServiceProvider extends ServiceProvider
      */
     private function purchase() {
         PurchaseItem::created(function (PurchaseItem $purchase_item) {
-
-            $presentationQuantity = (!empty($purchase_item->item->presentation)) ? $purchase_item->item->presentation->quantity_unit : 1;
-
-            $warehouse = ($purchase_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id) : $this->findWarehouse();
-            // $warehouse = $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id);
-            // $warehouse = $this->findWarehouse();
-            //$this->createInventory($purchase_item->item_id, $purchase_item->quantity, $warehouse->id);
-            $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
-            $this->updateStock($purchase_item->item_id, ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+            if($purchase_item->is_delivered){
+                $presentationQuantity = (!empty($purchase_item->item->presentation)) ? $purchase_item->item->presentation->quantity_unit : 1;
+    
+                $warehouse = ($purchase_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id) : $this->findWarehouse();
+                // $warehouse = $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id);
+                // $warehouse = $this->findWarehouse();
+                //$this->createInventory($purchase_item->item_id, $purchase_item->quantity, $warehouse->id);
+                $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+                $this->updateStock($purchase_item->item_id, ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+            }
         });
     }
 
@@ -227,6 +228,18 @@ class InventoryKardexServiceProvider extends ServiceProvider
     private function sale_note()
     {
         SaleNoteItem::created(function (SaleNoteItem $sale_note_item) {
+            $sale_note_item->load('sale_note'); 
+            $startTime = microtime(true); // Marca el inicio del tiempo
+
+            // Verifica hasta 5 segundos si el objeto 'sale_note_item' está completamente definido
+            while (is_null($sale_note_item) || !isset($sale_note_item->item)) {
+                if (microtime(true) - $startTime > 5) { // Si pasó más de 5 segundos
+                    Log::error("No se pudo obtener el sale_note_item después de 5 segundos de espera.");
+                    return; // Sale del proceso si no se encuentra el objeto después de 5 segundos
+                }
+                usleep(10000000); // Pausa por 0.1 segundo para no sobrecargar el proceso
+                // Aquí podrías intentar obtener nuevamente $sale_note_item, o esperar a que esté listo
+            }
 
             if(!$sale_note_item->item->is_set){
 
