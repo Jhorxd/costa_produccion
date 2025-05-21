@@ -925,8 +925,6 @@ export default {
             this.item_selected.item.position_data = data.position_data;
             this.item_selected.is_delivered = true;
             this.form.real_amount_due += parseFloat(this.item_selected.total);
-            console.log(this.item_selected);
-            console.log(this.form);
             
             this.stock_positions = data.stock_positions;
             this.modalDataPositions = this.initModalDataPosition();

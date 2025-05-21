@@ -226,7 +226,7 @@ export default {
         });
       });
 
-      if(this.stock_necessary>stock_total){
+      if(this.has_lots && this.stock_necessary>stock_total){
         const differenceStock = parseInt(this.stock_necessary)-parseInt(stock_total);
         this.$message.warning("Aun falta que seleccione "+differenceStock+" lote(s)");
         return; 
@@ -253,7 +253,7 @@ export default {
         });
         
         if(this.stock_necessary != 0 && this.stock_necessary!=stock_total){
-          this.$message.error("El stock total necesario es:"+this.stock_necessary);
+          this.$message.error("El stock total necesario es: "+this.stock_necessary);
           return;
         }
         this.$emit('positions-save', {

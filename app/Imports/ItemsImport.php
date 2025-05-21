@@ -16,6 +16,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Modules\Inventory\Models\InventoryTransaction;
 use Modules\Inventory\Models\Inventory;
 use Exception;
+use Illuminate\Support\Facades\Log;
 use Modules\Item\Models\ItemLotsGroup;
 use Modules\Finance\Helpers\UploadFileHelper;
 
@@ -147,8 +148,9 @@ class ItemsImport implements ToCollection
                     $item = null;
                 }
                 // $establishment_id = auth()->user()->establishment->id;
-                $pharmaceutical_unit_type = PharmaceuticalItemUnitType::updateOrCreate(['description' => $pharmaceutical_unit_type_description]);
 
+               $pharmaceutical_unit_type = PharmaceuticalItemUnitType::updateOrCreate(['description' => $pharmaceutical_unit_type_description]);
+               
                 if(!$item) {
                     $category = $category_name ? Category::updateOrCreate(['name' => $category_name]):null;
                     $brand = $brand_name ? Brand::updateOrCreate(['name' => $brand_name]):null;

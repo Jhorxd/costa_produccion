@@ -3,50 +3,55 @@
 namespace App\CoreFacturalo\Requests\Inputs;
 
 use App\Models\Tenant\Document;
+use App\Models\Tenant\DocumentNumberSequence;
 use App\Models\Tenant\Series;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Modules\Document\Models\SeriesConfiguration;
 
 class Functions
 {
     public static function newNumber($soap_type_id, $document_type_id, $series, $number, $model)
     {
-
         if ($number === '#') {
+            return DB::transaction(function () use ($soap_type_id, $document_type_id, $series, $model) {
 
-            $document = $model::select('number')
+                // Bloqueamos la secuencia para esta serie y tipo de documento
+                $sequence = DocumentNumberSequence::where('type', $document_type_id)
+                                ->where('serie', $series)
+                                ->lockForUpdate()
+                                ->first();
+
+                if (!$sequence) {
+                    // Si la secuencia no existe, buscamos el último número en los documentos existentes
+                    $document = $model::select('number')
                                     ->where('soap_type_id', $soap_type_id)
                                     ->where('document_type_id', $document_type_id)
                                     ->where('series', $series)
                                     ->orderBy('number', 'desc')
                                     ->first();
 
-            if($document){
+                    $lastNumber = ($document) ? (int)$document->number : 0;
 
-                return (int)$document->number+1;
+                    // Creamos la secuencia con el siguiente número
+                    $sequence = DocumentNumberSequence::create([
+                        'type' => $document_type_id,
+                        'serie' => $series,
+                        'next_number' => $lastNumber + 1,
+                    ]);
+                }
 
-            }else{
+                // Obtenemos el número actual y actualizamos la secuencia
+                $nextNumber = (int)$sequence->next_number;
+                $sequence->next_number = $nextNumber + 1;
+                $sequence->save();
 
-                $series_configuration = SeriesConfiguration::where([['document_type_id',$document_type_id],['series',$series]])->first();
-                return ($series_configuration) ? (int) $series_configuration->number:1;
-
-            }
-
+                return $nextNumber;
+            });
         }
 
         return $number;
-
-        // if ($number === '#') {
-        //     $document = $model::select('number')
-        //                         ->where('soap_type_id', $soap_type_id)
-        //                         ->where('document_type_id', $document_type_id)
-        //                         ->where('series', $series)
-        //                         ->orderBy('number', 'desc')
-        //                         ->first();
-        //     return ($document)?(int)$document->number+1:1;
-        // }
-        // return $number;
     }
 
     public static function filename($company, $document_type_id, $series, $number)

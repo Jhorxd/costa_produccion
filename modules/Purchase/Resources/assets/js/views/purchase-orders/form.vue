@@ -161,7 +161,8 @@
                                         :on-success="onSuccess"
                                         :limit="1"
                                     >
-                                        <el-button class="btn-archive-upload" slot="trigger" type="primary">Seleccione un archivo (PDF/JPG)
+                                        <el-button class="btn-archive-upload" slot="trigger" type="primary">Seleccione un archivo <br>
+                                            (PDF/JPG)
                                         </el-button>
                                     </el-upload>
                                     <small class="form-control-feedback" v-if="errors.file"

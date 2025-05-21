@@ -121,6 +121,8 @@
 
     @if ($vc_company->favicon)
         <link rel="shortcut icon" type="image/png" href="{{ asset($vc_company->favicon) }}" />
+    @else
+        <link rel="shortcut icon" type="image/png" href="{{ asset('images/farmaERP-logo.ico') }}" />
     @endif
     <script defer src="{{ mix('js/app.js') }}"></script>
 

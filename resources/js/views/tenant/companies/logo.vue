@@ -50,7 +50,7 @@ export default {
         src() {
             if (this.path_logo != '') return this.path_logo;
 
-            return '/logo/tulogo.png';
+            return '/logo/logo-erp.png';
         },
         div_src() {
             if (this.position_class != '') {

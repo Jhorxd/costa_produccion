@@ -24,7 +24,7 @@ use Modules\Item\Models\ItemLotsGroup;
 use Modules\Order\Models\OrderNote;
 use App\Models\Tenant\ItemSupply;
 use App\Http\Controllers\Tenant\PurchaseController;
-
+use Illuminate\Support\Facades\Log;
 
 /**
  * Se debe tener en cuenta este trait para llevar el control de Kardex
@@ -468,6 +468,7 @@ trait InventoryTrait
      */
     private function createInventoryKardexSaleNote($model, $item_id, $quantity, $warehouse_id, $sale_note_item_id)
     {
+        Log::info($warehouse_id);
         $sale_note_kardex = $model->inventory_kardex()->create([
             'date_of_issue' => date('Y-m-d'),
             'item_id' => $item_id,

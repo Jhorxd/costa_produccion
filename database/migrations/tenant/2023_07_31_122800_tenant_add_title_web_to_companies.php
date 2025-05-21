@@ -14,7 +14,7 @@ class TenantAddTitleWebToCompanies extends Migration
     public function up()
     {
         Schema::table('companies', function (Blueprint $table) {
-            $table->string('title_web')->after('api_sunat_secret')->default('Facturación Electrónica');
+            $table->string('title_web')->after('api_sunat_secret')->default('FarmaERP');
         });
     }
 
