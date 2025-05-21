@@ -75,6 +75,8 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
 use Modules\Inventory\Models\WarehouseLocationPosition;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+#Importación Momentanea para abastecer la solicitud de notificaciones
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -422,6 +424,108 @@ class ItemController extends Controller
         ];
 
         return response()->json($responseData, 200);
+    }
+
+    //GEORGE
+    public function notifications(){
+        $top_products = Item::productsWithoutRotation()->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+            ];
+        });;
+
+
+        //$records = $this->getInitialQueryRecords();
+        //$top_products = $records->whereNotService();
+
+        //dd(tenant());
+        /*$top_products = DB::table('items')
+                        ->where('status', 1) // Filtrar por status 1
+                        ->select('id', 'name') // Seleccionar id y name
+                        ->get(); // Obtener los resultados*/
+
+         // Productos sin rotación (últimos 30 días), formateados para JSON
+        $productos_sin_rotacion = collect(Item::getProductsWithoutRecentSales(30))->map(function ($item) {
+            return [
+                'codigo' => $item->id,
+                'nombre' => $item->name ?: $item->description,
+                'fecha' => '—',
+                'lote' => '—',
+            ];
+        });
+
+        $facturas_vencidas = collect(Item::getOverduePurchaseInvoices())->map(function ($item) {
+            return [
+                'codigo' => $item->series . '-' . $item->number,
+                'nombre' => 'Factura vencida',
+                'fecha' => $item->date_of_due,
+                'lote' => '—',
+            ];
+        });
+
+        $productos_stock_minimo = collect(Item::getItemsWithLowStock())->map(function ($item) {
+            return [
+                'codigo' => $item->id,
+                'nombre' =>  $item->name ?: $item->description,
+                'fecha' => '—',
+                'lote' => 'Stock: ' . $item->stock . ' / Mín: ' . $item->stock_min,
+            ];
+        });
+
+        $productos_por_vencer = collect(Item::getItemsNearExpiration())->map(function ($item) {
+            return [
+                'codigo' => $item->id,
+                'nombre' => $item->name ?: $item->description,
+                'fecha' => $item->fecha_lote ?? $item->fecha_item,
+                'lote' => $item->code_lote ?? '—',
+            ];
+        });
+
+        $proveedores_retraso = collect(Item::getDelayedSupplierDeliveries())->map(function ($item) {
+            return [
+                'codigo' => $item->series . '-' . $item->number,
+                'nombre' => $item->proveedor,
+                'fecha' => $item->date_of_due,
+                'lote' => 'No entregado',
+            ];
+        });
+
+        return response()->json([
+            'top-products' => $top_products,
+            'notificaciones' => [
+                [
+                    'titulo' => 'Productos sin Rotación en los último 30 Días:',
+                    'accion' => 'Tomar acción',
+                    'url' => './documents/create',
+                    'productos' => $productos_sin_rotacion,
+                ],
+                [
+                    'titulo' => 'Pagos Vencidos a Proveedores:',
+                    'accion' => 'Tomar acción',
+                    'url' => './purchases',
+                    'productos' => $facturas_vencidas,
+                ],
+                [
+                    'titulo' => 'Stock mínimo alcanzado:',
+                    'accion' => 'Revisar inventario',
+                    'url' => './items',
+                    'productos' => $productos_stock_minimo,
+                ],
+                [
+                    'titulo' => 'Productos próximos a vencer (30 días):',
+                    'accion' => 'Revisar vencimientos',
+                    'url' => './items',
+                    'productos' => $productos_por_vencer,
+                ],
+                [
+                    'titulo' => 'Proveedores con retraso de entrega:',
+                    'accion' => 'Ver órdenes pendientes',
+                    'url' => './purchases',
+                    'productos' => $proveedores_retraso,
+                ]
+            ]
+        ]);
     }
 
     public function record($id)

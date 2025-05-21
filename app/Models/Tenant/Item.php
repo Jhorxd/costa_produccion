@@ -38,6 +38,7 @@ use Modules\Item\Models\WebPlatform;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Modules\Purchase\Models\WeightedAverageCost;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
+
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -2966,6 +2967,155 @@ class Item extends ModelTenant
         return $this->unit_type_id === self::SERVICE_UNIT_TYPE;
     }
 
+    //[GEORGE NOTIFICACIONES]
+    /**
+     * @param Builder $query
+     *
+     * @return Builder|\Illuminate\Database\Query\Builder
+     */
+    public function scopeProductsWithoutRotation($query){
+        /*return $query
+            ->whereNotNull('items.cod_digemid')
+            ->select('items.*')
+            ->join('cat_digemid','cat_digemid.item_id','=','items.id')
+            ;*/
+        return $query
+            ->where('items.active', 1)
+            ->select('items.id', 'items.name');
+            //->join('cat_digemid','cat_digemid.item_id','=','items.id')
+            
+    }
+
+    public static function getOverduePurchaseInvoices()
+    {
+        return DB::connection('tenant')
+            ->table('purchases as p')
+            ->select(
+                'p.id',
+                'p.series',
+                'p.number',
+                'p.date_of_due',
+                DB::raw('(p.total_taxed + p.total_exonerated + p.total_unaffected + p.total_igv) as total')
+            )
+            ->whereDate('p.date_of_due', '<', now())
+            ->where('p.total_canceled', '!=', 1)
+            ->where('p.state_type_id', '01')
+            ->whereRaw('(p.total_taxed + p.total_exonerated + p.total_unaffected + p.total_igv) > 0')
+            ->get();
+    }
+
+    public static function getProductsWithoutRecentSales($dias = 30)
+    {
+    return DB::connection('tenant')
+        ->table('items as i')
+        ->select('i.id', 'i.name', 'i.description')
+        ->where('i.active', 1)
+        ->whereNotExists(function ($query) use ($dias) {
+            $query->select(DB::raw(1))
+                ->from('document_items as di')
+                ->join('documents as d', 'd.id', '=', 'di.document_id')
+                ->whereRaw('di.item_id = i.id')
+                ->where('d.date_of_issue', '>=', now()->subDays($dias))
+                ->whereIn('d.state_type_id', ['01', '05']); // Aceptados
+        })
+        ->get();
+
+        /*
+        return DB::connection('tenant')
+        ->table('items as i')
+        ->select('i.id', 'i.name')
+        ->where('i.active', 1)
+        ->whereNotExists(function ($query) use ($dias) {
+            $query->select(DB::raw(1))
+                ->from('sale_note_items as sni')
+                ->join('sale_notes as sn', 'sn.id', '=', 'sni.sale_note_id')
+                ->whereRaw('sni.item_id = i.id')
+                ->where('sn.date_of_issue', '>=', now()->subDays($dias));
+        })
+        ->get();*/
+    }
+
+    public function scopeProductsWithoutRecentSales2($query)
+    {
+        return $query
+            ->where('items.active', 1)
+            ->whereNotExists(function ($subquery) {
+                $subquery->select(DB::raw(1))
+                    ->from('sale_note_items')
+                    ->join('sale_notes', 'sale_notes.id', '=', 'sale_note_items.sale_note_id')
+                    ->whereRaw('sale_note_items.item_id = items.id')
+                    ->where('sale_notes.date_of_issue', '>=', now()->subDays(30));
+            })
+            ->select('items.id', 'items.name');
+    }
+
+    
+    public static function getItemsWithLowStock()
+    {
+        return DB::connection('tenant')
+            ->table('items')
+            ->select('id', 'name', 'description', 'stock', 'stock_min')
+            ->where('active', 1)
+            ->whereColumn('stock', '<=', 'stock_min')
+            ->get();
+    }
+
+    
+    public static function getItemsNearExpiration()
+{
+        return DB::connection('tenant')
+        ->table('items as i')
+        ->leftJoin('item_lots_group as il', function ($join) {
+            $join->on('il.item_id', '=', 'i.id')
+                 ->where('il.status', 1);
+        })
+        ->select(
+            'i.id',
+            'i.name',
+            'i.description',
+            'i.date_of_due as fecha_item',
+            'il.date_of_due as fecha_lote',
+            'il.code as code_lote',
+            'il.quantity'
+        )
+        ->where('i.active', 1)
+        ->where(function ($query) {
+            $query->whereBetween('il.date_of_due', [
+                        now()->toDateString(),
+                        now()->addDays(30)->toDateString()
+                    ])
+                  ->orWhereBetween('i.date_of_due', [
+                        now()->toDateString(),
+                        now()->addDays(30)->toDateString()
+                    ]);
+        })
+        ->orderByRaw('COALESCE(il.date_of_due, i.date_of_due) ASC')
+        ->get();
+    }
+
+    
+    public static function getDelayedSupplierDeliveries(){
+    return DB::connection('tenant')
+        ->table('purchases as p')
+        ->join('persons as per', 'per.id', '=', 'p.supplier_id')
+        ->select(
+            'p.id',
+            'p.series',
+            'p.number',
+            'p.date_of_due',
+            'per.name as proveedor'
+        )
+        ->whereDate('p.date_of_due', '<=', now()->toDateString())
+        ->where('p.state_type_id', '01')
+        ->where('p.total_canceled', 0)
+        ->whereExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('purchase_items as pi')
+                ->whereRaw('pi.purchase_id = p.id')
+                ->where('pi.is_delivered', 0);
+        })
+        ->get();
+    }
 
 }
 
