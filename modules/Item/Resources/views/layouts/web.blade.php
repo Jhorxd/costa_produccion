@@ -9,7 +9,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Facturación Electrónica</title>
+    <title>FarmaERP</title>
 
     <link href="{{ mix('css/app.css') }}" rel="stylesheet">
 

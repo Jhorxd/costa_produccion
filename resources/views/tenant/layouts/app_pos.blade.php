@@ -13,8 +13,8 @@
     <meta name="googlebot" content="noindex">
     <meta name="robots" content="noindex">
 
-    {{--    <title>{{ config('app.name', 'Facturación Electrónica') }}</title>--}}
-    <title>Facturación Electrónica</title>
+    {{--    <title>{{ config('app.name', 'FarmaERP') }}</title>--}}
+    <title>FarmaERP</title>
 
     <!-- Scripts -->
 
