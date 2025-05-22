@@ -32,7 +32,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $vc_company->title_web }}</title>
+    {{-- <title>{{ $vc_company->title_web }}</title> --}}
+    <title>FarmaERP</title>
     <meta name="googlebot" content="noindex">
     <meta name="robots" content="noindex">
 

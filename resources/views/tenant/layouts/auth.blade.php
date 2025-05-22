@@ -10,7 +10,10 @@
     <meta name="robots" content="noindex">
 
     {{--    <title>{{ config('app.name', 'FarmaERP') }}</title>--}}
-    <title>{{ $vc_company->title_web }}</title>
+    {{-- <title>{{ $vc_company->title_web }}</title> --}}
+    <title>FarmaERP</title>
+
+    <link rel="shortcut icon" type="image/png" href="{{ asset('images/farmaERP-logo.ico') }}" />
 
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
     <link rel="preconnect" href="https://fonts.gstatic.com">

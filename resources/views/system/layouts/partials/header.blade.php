@@ -1,8 +1,8 @@
 <header class="header" style="left:0;">
     <div class="logo-container">
-        <a href="{{route('system.dashboard')}}" class="logo pt-2 pt-md-0">
-            @if (file_exists(public_path('theme/logo.svg')))
-                <img class="uk-logo-inverse" width="100" height="auto" src="{{asset('theme/logo.svg')}}" alt="Logo" />
+        <a href="{{route('system.dashboard')}}" class="logo pt-2 pt-md-0 ml-2">
+            @if (file_exists(public_path('logo/logo-erp.png')))
+                <img class="uk-logo-inverse" width="100" height="auto" src="{{asset('logo/logo-erp-removebg.png')}}" alt="Logo" />
             @else
                 <i class="fa fa-circle fa-3x"></i>
             @endif

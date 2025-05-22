@@ -24,6 +24,7 @@
     @if (file_exists(public_path('theme/custom_styles.css')))
         <link rel="stylesheet" href="{{ asset('theme/custom_styles.css') }}" />
     @endif
+    <link rel="shortcut icon" type="image/png" href="{{ asset('images/farmaERP-logo.ico') }}" />
 </head>
 
 <body>
