@@ -49,7 +49,7 @@
                 </div>
                 <div class="form-actions text-right pt-2 mt-2">
                     <el-button class="second-buton" @click.prevent="close">Cancelar</el-button>
-                    <el-button @click.prevent="saveChanges" type="primary">Guardar</el-button>
+                    <el-button @click.prevent="saveChanges" type="primary" :disabled="stateSubmitButton">Guardar</el-button>
                 </div>
                 <positions
                     :key="purchase_id||0"
@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import { create } from 'lodash';
+//import { create } from 'lodash';
 import positions from './positions.vue';
 
 export default {
@@ -83,7 +83,8 @@ export default {
             positionData: {},
             showDialogSelectPosition: false,
             stock_positions: [],
-            item_selected: ''
+            item_selected: '',
+            stateSubmitButton: true
         };
     },
     computed: {
@@ -96,7 +97,6 @@ export default {
         }
     },
     async created() {
-        await this.getPurchase(this.purchase_id);
     },
     async mounted(){
         //await this.getPurchase(this.purchase_id);
@@ -113,13 +113,27 @@ export default {
                 console.log(error);
             }
         },
-        create(){
+
+        enableSubmitButton(){
+            if (this.itemData.items.length > 0) {
+                return this.itemData.items.some(item => this.enabledSelectPosition(item));
+            }
+            return false;
+        },
+        async create(){
             //console.log(this.itemData);
-            
+            await this.getPurchase(this.purchase_id);
+            this.stateSubmitButton = !this.enableSubmitButton();
+            console.log(this.itemData);
+            console.log(this.enableSubmitButton());
+        },
+        resetData(){
+            this.itemData = {};
+            this.stateSubmitButton = true;
         },
         close() {
             this.$emit('update:showDialog', false);
-            //this.resetData();
+            this.resetData();
         },
         initModalDataPosition(){
             return {

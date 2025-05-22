@@ -417,7 +417,7 @@
         ></purchase-options>
 
         <purchase-details
-            :key="idPurchaseSelected"
+            :key="key"
             :showDialog.sync="showDialogPurchaseDetails"
             :purchase_id="idPurchaseSelected">
         </purchase-details>
