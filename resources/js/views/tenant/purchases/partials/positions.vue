@@ -67,6 +67,10 @@
               <div class="box-content">
                 <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
                 <p>Stock disponible: {{ box.stock_available }}</p>
+                <el-input v-if="box.is_selected" placeholder="Cantidad"
+                  v-model="box.quantity"
+                  style="width: 100%;">
+                </el-input>
                 <el-button
                   type="primary"
                   @click="selectBox(box)"
@@ -110,13 +114,17 @@ export default {
                 item_name:'',
                 quantity:0,
                 has_lot:'',
+                current_stock: 0,
+                stock_max: 0,
+                quantity_delivered: 0
               },
               position_data:{
                 expiration_date:'',
                 lot_name:'',
                 warehouse_id:'',
                 location_id:'',
-                position_id:''
+                position_id:'',
+                quantity:0,
               },
               stock_positions:[]
             },
@@ -153,17 +161,17 @@ export default {
             const stock_position_finded = this.stock_positions.findIndex(element => element.item_id==this.dataModalLocal.item_data.item_id);
             
             if(stock_position_finded!=-1){
-              this.matrix.forEach(row => {
+              /* this.matrix.forEach(row => {
                 const finded = row.findIndex(element => element.id==this.stock_positions[stock_position_finded].position_id);
                 if(finded != -1){
-                  finded.is_selected = true;
+                  row[finded].is_selected = true;
                 }
-              });
+              }); */
 
-              const positionFinded = this.positions.findIndex(element => element.id==this.stock_positions[stock_position_finded].position_id)
+              /* const positionFinded = this.positions.findIndex(element => element.id==this.stock_positions[stock_position_finded].position_id)
               if(positionFinded!=-1){
                 this.positions[positionFinded].is_selected = true;
-              }
+              } */
             }
             
             
@@ -252,7 +260,8 @@ export default {
                         stock_available: existingPosition ? existingPosition.stock_available : 0,
                         code_location: existingPosition ? existingPosition.code_location: 'An',
                         is_selected: existingPosition ? Boolean(existingPosition.is_selected): false,
-                        exist_item: existingPosition ? Boolean(existingPosition.exist_item): false
+                        exist_item: existingPosition ? Boolean(existingPosition.exist_item): false,
+                        quantity: existingPosition ? existingPosition.quantity: 0,
                     });
                 }
                 newPositions.push(row);
@@ -290,7 +299,7 @@ export default {
                       }
                     }
                   });
-                });
+              });
               const position_finded = this.positions.find(position => position.row == box.row && position.column == box.column);
               if(position_finded){
                 position_finded.is_selected = true;
@@ -315,18 +324,54 @@ export default {
           const day = String(date.getDate()).padStart(2, '0');
           return `${year}-${month}-${day}`;
         },
+        getQuantityOfPositionSelected() {
+          for (const row of this.matrix) {
+            const findedElementIndex = row.findIndex(element => element.is_selected === true);
+            if (findedElementIndex !== -1) {
+              return parseInt(row[findedElementIndex].quantity);
+            }
+          }
+          return 0;
+        },
         saveChanges(){
           let is_one_selected = this.isOneSelected(); // verificar si hay almenos un seleccionado;
           if(!is_one_selected){
             return this.$message.error("Elige una posición");
           }
+
+          const current_stock = parseInt(this.dataModalLocal.item_data.current_stock);
+          const stock_max = parseInt(this.dataModalLocal.item_data.stock_max);
+          const quantity_selected = this.getQuantityOfPositionSelected();
+          const quantity_required = parseInt(this.dataModalLocal.item_data.quantity);
+          const quantity_delivered = parseInt(this.dataModalLocal.item_data.quantity_delivered);
+
+          console.log(quantity_required);
+          console.log(quantity_delivered);
+          
+          
+
+          if(quantity_selected>this.dataModalLocal.item_data.quantity){
+            return this.$message.error("La cantidad ingresada supera la cantidad registrada en la compra ("+(this.dataModalLocal.item_data.quantity)+")");
+          }
+
+          const quantity_available = quantity_required-quantity_delivered;
+          if(quantity_selected>quantity_available){
+            return this.$message.error("La cantidad ingresada supera la cantidad disponible de recepción ("+(quantity_available)+")");
+          }
+
+          if((current_stock+quantity_selected)>stock_max){
+            return this.$message.error("Se supera el stock máximo para el item, disponible: "+(stock_max-current_stock));
+          }
+
           const index_stock_position = this.dataModalLocal.stock_positions.findIndex(element => element.item_id == this.dataModalLocal.item_data.item_id);
           if(index_stock_position!=-1){
             this.dataModalLocal.position_data.position_id = this.dataModalLocal.stock_positions[index_stock_position].position_id;
           }
           
           this.dataModalLocal.position_data.expiration_date = this.formatDate(this.dataModalLocal.position_data.expiration_date);
+          this.dataModalLocal.position_data.quantity = quantity_selected;
           this.$emit('positions-save', this.dataModalLocal);
+          this.resetData();
           this.close();
           this.$message.success("Posición guardada correctamente");
         },
@@ -340,6 +385,9 @@ export default {
                 item_name:'',
                 quantity:0,
                 has_lot:'',
+                current_stock: 0,
+                stock_max: 0,
+                quantity_delivered: 0
               },
               position_data:{
                 expiration_date:'',

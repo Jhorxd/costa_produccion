@@ -2,7 +2,9 @@
 
 namespace App\Http\Resources\Tenant;
 
+use App\Models\Tenant\Item;
 use App\Models\Tenant\Purchase;
+use App\Models\Tenant\PurchaseItem;
 use Modules\Inventory\Models\Warehouse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
@@ -21,7 +23,7 @@ class PurchaseResource extends JsonResource
     {
         $purchase = Purchase::find($this->id);
         $purchase->purchase_payments = self::getTransformPayments($purchase->purchase_payments);
-        $purchase->items = self::getTransformItems($purchase->items);
+        $purchase->items = self::getTransformItems($purchase->items, $this->id);
         $purchase->customer_number = $purchase->customer_id ? $purchase->customer->number:null;
         $purchase->fee = $purchase->fee;
 
@@ -57,9 +59,9 @@ class PurchaseResource extends JsonResource
     }
 
 
-    public static function getTransformItems($items){
-
-        return $items->transform(function($row, $key){
+    public static function getTransformItems($items, $purchase_id){
+        return $items->transform(function($row, $key) {
+            $item = Item::select('stock_max', 'stock')->find($row->id);
             return [
                 'id' => $row->id,
                 'purchase_id' => $row->purchase_id,
@@ -99,6 +101,10 @@ class PurchaseResource extends JsonResource
                 'lots' => $row->lots,
                 'warehouse' => ($row->warehouse) ? $row->warehouse :  self::getWarehouse($row->purchase->establishment_id),
                 'name_product_pdf' => $row->name_product_pdf,
+                'is_delivered' => $row->is_delivered,
+                'stock_max' => $item->stock_max,
+                'stock' => $item->stock,
+                'quantity_delivered' => $row->quantity_delivered
             ];
         });
 

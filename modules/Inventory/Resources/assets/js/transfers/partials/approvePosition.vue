@@ -43,7 +43,7 @@
               </div>
               <el-button
                 type="primary"
-                @click="selectBox(box)"
+                @click="selectPosition(box)"
                 :class="{ 'selected-button': box.is_selected }"
                 :disabled="box.stock_available < 1 || (box.lots_group_list.length==0 && box.uses_lots) || box.stock_item==0"
               >
@@ -60,7 +60,8 @@
     </div>
     <position-lot
       :showDialog.sync = "showDialogLots"
-      :lots= "lotsBoxSelected"
+      :available_lots= "lotsPositionSelected"
+      :required_lots = "required_lots"
       :stock_necessary = "stock_necessary"
       @update-box-selected="saveLots">
     </position-lot>
@@ -90,8 +91,9 @@ export default {
       has_lots: false,
       has_positions: false,
       showDialogLots: false,
-      boxSelected: [],
-      lotsBoxSelected:[]
+      positionSelected: [],
+      lotsPositionSelected:[],
+      required_lots: []
     };
   },
   computed: {
@@ -121,17 +123,22 @@ export default {
     }
   },
   methods: {
-    saveLots(data){
-      const positionFinded = this.positions.find(element => element.id == this.boxSelected.id);
-      if(positionFinded){
-        if(positionFinded.lots_group_list.length>0){
-          positionFinded.lots_group_list = data;
-          positionFinded.is_selected = true;
-        }else{
-          positionFinded.is_selected = false;
-        }
+    async create() {      
+      this.item_id = this.dataModal.item_id || '';
+      this.positions = this.dataModal.positions ? [...this.dataModal.positions] : [];
+      
+      await this.getLocations(this.warehouse_id);
+      if (this.dataModal.location_id!=null){
+        await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id), this.warehouse_id); 
       }
+      
+      this.stock_necessary = this.dataModal.stock_necessary || 0;
+      this.has_lots = this.dataModal.has_lots || false;
+      this.has_position = this.dataModal.has_position || false;
+      this.required_lots = this.dataModal.lots;
     },
+
+    //Llamadas de datos
     async getLocations(warehouse_id) {
       await this.$http
         .get(`/${this.resource}/locations/${warehouse_id}`)
@@ -165,77 +172,33 @@ export default {
     async changeLocation() {
       await this.getPositions(this.location_id, this.item_id, this.warehouse_id);
     },
-    async create() {
-      this.item_id = this.dataModal.item_id || '';
-      await this.getLocations(this.warehouse_id);
-      this.positions = this.dataModal.positions ? [...this.dataModal.positions] : [];
-      
-      if (this.dataModal.location_id!=null){
-        
-        await this.getPositions(parseInt(this.dataModal.location_id), parseInt(this.item_id), this.warehouse_id); 
-      }
-      
-      this.stock_necessary = this.dataModal.stock_necessary || 0;
-      this.has_lots = this.dataModal.has_lots || false;
-      this.has_position = this.dataModal.has_position || false;
-    },
-    numberToLetter(number) {
-      let letter = '';
-      while (number > 0) {
-        const remainder = (number - 1) % 26;
-        letter = String.fromCharCode(65 + remainder) + letter;
-        number = Math.floor((number - 1) / 26);
-      }
-      return letter;
-    },
-    selectBox(box) {
-      console.log(box);
-      
-      if(this.has_lots){
-        this.boxSelected = box;
-        this.lotsBoxSelected = box.lots_group_list;
-        this.showDialogLots = true;
-      }else{
-        if (box.is_selected) {
-          box.is_selected = false;
-          box.stock = 0;
-        } else {        
-          // Seleccionar la nueva posición
-          box.is_selected = true;
-          box.stock = Math.min(1, box.stock_available);
-        }
-      }
-    },
-    validateStock(box) {
-      if (box.stock < 1) {
-        box.stock = 1;
-        this.$message.warning("La cantidad mínima es 1");
-      } else if (box.stock_available<=0) {
-        box.stock = 0;
-        box.is_selected = false;
-        this.$message.warning(`No hay stock disponible`);
-      }
-    },
-    saveChanges() {
+
+    getTotalQuantitySelected() {
       let stock_total = 0;
       this.positions.forEach(position_element => {
         position_element.lots_group_list.forEach(element => {
           if(element.selected){
-            stock_total++;
+            stock_total+=parseInt(element.compromise_quantity);
           }
         });
       });
+      return stock_total;
+    },
 
-      if(this.has_lots && this.stock_necessary>stock_total){
-        const differenceStock = parseInt(this.stock_necessary)-parseInt(stock_total);
-        this.$message.warning("Aun falta que seleccione "+differenceStock+" lote(s)");
-        return; 
-      }
+    saveChanges() {
+      console.log(this.positions);
+      
+      console.log(this.stock_necessary);
+      
       if (!this.location_id) {
         this.$message.error("Debes seleccionar una ubicación");
         return;
       }
-      if(this.has_lots){        
+      if(this.has_lots){
+        if(this.stock_necessary>this.getTotalQuantitySelected()){
+          this.$message.warning("Aun falta que selecciones mas lotes");
+          return; 
+        }
         this.$emit('positions-save', {
           item_id: this.item_id,
           location_id: this.location_id,
@@ -268,6 +231,35 @@ export default {
       
       this.close();
       this.$message.success("Posición guardada correctamente");
+    },  
+    numberToLetter(number) {
+      let letter = '';
+      while (number > 0) {
+        const remainder = (number - 1) % 26;
+        letter = String.fromCharCode(65 + remainder) + letter;
+        number = Math.floor((number - 1) / 26);
+      }
+      return letter;
+    },
+    selectPosition(box) {
+      console.log(box);
+      
+      if(this.has_lots){
+        this.positionSelected = box;
+        this.lotsPositionSelected = box.lots_group_list;
+        console.log(this.required_lots);
+        
+        this.showDialogLots = true;
+      }else{
+        if (box.is_selected) {
+          box.is_selected = false;
+          box.stock = 0;
+        } else {        
+          // Seleccionar la nueva posición
+          box.is_selected = true;
+          box.stock = Math.min(1, box.stock_available);
+        }
+      }
     },
     resetData() {
       this.positions = [];
@@ -277,7 +269,31 @@ export default {
     close() {
       this.$emit('update:showDialog', false);
       this.resetData();
-    }
+    },
+
+    validateStock(box) {
+      if (box.stock < 1) {
+        box.stock = 1;
+        this.$message.warning("La cantidad mínima es 1");
+      } else if (box.stock_available<=0) {
+        box.stock = 0;
+        box.is_selected = false;
+        this.$message.warning(`No hay stock disponible`);
+      }
+    },
+
+    //Método de componente modal (lotes)
+    saveLots(data){
+      const positionFinded = this.positions.find(element => element.id == this.positionSelected.id);
+      if(positionFinded){
+        if(positionFinded.lots_group_list.length>0){
+          positionFinded.lots_group_list = data;
+          positionFinded.is_selected = true;
+        }else{
+          positionFinded.is_selected = false;
+        }
+      }
+    },
   }
 };
 </script>

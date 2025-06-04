@@ -32,6 +32,7 @@ class TransferResource2 extends JsonResource
                 'barcode' => $i->barcode,
                 'has_position' => $item_positions->count()>0,
                 'has_lots' => $item_lots>0,
+                'lots' => $i->lots,
                 'location_id' => $item_positions->count()>0?$item_positions->first()->location_id:null
             ];
         }

@@ -292,8 +292,17 @@ class InventoryKardex extends ModelTenant
                 if($inventory_transfer) {
                     $data['number'] = $inventory_transfer->series.'-'.$inventory_transfer->number;
                     $data['date_of_issue'] = $inventory_transfer->created_at->format('Y-m-d');
+                    
+                    $lotCodesArray = [];
+                    $items = (array)$inventory_transfer->item;
+                    foreach ($items as $item) {
+                        foreach ($item->lots as $lot) {
+                            $lotCodesArray[] = $lot->code;
+                        }
+                    }
+                    $finalLotCodesString = implode(' - ', $lotCodesArray);
+                    $data['lots'] = !empty($finalLotCodesString) ? $finalLotCodesString : '-';
                 }
-
                 if ($inventory_kardexable->warehouse_destination_id === $user->establishment_id) {
                     $data['input'] = $output;
                     $data['output'] = $input;

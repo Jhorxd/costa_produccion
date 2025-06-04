@@ -5031,24 +5031,6 @@ export default {
             this.changeDetractionType();
         },
         clickAddItemInvoice() {
-            console.log("configuration:", this.config);
-            console.log("currency-type-id-active:", this.form.currency_type_id);
-            console.log("documentId:", this.documentId);
-            console.log("editNameProduct:", this.config.edit_name_product);
-            console.log("exchange-rate-sale:", this.form.exchange_rate_sale);
-            console.log("isEditItemNote:", this.isEditItemNote); // Assuming isEditItemNote is a property
-            console.log("operation-type-id:", this.form.operation_type_id);
-            console.log("recordItem:", this.recordItem);
-            console.log("showDialog.sync:", this.showDialogAddItem); // Assuming showDialogAddItem is a property
-            console.log("typeUser:", this.typeUser);
-            console.log("customer-id:", this.form.customer_id);
-            console.log("currency-types:", this.currency_types);
-            console.log("is-from-invoice:", this.is_from_invoice);
-            console.log("percentage-igv:", this.percentage_igv);
-            console.log("isUpdateDocument:", this.isUpdateDocument);
-            console.log("permissionEditItemPrices:", this.authUser.permission_edit_item_prices);
-            console.log("ref:", "form_add_item"); // ref is likely a string, this.ref may not be necessary.
-            console.log("selectedOptionPrice:", this.selected_option_price);
             this.recordItem = null;
             this.showDialogAddItem = true;
         },
@@ -6529,7 +6511,8 @@ export default {
             // Condicion de pago Credito con cuota pasa a credito
             if (this.form.payment_condition_id === "03")
                 this.form.payment_condition_id = "02";
-
+            console.log(path);
+            
             this.$http
                 .post(path, this.form)
                 .then(response => {

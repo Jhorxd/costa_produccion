@@ -479,7 +479,8 @@
                     </template>
                     <template v-if="!is_client">
 
-                        <div v-if="form.item_unit_types.length > 0"
+                        <!-- Lista de precios -->
+                        <!-- <div v-if="form.item_unit_types.length > 0"
                              class="col-md-12">
                             <div class="table-responsive"
                                  style="margin:3px">
@@ -501,8 +502,6 @@
                                         <th class="text-center">Precio 1</th>
                                         <th class="text-center">Precio 2</th>
                                         <th class="text-center">Precio 3</th>
-                                        <!-- <th class="text-center">Precio Default</th>
-                                        <th></th> -->
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -520,29 +519,15 @@
                                         <td>
                                             <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price3)">{{ row.price3 }}</el-button>
                                         </td>
-                                        <!-- <td class="text-center">Precio {{ row.price_default }}</td>
-                                        <td class="series-table-actions text-right">
-                                            <button :class="getSelectedClass(row)"
-                                                    class="btn waves-effect waves-light btn-xs"
-                                                    type="button"
-                                                    @click.prevent="selectedPrice(row)">
-                                                <i class="el-icon-check"></i>
-                                            </button>
-                                        </td> -->
                                     </tr>
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
+                        </div> -->
 
                         <div v-if="showDiscounts"
                              class="col-md-12 mt-2">
                             <el-collapse v-model="activePanel">
-
-                                <!--                                <el-collapse-item-->
-                                <!--                                    v-if="!(recordItem != null)"-->
-                                <!--                                    name="1"-->
-                                <!--                                    title="+ Agregar Descuentos/Cargos/Atributos especiales">-->
 
                                 <el-collapse-item name="1"
                                                   title="+ Agregar Descuentos/Cargos/Atributos especiales"
@@ -847,7 +832,7 @@ export default {
     ],
     data() {
         return {
-            showDiscounts: true,
+            showDiscounts: false,
             extra_temp: undefined,
             can_add_new_product: false,
             loading_search: false,
@@ -909,14 +894,14 @@ export default {
         
         this.$store.commit('setConfiguration', this.configuration)
         this.initForm()
-        if (this.displayDiscount !== undefined) {
+        /* if (this.displayDiscount !== undefined) {
             if (this.displayDiscount == true) {
                 this.showDiscounts = true;
             } else {
                 this.showDiscounts = false;
 
             }
-        }
+        } */
         this.$set(this.form, 'category', 'Todos'); // Asigna 'Todos' por defecto
         this.$set(this.form, 'brand', 'Todos')
     },
@@ -1835,11 +1820,6 @@ export default {
             if (this.form.item.series_enabled) {
                 if (select_lots.length != this.form.quantity)
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
-            }
-
-            if(this.form.item.stock <= 0)
-            {
-                return this.$message.error('El producto no cuenta con stock suficiente');
             }
 
             // this.row.edit = false;

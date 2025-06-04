@@ -3,7 +3,6 @@
 namespace Modules\Inventory\Providers;
 
 use App\Models\Tenant\Item;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Modules\Inventory\Models\Inventory;
 use Modules\Inventory\Traits\InventoryTrait;
@@ -33,9 +32,7 @@ class InventoryChangeServiceProvider extends ServiceProvider
             {
                 return;
             }
-            Log::info($item);
             $warehouse = ($item->warehouse_id) ? $this->findWarehouseById($item->warehouse_id) : $this->findWarehouse();
-            Log::info($warehouse);
             if(!$item->is_set){
                 $this->createInitialInventory($item->id, $item->stock, $warehouse->id);
             }else{

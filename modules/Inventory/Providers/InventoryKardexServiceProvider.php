@@ -170,7 +170,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                             foreach ($lotesSelecteds as $item)
                             {
                                 $lot = ItemLotsGroup::query()->find($item->id);
-                                $lot->quantity = $lot->quantity + (($quantity_unit * $item->compromise_quantity) * $document_factor);
+                                $lot->quantity = $lot->quantity + (($item->compromise_quantity) * $document_factor);
                                 $this->validateStockLotGroup($lot, $document_item);
                                 $lot->save();
                             }

@@ -1538,7 +1538,7 @@ class InventoryController extends Controller
                 'success' => false,
                 'message' => 'Almacenes no encontrados'
             ]);
-        }   
+        }
     }
 
     public function getLocationsById($id){

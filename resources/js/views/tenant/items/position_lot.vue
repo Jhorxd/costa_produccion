@@ -104,7 +104,7 @@
                 }
             },
             LotSelected(lot, index) {              
-                const updatedLot = { ...lot, selected: !lot.selected };
+                let updatedLot = { ...lot, selected: !lot.selected };
                 
                 if(lot.selected) {
                     const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
@@ -112,7 +112,12 @@
                         this.lots_selected.splice(lotIndex, 1);
                     }
                 } else {
-                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
+                    let lotIndex = null;
+                    if(updatedLot.id!=undefined){
+                        lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
+                    }else{
+                        lotIndex = this.lots_selected.findIndex(existingLot => existingLot.code === updatedLot.code);
+                    }
                     
                     if (lotIndex == -1) {
                         updatedLot.lots_group_id = updatedLot.id;

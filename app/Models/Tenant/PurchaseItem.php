@@ -74,7 +74,8 @@ class PurchaseItem extends ModelTenant
         'date_of_due',
         'item_lot_group_id',
         'name_product_pdf',
-        'is_delivered'
+        'is_delivered',
+        'quantity_delivered'
     ];
 
 

@@ -762,7 +762,7 @@
         <lots-group
             :lots-group="form.lots_group"
             :itemId="form.item_id"
-            :quantity="form.quantity"
+            :quantity="(parseInt(form.quantity)*parseInt(factorSelected))"
             :showDialog.sync="showDialogLots"
             @addRowLotGroup="addRowLotGroup">
         </lots-group>
@@ -922,7 +922,8 @@ export default {
             various_item: false,
             various_item_barcode: 'VARIOUS_ITEM',
             // GB
-            selectedRow: null
+            selectedRow: null,
+            factorSelected: 1,
         }
     },
     created() {
@@ -1118,6 +1119,7 @@ export default {
         // Nueva Lógica para el botón del data-table
         async selectItem(row) {
             this.form.item_id = row.id; // Asigna el ID del producto seleccionado
+            this.factorSelected = 1;
             await this.changeItem()
             this.form.description = row.description
             this.selectedRow = row;
@@ -1166,9 +1168,7 @@ export default {
             return ItemOptionDescription(item)
         },
         getTables() {
-            this.$http.get(`/${this.resource}/item/tables`).then(response => {
-                console.log(response.data);
-                
+            this.$http.get(`/${this.resource}/item/tables`).then(response => {                
                 let data = response.data
                 this.all_items = data.items
                 this.operation_types = data.operation_types
@@ -1612,6 +1612,7 @@ export default {
 
         },
         close() {
+            this.factorSelected = 1;
             this.selectedRow = null
             // this.initForm()
             this.filterItems()
@@ -1856,7 +1857,7 @@ export default {
             this.showMessageDetraction()
 
             this.$emit('add', this.row);
-
+            this.factorSelected = 1;
             this.form.description = ''
             this.form.item_id = null
             this.form.quantity=0;
@@ -1981,7 +1982,7 @@ export default {
 
                     }
                 }
-
+                this.factorSelected = row.quantity_unit;
                 this.form.item_unit_type_id = row.id
                 this.item_unit_type = row
                 this.form.unit_price = value

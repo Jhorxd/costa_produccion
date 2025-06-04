@@ -592,7 +592,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                                                                                             {{ ($firstLevel === 'drivers') ? 'nav-active nav-expanded' : '' }}
                                                                                                                             {{ ($firstLevel === 'dispatchers') ? 'nav-active nav-expanded' : '' }}
                                                                                                                             {{ ($firstLevel === 'transports') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                            {{ ($firstLevel === 'dispatch_carrier') ? 'nav-active nav-expanded' : '' }}
+                                                                                                                            {{-- {{ ($firstLevel === 'dispatch_carrier') ? 'nav-active nav-expanded' : '' }} --}}
                                                                                                                             {{ ($firstLevel === 'dispatch_addresses') ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"

@@ -278,7 +278,6 @@ class TransferController extends Controller
                 ->first();
 
             $this->checkIfExistSerie($series, $document_type_id);
-
             $row = InventoryTransfer::query()
                 ->create([
                     'description' => $request->description,
@@ -305,29 +304,6 @@ class TransferController extends Controller
                 ];
 
                 $row->update(['item' => $products]);
-
-                foreach ($it['lots'] as $lot) {
-                    // if ($lot['has_sale']) {
-                    //     $item_lot = ItemLot::findOrFail($lot['id']);
-                    //     $item_lot->warehouse_id = $inventory->warehouse_destination_id;
-                    //     $item_lot->update();
-
-                        // historico de item para traslado
-                        InventoryTransferItem::query()->create([
-                            'inventory_transfer_id' => $row->id,
-                            'item_lot_id' => $lot['id'],
-                        ]);
-                    // }
-                }
-            }
-
-            if($request->lot_groups_total) {
-                foreach($request->lot_groups_total as $lot) {
-                    InventoryTransferItem::query()->create([
-                        'inventory_transfer_id' => $row->id,
-                        'item_lots_group_id' => $lot['id'],
-                    ]);
-                }
             }
 
             DB::connection('tenant')->commit();
@@ -360,22 +336,50 @@ class TransferController extends Controller
                         if(count($it['positions'])>0){
                             foreach ($it['positions'] as $position) {
                                 foreach ($position['lots_group_list'] as $element) {
-                                    $stock_transfer += $element['stock'];
+                                    $stock_transfer += $element['compromise_quantity'];
                                     $lot = ItemLotsGroup::find($element['id']);
                                     if($lot){
-                                        $lot->warehouse_id = $request->warehouse_destination_id;
-                                        $lot->save();
+                                        if($stock_transfer==$lot->quantity){
+                                            $lot->warehouse_id = $request->warehouse_destination_id;
+                                            $lot->save();
+                                        }else{
+                                            $lot_new = $lot->replicate();
 
+                                                unset($lot_new->created_at);
+                                                unset($lot_new->updated_at);
+
+                                                $lot_new->quantity = $stock_transfer;
+
+                                                $lot_new->warehouse_id = $request->warehouse_destination_id;
+
+                                                $lot->quantity -= $stock_transfer;
+                                                $lot->save();
+
+                                                $lot_new->save();
+                                        }
                                         
                                         $lot_position = ItemPosition::find($element['item_position_id']);
                                         if($lot_position){
-                                            if(isset($request->location_destination_id) && isset($request->position_destination_id)){
-                                                $lot_position->position_id = $request->position_destination_id;
-                                                $lot_position->location_id = $request->location_destination_id;
-                                                $lot_position->warehouse_id = $request->warehouse_destination_id;
-                                                $lot_position->save();
-                                            }else{
-                                                $lot_position->delete();
+                                            if ($stock_transfer == $lot->quantity) {
+                                                if (isset($request->location_destination_id) && isset($request->position_destination_id)) {
+                                                    $lot_position->position_id = $request->position_destination_id;
+                                                    $lot_position->location_id = $request->location_destination_id;
+                                                    $lot_position->warehouse_id = $request->warehouse_destination_id;
+                                                    $lot_position->save();
+                                                } else {
+                                                    $lot_position->delete();
+                                                }
+                                            } else{
+                                                $lot_position_new = $lot_position->replicate();
+
+                                                unset($lot_position_new->created_at);
+                                                unset($lot_position_new->updated_at);
+
+                                                $lot_position_new->position_id = $request->position_destination_id;
+                                                $lot_position_new->location_id = $request->location_destination_id;
+                                                $lot_position_new->warehouse_id = $request->warehouse_destination_id;
+
+                                                $lot_position_new->save();
                                             }
                                         }
                                     }

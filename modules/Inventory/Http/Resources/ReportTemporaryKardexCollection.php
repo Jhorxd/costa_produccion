@@ -35,6 +35,7 @@ class ReportTemporaryKardexCollection extends ResourceCollection
                 'warehouse' => $row->warehouse,
                 'date_of_register' => $row->date_of_register,
                 'guide_id' => $row->guide_id,
+                'lots' => $row->lots,
             ];
 
         });

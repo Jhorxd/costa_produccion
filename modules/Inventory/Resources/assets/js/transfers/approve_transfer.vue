@@ -238,7 +238,6 @@
                                     <th width="20%" class="text-center">Cód. Barras</th>
                                     <th width="20%" class="text-center">Producto</th>
                                     <th width="15%" class="text-center">Cantidad</th>
-                                    <th width="15%" class="text-center">Unidad</th>
                                     <!-- <th width="15%">Costo</th>
                                     <th width="10%">Importe Costo</th> -->
                                     <th width="20%" class="text-center">Opciones</th>
@@ -251,7 +250,7 @@
                                     <td class="text-center">{{ index + 1 }}</td>
                                     <td class="text-center">{{ row.barcode }}</td>
                                     <td class="text-center">{{ row.description }}</td>
-                                    <td class="text-center">
+                                    <td class="text-center" v-if="!row.has_lots">
                                         <!-- {{ row.quantity }} -->
     
                                         <el-input-number v-model="row.quantity"
@@ -259,10 +258,10 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
-                                    <td class="text-center">{{ row.has_lots?'Lotes':'Unidades' }}</td>
+                                    <td v-else class="text-center">{{ row.quantity }}</td>
                                     <td class="series-table-actions text-center">
                                         <el-button
-                                            @click.prevent="SelectPositions(row)"
+                                            @click.prevent="clickPosition(row)"
                                             class="btn btn-primary btn-submit-default btn-sm"
                                             type="primary"
                                             v-if="row.has_position">Posición
@@ -310,8 +309,8 @@
             </output-lots-group-form>
 
             <approve-position
-                :showDialog.sync="showDialogPositionDestiny"
-                :dataModal.sync="selectBoxDataModal"
+                :showDialog.sync="showDialogPositionOrigin"
+                :dataModal.sync="selectedItem"
                 :warehouse_id="form.warehouse_id"
                 @positions-save="savedDataModal">
             </approve-position>
@@ -344,7 +343,7 @@ export default {
             titleDialog: null,
             showDialogLotsOutput: false,
             showDialogLotsGroup: false,
-            showDialogPositionDestiny: false,
+            showDialogPositionOrigin: false,
             resource: "transfers",
             errors: {},
             form: {},
@@ -356,7 +355,7 @@ export default {
             all_items: [],
             lotsAll: [],
             lotsGroupAll: [],
-            selectBoxDataModal:{},
+            selectedItem:{},
             showDialogPositions: false,
             dataModalPosition: {location_id: null, positions: []}
         };
@@ -407,7 +406,7 @@ export default {
             }
         },
         savedDataModal(dataModal){
-            const item = this.form.items.find(element => element.id == this.selectBoxDataModal.item_id);
+            const item = this.form.items.find(element => element.id == this.selectedItem.item_id);
             
             if(item){
                 item.dataModal = dataModal;
@@ -637,7 +636,9 @@ export default {
                 const response = await this.$http.get(`/${this.resource}/record2/${this.resourceId}`);
                 const data = response.data.data.inventory_transfer;
                 const items = response.data.data.inventory_items;
-
+                console.log(data);
+                console.log(items);
+                
                 this.form = {
                 ...this.form,
                 id: data.id,
@@ -655,7 +656,8 @@ export default {
                         positions: [],
                         stock_necessary: item.quantity,
                         has_lots: item.has_lots,
-                        has_position: item.has_position
+                        has_position: item.has_position,
+                        lots: item.lots
                     }
                 }))
                 };
@@ -802,9 +804,11 @@ export default {
             this.$refs.selectSearchNormal.$el.getElementsByTagName('input')[0].focus()
         },
 
-        SelectPositions(row){
-            this.selectBoxDataModal = row.dataModal;
-            this.showDialogPositionDestiny = true;
+        clickPosition(item){
+            this.selectedItem = item.dataModal;
+            console.log(this.selectedItem);
+            
+            this.showDialogPositionOrigin = true;
         }
     }
 };

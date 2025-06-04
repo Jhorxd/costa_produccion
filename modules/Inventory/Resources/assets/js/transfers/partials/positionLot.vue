@@ -12,8 +12,9 @@
                         <thead>
                             <tr>
                                 <th width="15%">#</th>
-                                <th width="30%">Código</th>
-                                <th width="30%">Stock</th>
+                                <th width="20%">Código</th>
+                                <th width="20%">Stock</th>
+                                <th width="20%">Cantidad solicitada</th>
                                 <th width="25%">Opciones</th>
                             </tr>
                         </thead>
@@ -22,8 +23,9 @@
                                 <td>{{ index+1 }}</td>
                                 <td>{{ lot?lot.code:'---' }}</td>
                                 <td>{{ lot?lot.stock:'---' }}</td>
+                                <td>{{ lot?lot.stock:'---' }}</td>
                                 <td>
-                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)">
+                                    <button type="button" class="btn waves-effect waves-light btn-xs" :class="lot.selected?'btn-success':'btn-info'" @click="LotSelected(lot, index)" :disabled="!lot.enabled">
                                         <i class="fa fa-check"></i>
                                     </button>
                                     <!-- <el-button type="primary" @click="LotSelected(lot, index)">{{ lot.selected?'Seleccionado':'Seleccionar' }}</el-button> -->
@@ -45,8 +47,9 @@
     export default {
         props: [
             'showDialog',
-            'lots',
-            'stock_necessary'
+            'available_lots',
+            'stock_necessary',
+            'required_lots'
         ],
         data() {
             return {
@@ -58,60 +61,55 @@
         },
         methods: {
             async create() {
-                this.lots_temp = this.lots;
+                this.lots_temp = this.available_lots;
+                console.log(this.lots_temp); 
                 
                 this.lots_temp.forEach(element => {
+                    const index_lot = this.required_lots.findIndex( required_lot => required_lot.id == element.id);
+                    element.enabled = index_lot!=-1 ? true : false;
+                    element.compromise_quantity = 0;
                     this.$set(element, 'selected', element.selected || false);
                 });
-                
-                /* if(this.box_selected.lots.length>0){
-                    this.lots_selected = [...this.box_selected.lots];
-                    
-                    this.lots_selected.forEach(element => {
-                        if(element.lots_group){
-                            element.code = element.lots_group.code;
-                        }
-                        const lots_finded = this.lots_temp.find(lot => lot.id == element.lots_group.id);
-                        if(lots_finded){
-                            lots_finded.selected = true;
-                        }
-                    });
-                } */
+                console.log(this.lots_temp);
             },
             LotSelected(lot, index){
-                this.$set(lot, 'selected', !lot.selected);
-                
-                /* if(lot.selected){
-                    const lotIndex = this.lots_selected.findIndex(existingLot => existingLot.lots_group_id === updatedLot.id);
-                    if (lotIndex !== -1)
-                        this.lots_selected.splice(lotIndex, 1);
-                }else{
-                    const lotExists = this.lots_selected.find(existingLot => existingLot.id === updatedLot.id);
-                    if (!lotExists){
-                        updatedLot.lots_group_id = updatedLot.id;
-                        updatedLot.stock = updatedLot.quantity;
-                        
-                        this.lots_selected.push(updatedLot);
+                const index_lot = this.required_lots.findIndex( required_lot => required_lot.id == lot.id);
+                if(index_lot!=-1){
+                    const quantity_required = parseInt(this.required_lots[index_lot].compromise_quantity);
+                    if(quantity_required>parseInt(lot.stock)){
+                        this.$message.warning("No hay stock suficiente en esta posición");
                     }
+
+                    this.$set(lot, 'compromise_quantity', this.required_lots[index_lot].compromise_quantity);
+                    this.$set(lot, 'selected', !lot.selected);
                 }
-                this.lots_temp.splice(index, 1, updatedLot); */
             },
-            submit(){           
+            /* getTotalQuantitySelected(){
                 let stock_total = 0;
                 this.lots_temp.forEach(element => {
-                    if(element.selected)
-                        stock_total++;
-                }); 
+                    if(element.selected){
+                        const index_lot = this.required_lots.findIndex( required_lot => required_lot.id == element.id);
+                        if(index_lot!=-1){
+                            const quantity_required = this.required_lots[index_lot].compromise_quantity;
+                            stock_total+=parseInt(quantity_required);
+                        }
+                    }
+                });
+                return stock_total;
+            }, */
+            submit(){
                 /* if(this.stock_necessary>stock_total){
                     const differenceStock = parseInt(this.stock_necessary)-parseInt(stock_total);
                     this.$message.warning("Aun falta que seleccione "+differenceStock+" lote(s)");
                     return;
                 } */
                 
-                if(stock_total>this.stock_necessary){
+                /* if(stock_total>this.stock_necessary){
                     this.$message.warning("Lotes seleccionados de forma excesiva, la cantidad necesaria es "+this.stock_necessary+" lote(s)");
                     return;
-                }
+                } */
+               console.log(this.lots_temp);
+               
                 this.$emit('update-box-selected',this.lots_temp);
                 this.close();
             },

@@ -94,7 +94,7 @@
             } ///* Module advanced */
             elseif (
                 $firstLevel == "retentions" ||
-                $firstLevel == "dispatches" ||
+                //$firstLevel == "dispatches" ||
                 $firstLevel == "dispatch_carrier" ||
                 $firstLevel == "perceptions") {
                 $group = "advanced";

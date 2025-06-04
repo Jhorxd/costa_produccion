@@ -716,7 +716,6 @@ class SaleNoteController extends Controller
                 $sale_note_item->fill($row);
                 $sale_note_item->sale_note_id = $this->sale_note->id;
                 $sale_note_item->save();
-                Log::info("Llegue");
 
                 if(isset($row['lots'])){
 
@@ -742,7 +741,7 @@ class SaleNoteController extends Controller
                         foreach ($id_lote_selected as $item)
                         {
                             $lot = ItemLotsGroup::query()->find($item['id']);
-                            $lot->quantity = $lot->quantity - ($quantity_unit * $item['compromise_quantity']);
+                            $lot->quantity = $lot->quantity - ($item['compromise_quantity']);
                             $this->validateStockLotGroup($lot, $sale_note_item);
                             $lot->save();
                         }
@@ -1781,13 +1780,10 @@ class SaleNoteController extends Controller
     public function updateStockForAnnulmentSaleNote($id)
     {
         $sale_note_item = SaleNoteItem::where('sale_note_id', $id)->get();
-        Log::info($id);
-        Log::info($sale_note_item);
         if(!empty($sale_note_item)){
             foreach($sale_note_item as $element)
             {
                 $itemParsed = json_decode(json_encode($element['item']),true);
-                Log::info($itemParsed);
                 $item = Item::find($element['item_id']);
                 if($item){
                     $item->stock += (int)$element['quantity'];

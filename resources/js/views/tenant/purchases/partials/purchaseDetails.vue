@@ -36,7 +36,7 @@
                                 <td class="text-left">{{row.data_position.position!=null?getNamePosition(row.data_position.position):'-'}}</td>
                                 <td class="text-left">{{ row.lot_code || '-'}}</td>
                                 <td class="text-center">{{ row.item.unit_type_id }}</td>
-                                <td class="text-center" v-if="row.isPositionEnabled">
+                                <td class="text-center" v-if="!row.is_delivered">
                                     <button class="btn waves-effect waves-light btn-xs btn-success"
                                             type="button"
                                             @click.prevent="clickSelectPosition(row)">Posición
@@ -116,7 +116,7 @@ export default {
 
         enableSubmitButton(){
             if (this.itemData.items.length > 0) {
-                return this.itemData.items.some(item => this.enabledSelectPosition(item));
+                return this.itemData.items.some(item => item.is_delivered==0);
             }
             return false;
         },
@@ -142,6 +142,9 @@ export default {
                     item_name:'',
                     quantity:0,
                     has_lot:'',
+                    current_stock: 0,
+                    stock_max: 0,
+                    quantity_delivered: 0
                 },
                 position_data:{
                     expiration_date:'',
@@ -183,6 +186,9 @@ export default {
             this.positionData.item_data.item_name = item.item.description;
             this.positionData.item_data.quantity = parseInt(item.quantity);
             this.positionData.item_data.has_lot = item.item.lots_enabled;
+            this.positionData.item_data.current_stock = item.stock;
+            this.positionData.item_data.stock_max = item.stock_max;
+            this.positionData.item_data.quantity_delivered = item.quantity_delivered;
 
             this.positionData.stock_positions = this.stock_positions;
 
@@ -194,6 +200,7 @@ export default {
             this.positionData = this.initModalDataPosition();
         },
         async saveChanges(){
+            console.log(this.itemData);
             const response = await this.$http.post(`/purchases/updatePosition`, this.itemData);
             if(response.data.success){
                 await this.getPurchase(this.purchase_id);

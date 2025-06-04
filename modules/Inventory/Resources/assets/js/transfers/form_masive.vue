@@ -71,7 +71,7 @@
                                 <el-button
                                     type="primary"
                                     @click.prevent="clickSelectPosition"
-                                >Mostrar ubicaciones
+                                >Posición de destino
                                 </el-button>
                             </div>
                         </div>
@@ -196,31 +196,27 @@
                                 </el-checkbox>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div :class="form_add.lots_enabled?'col-md-4':'col-md-2'">
                             <div class="form-group">
                                 <label class="control-label">Cantidad Actual</label>
                                 <el-input v-model="form_add.stock"
-                                          v-if="!form_add.lots_enabled"
-                                          @change="clearStockNumber"
-                                          :readonly="true"></el-input>
-                                <el-input v-model="form_add.quantity_lots"
-                                          v-else
                                           @change="clearStockNumber"
                                           :readonly="true"></el-input>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label class="control-label">Cantidad a Trasladar</label>
+                        <div class="col-md-2" :class="form_add.lots_enabled ? 'd-flex align-items-center': ''">
+                            <div class="form-group" v-if="!form_add.lots_enabled">
+                                <label class="control-label" >Cantidad a Trasladar</label>
                                 <el-input v-model="form_add.quantity"
                                           @change="clearQuantyNumber"
                                           type="number"></el-input>
                             </div>
-                        </div>
-                        <div class="col-md-2" v-if="form_add.item_id!=null">
-                            <div class="form-group">
-                                <label class="control-label">Unidad</label>
-                                <el-input :value="getIsUsesLots()" readonly></el-input>
+                            <div class="form-group" v-else>
+                                    <a class="text-center font-weight-bold text-info"
+                                href="#"
+                                @click.prevent="clickLotGroup">[&#10004;
+                                    Seleccionar
+                                    lote]</a>
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -258,7 +254,7 @@
                                     <td class="text-center">{{ index + 1 }}</td>
                                     <td class="text-center">{{ row.barcode || '---' }}</td>
                                     <td class="text-center">{{ row.description }}</td>
-                                    <td class="text-center">
+                                    <td class="text-center" v-if="!row.lots_enabled">
                                         <!-- {{ row.quantity }} -->
     
                                         <el-input-number v-model="row.quantity"
@@ -266,6 +262,7 @@
                                                          :step="1"
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
+                                    <td v-else class="text-center">{{ row.quantity }}</td>
                                     <td class="text-center">{{ row.purchase_unit_price }}</td>
     
                                     <td class="series-table-actions text-center">
@@ -301,7 +298,7 @@
                 :showDialog.sync="showDialogLotsOutput"
                 @addRowOutputLot="addRowOutputLot"></output-lots-form>
     
-            <output-lots-group-form
+            <!-- <output-lots-group-form
                 :showDialog.sync="showDialogLotsGroup"
                 :itemId="form_add.item_id"
                 :lots-group-all="lotsGroupAll"
@@ -309,7 +306,7 @@
                 :quantity="form_add.quantity"
                 @addRowLotGroup="addRowLotGroup"
                 :compromise-all-quantity="true">
-            </output-lots-group-form>
+            </output-lots-group-form> -->
 
             <positions 
                 :showDialog.sync="showDialogPositions" 
@@ -317,6 +314,15 @@
                 :warehouse_id="form.warehouse_destination_id"
                 @positions-save="saveDataModalPositions">
             </positions>
+
+            <lots-group
+                :lotsGroupAll="lotsGroupAll"
+                :lotsGroup="lotsAll"
+                :itemId="form_add.item_id"
+                :quantity="quantity_required"
+                :showDialog.sync="showDialogLots"
+                @addRowLotGroup="addRowLotGroup">
+            </lots-group>
         </div>
     </div>
 </template>
@@ -328,10 +334,11 @@ import OutputLotsGroupForm from '../../../../../../resources/js/views/tenant/doc
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../../../../resources/js/helpers/modal_item";
 import {filterWords} from "../../../../../../resources/js/helpers/functions";
 import positions from './partials/positions.vue';
+import lotsGroup from './partials/lots_group.vue';
 
 export default {
     props: [],
-    components: {OutputLotsForm, OutputLotsGroupForm, positions},
+    components: {OutputLotsForm, OutputLotsGroupForm, positions, lotsGroup},
     data() {
         return {
             loading_item: false,
@@ -339,6 +346,7 @@ export default {
             titleDialog: null,
             showDialogLotsOutput: false,
             showDialogLotsGroup: false,
+            showDialogLots: false,
             resource: "transfers",
             errors: {},
             form: {},
@@ -352,7 +360,8 @@ export default {
             lotsGroupAll: [],
             //modal positions: 
             showDialogPositions: false,
-            dataModalPosition: {location_id: null, positions: []}
+            dataModalPosition: {location_id: null, positions: []},
+            quantity_required: 0,
         };
     },
     async created() {
@@ -367,6 +376,9 @@ export default {
         this.initFormAdd();
     },
     methods: {
+        clickLotGroup(){
+            this.showDialogLots = true;
+        },
         getIsUsesLots(){
             const elementFinded = this.items.find(element => element.id == this.form_add.item_id)
             
@@ -405,12 +417,16 @@ export default {
             }
         },
         saveDataModalPositions(data){
-            console.log(data);
-            
             this.dataModalPosition = data;
+            console.log(this.dataModalPosition);
         },
-        addRowLotGroup(id) {
-            this.form.selected_lots_group = id
+        addRowLotGroup(lots_selecteds) {
+            let total_compromise_quantity = 0;
+            lots_selecteds.forEach(element => {
+                total_compromise_quantity += element.compromise_quantity; 
+            });
+            this.form_add.quantity = total_compromise_quantity;
+            this.form_add.lots = lots_selecteds;
         },
         addRowOutputLot(lots) {
             let row = this.items.find(x => x.id == this.form_add.item_id);
@@ -430,7 +446,7 @@ export default {
                     this.loading_item = false;
                 });
 
-            let row = this.items.find(x => x.id == this.form_add.item_id);            
+            let row = this.items.find(x => x.id == this.form_add.item_id);
 
             // this.form = _.clone(data);
             // this.form.lots = []; //Object.values(response.data.data.lots)
@@ -567,14 +583,7 @@ export default {
             })
         },
         clickAddItem() {
-            /* if (!this.form_add.item_id) {
-              return;
-            }*/
             if(this.form_add.lots_enabled){
-                if (parseInt(this.form_add.quantity_lots) < this.form_add.quantity) {
-                    return this.$message.error("La cantidad de lotes disponible es menor a la cantidad de traslado.");
-                }
-
                 if (parseInt(this.form_add.quantity_lots) < 1) {
                     return this.$message.error("La cantidad de lotes debe ser mayor o igual a 1");
                 }
@@ -587,17 +596,10 @@ export default {
                     return this.$message.error("El stock es menor a la cantidad de traslado.");
                 }
             }
-            
 
             if (this.form_add.quantity < 1) {
                 return this.$message.error("La cantidad debe ser mayor o igual a 1");
             }
-
-            /* if (this.form_add.series_enabled) {
-                if (parseInt(this.form_add.quantity) !== this.form_add.lots.length) {
-                    return this.$message.error("La cantidad de series seleccionadas es diferente a la cantidad de traslado");
-                }
-            } */
 
             let dup = this.form.items.find(x => x.id == this.form_add.item_id);
             if (dup) {
@@ -605,14 +607,16 @@ export default {
             }
 
             let row = this.items.find(x => x.id == this.form_add.item_id);
+            
             this.form.items.push({
                 id: row.id,
                 description: row.description,
                 barcode: row.barcode,
                 purchase_unit_price: row.purchase_unit_price,
-                current_stock: parseFloat(this.form_add.stock),
+                current_stock: parseInt(this.form_add.stock),
                 quantity: this.form_add.quantity,
-                lots: this.form_add.lots
+                lots: this.form_add.lots,
+                lots_enabled: row.lots_enabled
             });
 
             // cargamos lotes seleccionados previamentes
@@ -646,10 +650,18 @@ export default {
                 lot_groups_total: [],
             };
         },
-        async submit() {
+        async submit() {            
             if (this.form.items.length == 0) {
                 return this.$message.error("Debe agregar productos.");
+            }            
+            const hasInvalidLot = this.form.items.some(element => {
+                return element.lots_enabled && 
+                    (this.dataModalPosition.location_id == null || this.dataModalPosition.positions.length === 0);
+            });
+            if (hasInvalidLot) {
+                return this.$message.error("Registre una posición de destino");
             }
+
             if(this.dataModalPosition.location_id!=null){
                 this.form.location_destination_id = this.dataModalPosition.location_id;
             }
@@ -660,7 +672,6 @@ export default {
                     }
                 });
             }
-            console.log(this.form);
             
             this.loading_submit = true;
             await this.$http

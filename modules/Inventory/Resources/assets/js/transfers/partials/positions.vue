@@ -68,12 +68,16 @@ export default {
     methods: {
         async create() {
           this.positions = [...this.dataModal.positions];
-          if(this.dataModal.positions!=null){
+          await this.getLocations(this.warehouse_id); //llenamos locations
+          
+          if(this.dataModal.location_id!=null && this.dataModal.positions.length>0){
             this.location_id = {...this.dataModal.location_id};
+          }else if(this.locations.length>0){
+            this.location_id = this.locations[0].id;
+            await this.getPositions(this.location_id);
           }else{
             this.location_id = '';
           }
-          await this.getLocations(this.warehouse_id); //llenamos locations
           if (this.positions.length>0){
             this.buildMatrix(this.positions);
           }
@@ -180,7 +184,6 @@ export default {
             positions: []
           };
           let is_one_selected = this.isOneSelected(); // verificar si hay almenos un seleccionado;
-          console.log(is_one_selected);
           
           if(this.location_id!=null && this.positions.length>0 && is_one_selected){
             data.location_id = this.location_id;

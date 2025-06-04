@@ -84,6 +84,8 @@ export default {
             this.resetData();
         },
         async create() {
+            console.log(this.lots);
+          
             this.buildMatrix(this.positions);
             this.selects_temp = [...this.positions_selected];
         },

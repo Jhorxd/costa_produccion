@@ -358,17 +358,13 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
                                     $enabled_add_position=true;
                                     $position->quantity_used+=1;
                                 }
-                                /* return [
-                                    'stock_available' => $stock_available,
-                                    'enabled_add_position' => $enabled_add_position
-                                ]; */
                             }
                             
                             if($enabled_add_position){
                                 if($item['lots_enabled']){
                                     $lot_new = new ItemLotsGroup();
                                     $lot_new->code = $position_data['lot_name'];
-                                    $lot_new->quantity = $row['quantity'];
+                                    $lot_new->quantity = (int)$position_data['quantity'];
                                     $lot_new->date_of_due = $position_data['expiration_date'];
                                     $lot_new->item_id = $row['item_id'];
                                     $lot_new->status = 1;
@@ -378,23 +374,24 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
                                     $item_position_new = new ItemPosition();
                                     $item_position_new->item_id = $row['item_id'];
                                     $item_position_new->lots_group_id = $lot_new->id;
-                                    $item_position_new->stock = $row['quantity'];
+                                    $item_position_new->stock = (int)$position_data['quantity'];
                                     $item_position_new->position_id = $position_data['position_id'];
                                     $item_position_new->location_id = $position_data['location_id'];
                                     $item_position_new->warehouse_id = $position_data['warehouse_id'];
                                     $item_position_new->save();
                                 }else{
-                                    ItemPosition::updateOrCreate(
+                                    $itemPosition = ItemPosition::firstOrNew(
                                         [
                                             'item_id' => $row['item_id'],
                                             'position_id' => $position_data['position_id'],
                                             'location_id' => $position_data['location_id'],
                                             'warehouse_id' => $position_data['warehouse_id'],
-                                        ],
-                                        [
-                                            'stock' => $row['quantity'],
                                         ]
                                     );
+
+                                    $itemPosition->stock = ($itemPosition->stock ?? 0) + (int)$position_data['quantity'];
+
+                                    $itemPosition->save();
                                 }
         
                                 $position->save();
@@ -405,6 +402,12 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
                                     $itemData['position_data'] = $position_data;
                                     
                                     $purchase_item->item = $itemData;
+                                    $purchase_item->quantity_delivered += (int)$position_data['quantity'];
+
+                                    if((int)$row['quantity']==$purchase_item->quantity_delivered){
+                                        $purchase_item->is_delivered = 1;
+                                    }
+
                                     $purchase_item->save();
 
                                     $purchase = Purchase::find($purchase_item->purchase_id);
@@ -417,10 +420,10 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
     
                                     $warehouse = ($purchase_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id) : $this->findWarehouse();
 
-                                    $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
-                                    $this->updateStock($purchase_item->item_id, ($purchase_item->quantity * $presentationQuantity), $warehouse->id);
+                                    $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ((int)$position_data['quantity'] * $presentationQuantity), $warehouse->id);
+                                    $this->updateStock($purchase_item->item_id, ((int)$position_data['quantity'] * $presentationQuantity), $warehouse->id);
 
-                                    $kardex = $this->saveKardex('purchase', $purchase_item->item_id, $purchase_item->purchase_id, $purchase_item->quantity, 'purchase');
+                                    $kardex = $this->saveKardex('purchase', $purchase_item->item_id, $purchase_item->purchase_id, (int)$position_data['quantity'], 'purchase');
     
                                     $this->updateItemStock($purchase_item->item_id, $kardex->quantity, false);
                                 }

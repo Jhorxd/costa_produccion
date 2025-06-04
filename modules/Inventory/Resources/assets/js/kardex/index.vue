@@ -9,6 +9,7 @@
             <th>NV. Asociada</th>
             <th>Pedido</th>
             <th>Doc. Asociado</th>
+            <th>Lotes</th>
             <th>Fecha emisión</th>
             <th>Fecha registro</th>
             <th>Entrada</th>
@@ -29,6 +30,7 @@
             <td>{{ row.sale_note_asoc }}</td>
             <td>{{ row.order_note_asoc }}</td>
             <td>{{ row.doc_asoc }}</td>
+            <td>{{ row.lots ? row.lots : '-' }}</td>
             <td>{{ row.date_of_issue }}</td>
             <td>{{ row.date_of_register }}</td>
             <!-- <td>{{ row.inventory }}</td> -->

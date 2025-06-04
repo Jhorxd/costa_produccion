@@ -384,6 +384,7 @@
                                                 <td>
                                                     <el-date-picker
                                                         v-model="row.date"
+                                                        @change="changeDateOfPaymentMethod"
                                                         :clearable="false"
                                                         format="dd/MM/yyyy"
                                                         type="date"
@@ -416,6 +417,7 @@
                                                     :key="index">
                                                     <td>
                                                         <el-date-picker v-model="row.date"
+                                                                        @change="changeDateOfPaymentMethod"
                                                                         :clearable="false"
                                                                         format="dd/MM/yyyy"
                                                                         type="date"
@@ -518,10 +520,10 @@
                                                         @click.prevent="clickOpenSeries(index, row.quantity, row.lots)">
                                                     Series
                                                 </button>
-                                                <button class="btn waves-effect waves-light btn-xs btn-success"
+                                                <!-- <button class="btn waves-effect waves-light btn-xs btn-success"
                                                         type="button"
                                                         @click.prevent="clickSelectPosition(row)">Posición
-                                                </button>
+                                                </button> -->
                                                 <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                         type="button"
                                                         @click.prevent="clickRemoveItem(index)">x
@@ -725,13 +727,13 @@
                 @saveInputLotGroup="saveInputLotGroup">
             </input-lot-group>
 
-            <positions
+            <!-- <positions
                 :key="keyPosition"
                 :dataModal="modalDataPositions"
                 :showDialog.sync="showDialogSelectPosition"
                 @positions-save="savePositionsData"
                 ref="positions">
-            </positions>
+            </positions> -->
     
         </div>
     </div>
@@ -820,7 +822,7 @@ export default {
             rowIndex: -1,
             typeUser: null,
             showDialogSelectPosition:false,
-            modalDataPositions:[],
+            /* modalDataPositions:[], */
             stock_positions:[],
             item_selected: null,
             keyPosition:0
@@ -905,7 +907,7 @@ export default {
                 stock_positions:[]
             }
         },
-        clickSelectPosition(data){            
+        /* clickSelectPosition(data){            
             this.modalDataPositions = this.initModalDataPosition();
             this.modalDataPositions.item_data.item_id = data.item_id;
             this.modalDataPositions.item_data.item_name = data.item.description;
@@ -920,15 +922,15 @@ export default {
 
             this.showDialogSelectPosition=true;
             
-        },
-        savePositionsData(data){
+        }, */
+        /* savePositionsData(data){
             this.item_selected.item.position_data = data.position_data;
             this.item_selected.is_delivered = true;
             this.form.real_amount_due += parseFloat(this.item_selected.total);
             
             this.stock_positions = data.stock_positions;
             this.modalDataPositions = this.initModalDataPosition();
-        },
+        }, */
         saveInputLotGroup(params)
         {
             this.form.items[params.index].lot_code = params.data.lot_code
@@ -1238,12 +1240,23 @@ export default {
                 }
 
             } else {
-
-                this.form.date_of_due = this.form.date_of_issue
+                this.changeDateOfPaymentMethod();
                 this.readonly_date_of_due = false
 
             }
 
+        },
+        changeDateOfPaymentMethod(){
+            const momentDates = this.form.fee.map(item => moment(item.date));
+            let latestDate = null;
+            if (momentDates.length > 0) {
+                latestDate = moment.max(momentDates);
+            }
+            if (latestDate) {
+                this.form.date_of_due = latestDate.format('YYYY-MM-DD');
+            } else {
+                this.form.date_of_due = this.form.date_of_issue;
+            }
         },
         inputTotalPerception() {
             this.total_amount = parseFloat(this.form.total) + parseFloat(this.form.total_perception)
