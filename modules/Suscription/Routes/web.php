@@ -122,6 +122,5 @@
                     
                     Route::post('CommonData','SuscriptionController@Tables');
                 });
-        })
-        ;
+        });
     }

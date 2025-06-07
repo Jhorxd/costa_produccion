@@ -127,7 +127,6 @@
     @endif
     <script defer src="{{ mix('js/app.js') }}"></script>
 
-    <script async src="https://social.buho.la/pixel/y9nonmie9j8dkwha20ct2ua7nwsywi2m"></script>
     <script>
         (async function () {
             const savedTheme = @json($visual->sidebar_theme);

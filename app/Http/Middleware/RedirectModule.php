@@ -34,7 +34,7 @@
             $path = explode('/', $request->path());
             $modules = $request->user()->getModules();
             $this->route_path = $request->path();
-
+            //dd("Module level");
 
             if (!$request->ajax()) {
 
