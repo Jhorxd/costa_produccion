@@ -360,13 +360,13 @@
                                 </button>
                             </template>
 
-                            <button
+                            <!-- <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info"
                                 @click.prevent="clickOptions(row.id)"
                             >
                                 C. Electrónico
-                            </button>
+                            </button> -->
                         </td>
                     </tr>
                 </data-table>

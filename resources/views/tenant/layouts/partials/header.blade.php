@@ -25,7 +25,7 @@
             </div>
             <h2>Modulos</h2>
         </div>
-        <tenant-dialog-header-menu></tenant-dialog-header-menu>
+        {{-- <tenant-dialog-header-menu></tenant-dialog-header-menu> --}}
 
         @if ($tenant_show_ads && $url_tenant_image_ads)
             <div class="ml-3 mr-3">

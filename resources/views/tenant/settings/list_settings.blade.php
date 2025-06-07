@@ -40,9 +40,9 @@
                     <li>
                         <a href="{{url('list-cards')}}">Listado de tarjetas</a>
                     </li>
-                    <li>
+                    {{-- <li>
                         <a href="{{url('list-platforms')}}">Plataformas</a>
-                    </li>
+                    </li> --}}
                     @endif
                 </ul>
             </div>
@@ -58,21 +58,14 @@
                         <a href="{{route('tenant.companies.create')}}">Empresa</a>
                     </li>
                     <li>
-                        <a href="{{route('tenant.bussiness_turns.index')}}">Giro de negocio</a>
-                    </li>
-                    <li>
                         <a href="#" class="style-switcher-open">Estilos y temas</a>
                     </li>
                     <li>
                         <a href="{{route('tenant.advanced.index')}}">Avanzado</a>
                     </li>
-                    <li>
+                    {{-- <li>
                         <a href="{{route('tenant.payment.generate.index')}}">Generador de link de pago</a>
-                    </li>
-                    <li>
-                        <a href="{{route('tenant_ecommerce_configuration')}}">Tienda Virtual/Restaurante</a>
-                    </li>
-                    
+                    </li> --}}
                 </ul>
             </div>
         </div>
@@ -156,21 +149,21 @@
                     </li>
                     @endif
                     @if($vc_company->soap_type_id != '03')
-                    <li>
+                    {{-- <li>
                         <a href="{{route('tenant.offline_configurations.index')}}">Modo offline</a>
-                    </li>
+                    </li> --}}
                     <li>
                         <a href="{{route('tenant.series_configurations.index')}}">Numeración de facturación</a>
                     </li>
                     @endif
-                    <li>
+                    {{-- <li>
                         <a href="{{route('tenant.company_accounts.create')}}">Avanzado - Contable</a>
-                    </li>
-                            @if($user->type != 'integrator' && $vc_company->soap_type_id != '03')
+                    </li> --}}
+                            {{-- @if($user->type != 'integrator' && $vc_company->soap_type_id != '03')
                     <li>
                         <a href="{{route('tenant.inventories.configuration.index')}}">Inventarios</a>
                     </li>
-                    @endif
+                    @endif --}}
                             @if($user->type === 'admin')
                             <li>
                                 <a href="{{route('tenant.sale_notes.configuration')}}">Nota de ventas</a>
@@ -212,7 +205,7 @@
     </div>
             @endif
     @endif
-    <div class="col-6 col-md-4 mb-4">
+    {{-- <div class="col-6 col-md-4 mb-4">
         <div class="card card-dashboard card-reports">
             <div class="card-body">
                 <h6 class="card-title">Comisiones</h6>
@@ -228,6 +221,6 @@
                 </ul>
             </div>
         </div>
-    </div>
+    </div> --}}
 </div>
 @endsection
