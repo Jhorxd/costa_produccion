@@ -63,7 +63,7 @@ class UserController extends Controller
                              ->pluck('module_level_id')
                              ->toArray();
 
-        $modulesToExclude = [10,11,15,16,19,20,21,22,23,24,26];
+        $modulesToExclude = [9,10,11,15,16,19,20,21,22,23,24,26];
         $levelsToExclude = [10,11,13,5,9,15,84,37,38,24,25,28,41,44,75,91,77,78];
 
 
