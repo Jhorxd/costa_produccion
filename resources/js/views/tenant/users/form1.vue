@@ -665,6 +665,8 @@ export default {
     async created() {
         await this.$http.get(`/${this.resource}/tables`).then((response) => {
             this.modules = response.data.modules;
+            console.log(this.modules);
+            
             this.establishments = response.data.establishments;
             this.zones = response.data.zones;
             this.types = response.data.types;

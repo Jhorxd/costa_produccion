@@ -39,12 +39,12 @@
                                 @click.prevent="clickExport()"
                             >Listado</a
                             >
-                            <a
+                            <!-- <a
                                 class="dropdown-item text-1"
                                 href="#"
                                 @click.prevent="clickExportWp()"
                             >Woocommerce</a
-                            >
+                            > -->
                             <a
                                 class="dropdown-item text-1"
                                 href="#"
@@ -59,11 +59,11 @@
                                 Atributos Extra
                             </a>
                             </template>
-                            <a
+                            <!-- <a
                                 class="dropdown-item text-1"
                                 href="#"
                                 @click.prevent="clickExportBartender()"
-                            >Bartender</a>
+                            >Bartender</a> -->
                         </div>
                     </div>
                     <div class="btn-group flex-wrap">

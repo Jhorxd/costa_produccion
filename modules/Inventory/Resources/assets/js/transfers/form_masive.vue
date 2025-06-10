@@ -204,7 +204,7 @@
                                           :readonly="true"></el-input>
                             </div>
                         </div>
-                        <div class="col-md-2" :class="form_add.lots_enabled ? 'd-flex align-items-center': ''">
+                        <div :class="form_add.lots_enabled ? 'd-flex align-items-center col-md-2': 'col-md-4'">
                             <div class="form-group" v-if="!form_add.lots_enabled">
                                 <label class="control-label" >Cantidad a Trasladar</label>
                                 <el-input v-model="form_add.quantity"
@@ -219,7 +219,7 @@
                                     lote]</a>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 mt-3">
                             <div class="form-group">
                                 <el-button
                                     :disabled="form_add.item_id == null"
@@ -263,7 +263,7 @@
                                                          @change="changeQuantity(row, index)"></el-input-number>
                                     </td>
                                     <td v-else class="text-center">{{ row.quantity }}</td>
-                                    <td class="text-center">{{ row.purchase_unit_price }}</td>
+                                    <td class="text-center">{{ (row.purchase_unit_price).toFixed(2) }}</td>
     
                                     <td class="series-table-actions text-center">
                                         <button

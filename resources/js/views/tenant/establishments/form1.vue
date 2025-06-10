@@ -133,13 +133,13 @@
                                 <span class="text-muted">Se recomienda resoluciones 700x300</span>
                                 <el-button class="btn-add-logo" @click="onOpenFileLogo">Cambiar logo del sucursal</el-button>
                             </div>
-                            <div class="col-12">
+                            <!-- <div class="col-12">
                                 <div class="form-comtrol">
                                     <el-checkbox v-model="form.has_igv_31556">
                                         Sujeto al IGV - Ley 31556
                                     </el-checkbox>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                     </el-tab-pane>
                     <el-tab-pane class name="second">
