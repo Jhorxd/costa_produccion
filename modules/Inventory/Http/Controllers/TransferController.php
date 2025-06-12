@@ -339,28 +339,28 @@ class TransferController extends Controller
                                     $stock_transfer += $element['compromise_quantity'];
                                     $lot = ItemLotsGroup::find($element['id']);
                                     if($lot){
-                                        if($stock_transfer==$lot->quantity){
+                                        if((int) $element['compromise_quantity']==$lot->quantity){
                                             $lot->warehouse_id = $request->warehouse_destination_id;
                                             $lot->save();
                                         }else{
                                             $lot_new = $lot->replicate();
 
-                                                unset($lot_new->created_at);
-                                                unset($lot_new->updated_at);
+                                            unset($lot_new->created_at);
+                                            unset($lot_new->updated_at);
 
-                                                $lot_new->quantity = $stock_transfer;
+                                            $lot_new->quantity = (int) $element['compromise_quantity'];
 
-                                                $lot_new->warehouse_id = $request->warehouse_destination_id;
+                                            $lot_new->warehouse_id = $request->warehouse_destination_id;
 
-                                                $lot->quantity -= $stock_transfer;
-                                                $lot->save();
+                                            $lot->quantity -= (int) $element['compromise_quantity'];
+                                            $lot->save();
 
-                                                $lot_new->save();
+                                            $lot_new->save();
                                         }
                                         
                                         $lot_position = ItemPosition::find($element['item_position_id']);
                                         if($lot_position){
-                                            if ($stock_transfer == $lot->quantity) {
+                                            if ((int) $element['compromise_quantity'] == $lot->quantity) {
                                                 if (isset($request->location_destination_id) && isset($request->position_destination_id)) {
                                                     $lot_position->position_id = $request->position_destination_id;
                                                     $lot_position->location_id = $request->location_destination_id;
@@ -371,13 +371,16 @@ class TransferController extends Controller
                                                 }
                                             } else{
                                                 $lot_position_new = $lot_position->replicate();
-
+                                                
                                                 unset($lot_position_new->created_at);
                                                 unset($lot_position_new->updated_at);
-
+                                                $lot_position_new->stock = (int) $element['compromise_quantity'];
                                                 $lot_position_new->position_id = $request->position_destination_id;
                                                 $lot_position_new->location_id = $request->location_destination_id;
                                                 $lot_position_new->warehouse_id = $request->warehouse_destination_id;
+
+                                                $lot_position->stock -= (int) $element['compromise_quantity'];
+                                                $lot_position->save();
 
                                                 $lot_position_new->save();
                                             }

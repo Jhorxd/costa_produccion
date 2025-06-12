@@ -373,7 +373,6 @@ export default {
             if (this.form.location_destination_id && this.form.position_destination_id) {
                 await this.getPositions(this.form.location_destination_id);
             }
-            console.log(this.form);
             
         } catch (error) {
             console.error("Error en created:", error);
@@ -479,8 +478,7 @@ export default {
             delete (this.errors.quantity)
         },
         changeQuantity(row, index) {
-            row.dataModal.stock_necessary = row.quantity; 
-            console.log(this.form);
+            row.dataModal.stock_necessary = row.quantity;
             
             /* if (parseFloat(row.current_stock) < row.quantity) {
                 row.quantity = 1
@@ -636,8 +634,6 @@ export default {
                 const response = await this.$http.get(`/${this.resource}/record2/${this.resourceId}`);
                 const data = response.data.data.inventory_transfer;
                 const items = response.data.data.inventory_items;
-                console.log(data);
-                console.log(items);
                 
                 this.form = {
                 ...this.form,
@@ -722,16 +718,38 @@ export default {
                 date_of_transfer: form.date_of_transfer
             };
         },
+        validatePositionsSelected() {
+            for (const item of this.form.items) {
+                // Si el producto requiere posición
+                if (item.has_position || (item.dataModal && item.dataModal.has_position)) {
+                    // Verifica si hay posiciones seleccionadas
+                    const positions = item.dataModal && item.dataModal.positions
+                        ? item.dataModal.positions
+                        : [];
+                    const selected = positions.some(pos => pos.is_selected);
+                    if (!selected) {
+                        return {
+                            success: false,
+                            message: `Debe seleccionar al menos una posición para el producto "${item.description}".`
+                        };
+                    }
+                }
+            }
+            return { success: true };
+        },
         async submit() {
             if (this.form.items.length == 0) {
                 return this.$message.error("Debe agregar productos.");
             }
             
+            const posValidation = this.validatePositionsSelected();
+            if (!posValidation.success) {
+                return this.$message.error(posValidation.message);
+            }
+
             this.loading_submit = true;
 
-            console.log(this.form);
             const data = this.formatForm(this.form);
-            console.log(data);
             //return;
             await this.$http
                 .post(`/${this.resource}/approve_transfer`, data)
@@ -806,7 +824,6 @@ export default {
 
         clickPosition(item){
             this.selectedItem = item.dataModal;
-            console.log(this.selectedItem);
             
             this.showDialogPositionOrigin = true;
         }

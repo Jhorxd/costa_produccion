@@ -62,15 +62,13 @@
         methods: {
             async create() {
                 this.lots_temp = this.available_lots;
-                console.log(this.lots_temp); 
                 
                 this.lots_temp.forEach(element => {
                     const index_lot = this.required_lots.findIndex( required_lot => required_lot.id == element.id);
                     element.enabled = index_lot!=-1 ? true : false;
-                    element.compromise_quantity = 0;
+                    //element.compromise_quantity = 0;
                     this.$set(element, 'selected', element.selected || false);
                 });
-                console.log(this.lots_temp);
             },
             LotSelected(lot, index){
                 const index_lot = this.required_lots.findIndex( required_lot => required_lot.id == lot.id);
@@ -108,7 +106,6 @@
                     this.$message.warning("Lotes seleccionados de forma excesiva, la cantidad necesaria es "+this.stock_necessary+" lote(s)");
                     return;
                 } */
-               console.log(this.lots_temp);
                
                 this.$emit('update-box-selected',this.lots_temp);
                 this.close();

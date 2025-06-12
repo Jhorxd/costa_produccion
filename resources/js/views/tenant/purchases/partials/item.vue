@@ -706,7 +706,7 @@ export default {
             sale_unit_price: 0,
             date_of_due: null,
             loading_search: false,
-            titleDialog: 'Agregar Producto o Servicio',
+            titleDialog: 'Agregar Producto',
             showDialogLots: false,
             resource: 'purchases',
             showDialogNewItem: false,

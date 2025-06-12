@@ -185,11 +185,7 @@ export default {
       return stock_total;
     },
 
-    saveChanges() {
-      console.log(this.positions);
-      
-      console.log(this.stock_necessary);
-      
+    saveChanges() {      
       if (!this.location_id) {
         this.$message.error("Debes seleccionar una ubicación");
         return;
@@ -242,12 +238,9 @@ export default {
       return letter;
     },
     selectPosition(box) {
-      console.log(box);
-      
       if(this.has_lots){
         this.positionSelected = box;
         this.lotsPositionSelected = box.lots_group_list;
-        console.log(this.required_lots);
         
         this.showDialogLots = true;
       }else{
@@ -283,14 +276,12 @@ export default {
     },
 
     //Método de componente modal (lotes)
-    saveLots(data){
+    saveLots(data){      
       const positionFinded = this.positions.find(element => element.id == this.positionSelected.id);
       if(positionFinded){
         if(positionFinded.lots_group_list.length>0){
           positionFinded.lots_group_list = data;
-          positionFinded.is_selected = true;
-        }else{
-          positionFinded.is_selected = false;
+          positionFinded.is_selected = data.some(lot => lot.selected === true);
         }
       }
     },
