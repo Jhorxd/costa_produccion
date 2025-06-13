@@ -889,7 +889,11 @@ class Item extends ModelTenant
         }
         $detail = $this->getFullDescription($warehouse, $extended_description);
         $realtion_item_unit_types = $this->item_unit_types;
-        $lots_grp = $this->lots_group;
+        if ($warehouse !== null) {
+            $lots_grp = $this->lots_group()->where('warehouse_id', $warehouse->id)->get();
+        } else {
+            $lots_grp = $this->lots_group; // Si $warehouse es null, carga todos los lots_group
+        }
 
         $lots = $this->getLotsBySerie($warehouse, $series, $search_item_by_series);
         $blank = [];
@@ -1046,7 +1050,8 @@ class Item extends ModelTenant
                                              ]),
             'category'                         => $detail['category'],
             'stock'                            => $stock,
-            'stock_max'                        => $this->stock_max,
+            'stock_max'                        => (int) $this->stock_max,
+            'stock_min'                        => (int) $this->stock_min,
             'internal_id'                      => $this->internal_id,
             'description'                      => $this->description,
             'currency_type_id'                 => $this->currency_type_id,

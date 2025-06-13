@@ -519,7 +519,6 @@
             $items_services = self::getServiceItem($request, $id);
             return self::TransformToModal($items_not_services->merge($items_services));
 
-
             $establishment_id = auth()->user()->establishment_id;
             $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
             // $items_u = Item::whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('description')->take(20)->get();
@@ -1194,7 +1193,6 @@
 
             $data = self::getItemToTrasferCollection($warehouse_id);
 
-
             if(!empty($input)) {
                 $whereItem[] = ['description', 'like', '%' . $input . '%'];
                 $whereItem[] = ['internal_id', 'like', '%' . $input . '%'];
@@ -1360,7 +1358,6 @@
             $warehouse_id = 0
         ):\Illuminate\Database\Eloquent\Builder
         {
-
             return Item::query()
                 ->with('item_lots', 'warehouses')
                 ->whereHas('warehouses', function ($query) use ($warehouse_id) {

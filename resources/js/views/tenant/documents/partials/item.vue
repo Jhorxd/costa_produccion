@@ -1421,7 +1421,7 @@ export default {
 
             this.extra_temp = undefined;
 
-            this.titleDialog = (this.recordItem) ? ' Editar Producto o Servicio' : ' Agregar Producto o Servicio';
+            this.titleDialog = (this.recordItem) ? ' Editar Producto' : ' Agregar Producto';
             this.titleAction = (this.recordItem) ? ' Editar' : ' Agregar';
             let operation_type = await _.find(this.operation_types, {id: this.operationTypeId})
             this.affectation_igv_types = await _.filter(this.all_affectation_igv_types, {exportation: operation_type.exportation})
@@ -1761,6 +1761,14 @@ export default {
 
             if (parseInt(this.form.quantity)>parseInt(this.selectedRow.stock)){
                 return this.$message.error('El stock requerido supera al stock disponible');
+            }
+            console.log(this.selectedRow);
+            
+            if(this.selectedRow.stock_min!=null){
+                const stock_available = parseInt(this.selectedRow.stock) - parseInt(this.selectedRow.stock_min);
+                if(parseInt(this.form.quantity)>stock_available){
+                    return this.$message.error('La cantidad requerida supera al stock mínimo. (Disponible: '+stock_available+')');
+                }
             }
 
             // if(this.form.quantity < this.getMinQuantity()){

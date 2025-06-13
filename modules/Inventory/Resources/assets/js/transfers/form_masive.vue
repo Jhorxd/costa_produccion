@@ -442,6 +442,8 @@ export default {
                     `/${this.resource}/stock/${this.form_add.item_id}/${this.form.warehouse_id}`
                 )
                 .then(response => {
+                    console.log(response);
+                    
                     this.form_add.stock = response.data.stock;
                     this.loading_item = false;
                 });
