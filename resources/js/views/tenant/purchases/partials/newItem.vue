@@ -1729,8 +1729,12 @@ export default {
                 return;
             }
             
-            if(this.selectedRow.stock_max!=null){
+            if(this.selectedRow.stock_max!=null && this.selectedRow.stock_max!=0){
                 const stock_available = parseInt(this.selectedRow.stock_max)-parseInt(this.selectedRow.stock);
+                console.log(this.selectedRow);
+                
+                console.log(stock_available);
+                
                 if(parseInt(this.form.quantity)>stock_available){
                     return this.$message.error('La cantidad requerida supera al stock máximo disponible: '+stock_available);
                 }

@@ -593,6 +593,7 @@ class Purchase extends ModelTenant
                     'key'         => $key + 1,
                     'id'          => $row->id,
                     'description' => $row->item->description,
+                    'is_delivered' => $row->is_delivered,
                     'name_product_pdf' => $row->name_product_pdf,
                     'quantity'    => round($row->quantity, 2),
                     'name_location' => $location_name ?? '-',

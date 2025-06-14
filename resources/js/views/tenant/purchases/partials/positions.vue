@@ -24,7 +24,7 @@
           ></el-input>
         </div>
         <div class="col-md-3" v-if="dataModalLocal.item_data.has_lot">
-          <label class="control-label">Fecha</label>
+          <label class="control-label">Fecha Exp.</label>
           <el-date-picker 
             type="date"
             class="form-control-feedback" 
@@ -102,7 +102,7 @@ export default {
     ],
     data() {
         return {
-            titleDialog: 'Selección de posicion',
+            titleDialog: 'Selección de posición',
             resource: 'transfers',
             matrix: [],
             warehouses: [],
@@ -337,6 +337,16 @@ export default {
           let is_one_selected = this.isOneSelected(); // verificar si hay almenos un seleccionado;
           if(!is_one_selected){
             return this.$message.error("Elige una posición");
+          }
+
+          if(this.dataModalLocal.item_data.has_lot){
+            if(this.dataModalLocal.position_data.lot_name==''){
+              return this.$message.error("Completa el nombre del nuevo lote");
+            }
+
+            if(this.dataModalLocal.position_data.expiration_date==''){
+              return this.$message.error("Completa la fecha de expiración");
+            }
           }
 
           const current_stock = parseInt(this.dataModalLocal.item_data.current_stock);
