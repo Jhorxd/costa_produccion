@@ -765,23 +765,35 @@ class ItemController extends Controller
                     ->where('warehouse_id', $request->warehouse_id)
                     ->delete();
                     
-                foreach ($request->positions_selected as $position) {
-                    $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $request->location_id)
-                            ->where('row', $position['row'])
-                            ->where('column', $position['column'])
-                            ->first();
+                foreach ($request->positions_selected as $positionSelected) {
+                    /* $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $request->location_id)
+                        ->where('row', $positionSelected['row'])
+                        ->where('column', $positionSelected['column'])
+                        ->first(); */
+                    $warehouseLocationPosition = WarehouseLocationPosition::find($positionSelected['id']);
                             
                     if ($warehouseLocationPosition) {
                         $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
                         
                         if($inventoryWarehouseLocation) {
 
-                            foreach ($position['lots'] as $lot) {
+                            foreach ($positionSelected['lots'] as $lot) {
                                 $lotId = $processedLots[$lot['code']] ?? null;
                                 
                                 if ($lotId) {
                                     $countItemPositions = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->count();
-                                    
+
+                                    /* $quantity_used_total = WarehouseLocationPosition::where('location_id', $request->location_id)->sum('quantity_used'); */
+
+                                    if($countItemPositions==0 && $inventoryWarehouseLocation->maximum_stock<=$warehouseLocationPosition->quantity_used){
+                                        $namePosition = $inventoryWarehouseLocation['code'].'-'.$warehouseLocationPosition['row'].'-'.chr(64 + $warehouseLocationPosition['column']);
+                                        return [
+                                            'success' => false,
+                                            'message' => 'No hay stock disponible para la posición '.$namePosition.' perteneciente a la ubicación '. $inventoryWarehouseLocation['name']. '--'. $warehouseLocationPosition->quantity_used,
+                                            'id' => null
+                                        ];
+                                    }
+
                                     ItemPosition::updateOrCreate(
                                         [
                                             'item_id' => $item->id,
@@ -799,7 +811,6 @@ class ItemController extends Controller
                                         WarehouseLocationPosition::where('id', $warehouseLocationPosition->id)
                                         ->increment('quantity_used');
                                     }
-                                    
                                 }
                             }
                         }
@@ -828,6 +839,18 @@ class ItemController extends Controller
                         $inventoryWarehouseLocation = InventoryWarehouseLocation::find($warehouseLocationPosition->location_id);
                         
                         if($inventoryWarehouseLocation) {
+
+                            $countItemPositions = ItemPosition::where('item_id', $item->id)->where('position_id', $warehouseLocationPosition->id)->count();
+
+                            if($countItemPositions==0 && $inventoryWarehouseLocation->maximum_stock<=$warehouseLocationPosition->quantity_used){
+                                $namePosition = $inventoryWarehouseLocation['code'].'-'.$warehouseLocationPosition['row'].'-'.chr(64 + $warehouseLocationPosition['column']);
+                                return [
+                                    'success' => false,
+                                    'message' => 'No hay stock disponible para la posición '.$namePosition.' perteneciente a la ubicación '. $inventoryWarehouseLocation['name']. '--'. $warehouseLocationPosition->quantity_used,
+                                    'id' => null
+                                ];
+                            }
+
                             $itemPosition = ItemPosition::updateOrCreate(
                                 [
                                     'item_id' => $item->id,
@@ -916,8 +939,6 @@ class ItemController extends Controller
             // Extra data
         }
 
-
-
         if ($request->tags_id) {
             ItemTag::destroy(   ItemTag::where('item_id', $item->id)->pluck('id'));
             foreach ($request->tags_id as $value) {
@@ -926,8 +947,6 @@ class ItemController extends Controller
             }
         }
         $item->lots_enabled = isset($request->lots_enabled) ? $request->lots_enabled:false;
-
-
 
         if (!$id) {
 
@@ -985,7 +1004,6 @@ class ItemController extends Controller
                 }
             } */
         }
-
 
         $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
 

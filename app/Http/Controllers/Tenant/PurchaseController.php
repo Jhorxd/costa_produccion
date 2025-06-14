@@ -51,6 +51,7 @@
     use App\Models\Tenant\GeneralPaymentCondition;
     use App\Models\Tenant\ItemPosition;
 use App\Models\Tenant\Kardex;
+use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Models\InventoryWarehouseLocation;
     use Modules\Inventory\Models\WarehouseLocationPosition;
     use Modules\Inventory\Traits\InventoryTrait;
@@ -92,7 +93,7 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
         {
 
             $records = $this->getRecords($request);
-
+            Log::info('hola');
             return new PurchaseCollection($records->paginate(config('tenant.items_per_page')));
         }
 
@@ -449,11 +450,6 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
         public function store(PurchaseRequest $request)
         {
             $data = self::convert($request);
-            /* return response()->json([
-                'success' => true,
-                'data' => $data,
-                
-            ],200); */
             try {
                 $purchase = DB::connection('tenant')->transaction(function () use ($data) {
                     $doc = Purchase::create($data);
@@ -518,74 +514,6 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
                                     );
                                 }
                             }
-                            
-
-                            /* $item_finded = Item::find($row['item_id']);
-                            if($item_finded){
-                                $item_finded->stock +=  $row['quantity'];
-                                $item_finded->save();
-                            } */
-                        }
-                        
-                        $item = $row['item'];
-                        if(!empty($item['position_data']) && $item['position_data']['position_id']!=null){
-                            $position_data = $item['position_data'];
-                            
-                            $position = WarehouseLocationPosition::find($position_data['position_id']);
-                            
-                            $enabled_add_position=false;
-                            $item_position = ItemPosition::where('position_id',$position_data['position_id'])->where('item_id',$item_id)->first();
-                            if($item_position){
-                                $enabled_add_position=true;
-                            }else{
-                                $location = InventoryWarehouseLocation::find($position_data['location_id']);
-                                $stock_available = (int)$location->maximum_stock - (int)$position['quantity_used'];
-                                if($stock_available>0){
-                                    $enabled_add_position=true;
-                                    $position->quantity_used+=1;
-                                }
-                                /* return [
-                                    'stock_available' => $stock_available,
-                                    'enabled_add_position' => $enabled_add_position
-                                ]; */
-                            }
-                            
-                            if($enabled_add_position){
-                                if($item['lots_enabled']){
-                                    $lot_new = new ItemLotsGroup();
-                                    $lot_new->code = $position_data['lot_name'];
-                                    $lot_new->quantity = $row['quantity'];
-                                    $lot_new->date_of_due = $position_data['expiration_date'];
-                                    $lot_new->item_id = $row['item_id'];
-                                    $lot_new->status = 1;
-                                    $lot_new->warehouse_id = $position_data['warehouse_id'];
-                                    $lot_new->save();
-
-                                    $item_position_new = new ItemPosition();
-                                    $item_position_new->item_id = $row['item_id'];
-                                    $item_position_new->lots_group_id = $lot_new->id;
-                                    $item_position_new->stock = $row['quantity'];
-                                    $item_position_new->position_id = $position_data['position_id'];
-                                    $item_position_new->location_id = $position_data['location_id'];
-                                    $item_position_new->warehouse_id = $position_data['warehouse_id'];
-                                    $item_position_new->save();
-                                }else{
-                                    ItemPosition::updateOrCreate(
-                                        [
-                                            'item_id' => $row['item_id'],
-                                            'position_id' => $position_data['position_id'],
-                                            'location_id' => $position_data['location_id'],
-                                            'warehouse_id' => $position_data['warehouse_id'],
-                                        ],
-                                        [
-                                            'stock' => $row['quantity'],
-                                        ]
-                                    );
-                                }
-
-                                $position->save();
-                                
-                            }
                         }
                         $it = Item::find((int)$row['item_id']);
                         if($it != null){
@@ -594,7 +522,6 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
                                 $it->save();
                             }
                         }
-                        
 
                         if (isset($row['update_date_of_due'], $row['date_of_due']) && $row['update_date_of_due'] && !empty($row['date_of_due'])) {
                             $it->date_of_due = $row['date_of_due'];
@@ -617,25 +544,6 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
                             }
                         }
 
-                        /* if (array_key_exists('item', $row)) {
-                            if (isset($row['item']['lots_enabled']) && $row['item']['lots_enabled'] == true) {
-
-                                // factor de lista de precios
-                                $presentation_quantity = (isset($p_item->item->presentation->quantity_unit)) ? $p_item->item->presentation->quantity_unit : 1;
-
-                                $item_lots_group = ItemLotsGroup::create([
-                                    'code' => $row['lot_code'],
-                                    'quantity' => $row['quantity'] * $presentation_quantity,
-                                    // 'quantity' => $row['quantity'],
-                                    'date_of_due' => $row['date_of_due'],
-                                    'item_id' => $row['item_id']
-                                ]);
-
-                                $p_item->item_lot_group_id = $item_lots_group->id;
-                                $p_item->update();
-                            }
-                        } */
-
                     }
 
                     foreach ($data['payments'] as $payment) {
@@ -654,14 +562,6 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
 
                     return $doc;
                 });
-                /* return [
-                    'success' => true,
-                    'data' => [
-                        'id' => 1,
-                        'data' => $purchase,
-                        'number_full' => "prueba",
-                    ],
-                ]; */
                 return [
                     'success' => true,
                     'data' => [

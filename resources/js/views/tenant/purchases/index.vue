@@ -308,7 +308,7 @@
                         </td>
                         <td class="text-right">{{ row.total }}</td>
                         <td class="text-right">
-                            <template v-if="permissions.edit_purchase">
+                            <template v-if="permissions.edit_purchase && !disableEdit(row)">
                                 <a
                                     v-if="row.state_type_id != '11'"
                                     :href="`/${resource}/edit/${row.id}`"
@@ -514,6 +514,9 @@ export default {
         this.getDocumentTypes();
     },
     methods: {
+        disableEdit(row){
+            return row.items.some(item => item.is_delivered == 1);
+        },
         clickReceptionItem(purchase_id){
             this.idPurchaseSelected = purchase_id;
             this.showDialogPurchaseDetails = true;

@@ -520,10 +520,6 @@
                                                         @click.prevent="clickOpenSeries(index, row.quantity, row.lots)">
                                                     Series
                                                 </button>
-                                                <!-- <button class="btn waves-effect waves-light btn-xs btn-success"
-                                                        type="button"
-                                                        @click.prevent="clickSelectPosition(row)">Posición
-                                                </button> -->
                                                 <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                         type="button"
                                                         @click.prevent="clickRemoveItem(index)">x
@@ -740,8 +736,6 @@
 </template>
 
 <script>
-
-//import PurchaseFormItem from './partials/item.vue'
 import PurchaseFormItem from './partials/newItem.vue'
 import PersonForm from '../persons/form.vue'
 import PurchaseOptions from './partials/options.vue'
@@ -821,8 +815,6 @@ export default {
             rowItem: null,
             rowIndex: -1,
             typeUser: null,
-            showDialogSelectPosition:false,
-            /* modalDataPositions:[], */
             stock_positions:[],
             item_selected: null,
             keyPosition:0
@@ -880,7 +872,6 @@ export default {
         this.loadHasGlobalIgv()
         this.loadEstablishment()
         this.searchPurchaseOrder();
-        // this.localHasGlobalIgv = this.hasGlobalIgv;
         this.initGlobalIgv()
     },
     methods: {
@@ -889,48 +880,6 @@ export default {
             if(typeUser=="admin") this.typeUser="Administrador"            
             this.showDialogAddItem = true
         },
-        initModalDataPosition(){
-            return {
-                item_data:{
-                    item_id:'',
-                    item_name:'',
-                    quantity:0,
-                    has_lot:'',
-                },
-                position_data:{
-                    expiration_date:'',
-                    lot_name:'',
-                    warehouse_id:'',
-                    location_id:'',
-                    position_id:''
-                },
-                stock_positions:[]
-            }
-        },
-        /* clickSelectPosition(data){            
-            this.modalDataPositions = this.initModalDataPosition();
-            this.modalDataPositions.item_data.item_id = data.item_id;
-            this.modalDataPositions.item_data.item_name = data.item.description;
-            this.modalDataPositions.item_data.quantity = parseInt(data.quantity);
-            this.modalDataPositions.item_data.has_lot = data.item.lots_enabled;
-            this.modalDataPositions.stock_positions = this.stock_positions;
-            if(data.item.position_data!=undefined){
-                this.modalDataPositions.position_data = data.item.position_data;
-            }
-            this.item_selected = data;
-            this.dialogKey = Date.now();            
-
-            this.showDialogSelectPosition=true;
-            
-        }, */
-        /* savePositionsData(data){
-            this.item_selected.item.position_data = data.position_data;
-            this.item_selected.is_delivered = true;
-            this.form.real_amount_due += parseFloat(this.item_selected.total);
-            
-            this.stock_positions = data.stock_positions;
-            this.modalDataPositions = this.initModalDataPosition();
-        }, */
         saveInputLotGroup(params)
         {
             this.form.items[params.index].lot_code = params.data.lot_code
@@ -1361,7 +1310,6 @@ export default {
             this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
             this.form.establishment_id = this.establishment.id
             this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
-            this.$refs.positions.resetData();
             this.changeDateOfIssue()
             this.changeDocumentType()
             this.changeCurrencyType()
@@ -1590,7 +1538,9 @@ export default {
                 return this.$message.error('El destino del pago es obligatorio');
             }
 
-            this.loading_submit = true
+            this.loading_submit = true;
+            console.log(this.form);
+            
             // await this.changePaymentMethodType(false)
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(response => {
@@ -1606,14 +1556,12 @@ export default {
                                 type: "success"
                             });
 
-                            //this.close()
+                            this.close()
 
                         } else {
-
                             this.resetForm()
                             this.purchaseNewId = response.data.data.id
                             this.showDialogOptions = true
-
                         }
 
                     } else {

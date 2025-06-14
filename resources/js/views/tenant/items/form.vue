@@ -1910,7 +1910,9 @@ export default {
                             }else{
                                 position_finded.stock = 0;
                             }
-                            if (this.form.lots_enabled) {
+                            console.log(element);
+                            
+                            if (this.form.lots_enabled && element.lots!=undefined) {
                                 if (element.lots.length>0){
                                     position_finded.lots = element.lots;
                                 }
@@ -2359,8 +2361,11 @@ export default {
                 if (this.form.purchase_percentage_isc <= 0)
                     return this.$message.error('El porcentaje isc debe ser mayor a 0 (Compras)');
             }
-
-            if (this.recordId && this.form.lots_enabled && this.positions_selected.length==0) {
+            console.log(this.form.lots);
+            
+            const someUnselected = this.form.lots.some(lot => lot.selected_global == false);
+            console.log(someUnselected);
+            if (this.recordId && this.form.lots_enabled && someUnselected) {
                 return this.$message.error('Debe elegir posiciones para los lotes'); 
             }
             
