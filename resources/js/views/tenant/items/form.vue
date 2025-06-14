@@ -2373,7 +2373,7 @@ export default {
             
             this.form.location_id = this.location_id;
 
-            this.loading_submit = true
+            this.loading_submit = true;
             
             await this.$http.post(`/${this.resource}`, this.form)
                 .then(async response => {

@@ -731,6 +731,20 @@ class ItemController extends Controller
 
         $processedLots = [];
         if ($request->lots_enabled) {
+
+            if ($id) {
+                $existingLotIds = collect($request->lots)->pluck('id')->filter();
+
+                $lotIdsToDelete = ItemLotsGroup::where('item_id', $item->id)
+                    ->whereNotIn('id', $existingLotIds)
+                    ->pluck('id');
+
+                if ($lotIdsToDelete->isNotEmpty()) {
+                    ItemPosition::whereIn('lots_group_id', $lotIdsToDelete)->delete();
+                }
+
+                ItemLotsGroup::whereIn('id', $lotIdsToDelete)->delete();
+            }
             
             foreach ($request->lots as $lotData) {
                 if (isset($lotData['id'])) {
@@ -766,10 +780,6 @@ class ItemController extends Controller
                     ->delete();
                     
                 foreach ($request->positions_selected as $positionSelected) {
-                    /* $warehouseLocationPosition = WarehouseLocationPosition::where('location_id', $request->location_id)
-                        ->where('row', $positionSelected['row'])
-                        ->where('column', $positionSelected['column'])
-                        ->first(); */
                     $warehouseLocationPosition = WarehouseLocationPosition::find($positionSelected['id']);
                             
                     if ($warehouseLocationPosition) {
@@ -797,13 +807,13 @@ class ItemController extends Controller
                                     ItemPosition::updateOrCreate(
                                         [
                                             'item_id' => $item->id,
-                                            'position_id' => $warehouseLocationPosition->id,
                                             'warehouse_id' => $inventoryWarehouseLocation->warehouse_id,
                                             'location_id' => $request->location_id,
                                             'lots_group_id' => $lotId,
                                         ],
                                         [
                                             'stock' => $lot['stock'],
+                                            'position_id' => $warehouseLocationPosition->id,
                                         ]
                                     );
 
