@@ -1082,16 +1082,22 @@ class Item extends ModelTenant
                 if(is_array($item_unit_types)){
                     return $item_unit_types;
                 }
+                
                 return [
                     'id'            => $item_unit_types->id,
                     'description'   => "{$item_unit_types->description}",
                     'item_id'       => $item_unit_types->item_id,
                     'unit_type_id'  => $item_unit_types->unit_type_id,
                     'quantity_unit' => $item_unit_types->quantity_unit,
-                    'price1'        => $item_unit_types->price1,
+                    'price1'        => $item_unit_types->price1,//DJAVIER
                     'price2'        => $item_unit_types->price2,
                     'price3'        => $item_unit_types->price3,
                     'price_default' => $item_unit_types->price_default,
+                    'price4' => $item_unit_types->price4,
+                    'label1' => $item_unit_types->label1,
+                    'label2' => $item_unit_types->label2,
+                    'label3' => $item_unit_types->label3,
+                    'label4' => $item_unit_types->label4,
                     'barcode' => $item_unit_types->barcode,
                 ];
             }),
@@ -2605,6 +2611,11 @@ class Item extends ModelTenant
                 'price1' => $row->price1,
                 'price2' => $row->price2,
                 'price3' => $row->price3,
+                'price4' => $row->price4,
+                'label1' => $row->label1,
+                'label2' => $row->label2,
+                'label3' => $row->label3,
+                'label4' => $row->label4,
                 'price_default' => $row->price_default,
             ];
         });

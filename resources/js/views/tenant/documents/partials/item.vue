@@ -509,8 +509,9 @@
                                         <th class="text-center">Descripción</th>
                                         <th class="text-center">Factor</th>
                                         <th class="text-center">Precio 1</th>
-                                        <th class="text-center">Precio 2</th>
-                                        <th class="text-center">Precio 3</th>
+                                        <th class="text-center">Precio Competencia 1</th>
+                                        <th class="text-center">Precio Competencia 2</th>
+                                        <th class="text-center">Precio Competencia 3</th>
                                         <!-- <th class="text-center">Precio Default</th>
                                         <th></th> -->
                                     </tr>
@@ -522,13 +523,20 @@
                                         <td class="text-center align-middle">{{ row.description }}</td>
                                         <td class="text-center align-middle">{{ row.quantity_unit }}</td>
                                         <td>
-                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price1)">{{ row.price1 }}</el-button>
+                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price1, 1)">{{ row.price1 }}</el-button>
+                                            
                                         </td>
                                         <td>
-                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price2)">{{ row.price2 }}</el-button>
+                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price2, 2)">{{ row.price2 }}</el-button>
+                                            <div class="center" style="font-size: 9px">{{row.label2}}</div>
                                         </td>
                                         <td>
-                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price3)">{{ row.price3 }}</el-button>
+                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price3, 3)">{{ row.price3 }}</el-button>
+                                            <div class="center" style="font-size: 9px">{{row.label3}}</div>
+                                        </td>
+                                        <td>
+                                            <el-button class="btn-block" @click.prevent="selectedPrice(row, row.price4, 4)">{{ row.price4 }}</el-button>
+                                            <div class="center" style="font-size: 9px">{{row.label4}}</div>
                                         </td>
                                         <!-- <td class="text-center">Precio {{ row.price_default }}</td>
                                         <td class="series-table-actions text-right">
@@ -924,6 +932,7 @@ export default {
             // GB
             selectedRow: null,
             factorSelected: 1,
+            label_selected:null
         }
     },
     created() {
@@ -1118,6 +1127,7 @@ export default {
         },
         // Nueva Lógica para el botón del data-table
         async selectItem(row) {
+            console.log("ROW", row);
             this.form.item_id = row.id; // Asigna el ID del producto seleccionado
             this.factorSelected = 1;
             await this.changeItem()
@@ -1286,6 +1296,8 @@ export default {
 
         },
         filterItems() {
+            console.log("FILTER");
+            console.log(this.all_items);
             this.items = this.all_items
         },
         enabledSearchItemsBarcode(input) {
@@ -1864,6 +1876,10 @@ export default {
 
             this.showMessageDetraction()
 
+            //console.log("row add",this.row)
+            this.row.label_selected = this.label_selected;
+            console.log("row add",this.row)
+
             this.$emit('add', this.row);
             this.factorSelected = 1;
             this.form.description = ''
@@ -1907,6 +1923,7 @@ export default {
             return this.errors
         },
         async reloadDataItems(item_id) {
+            console.log("RELOAD");
 
             if (!item_id) {
 
@@ -1963,7 +1980,8 @@ export default {
             }
             return false
         },
-        selectedPrice(row, amount = false) {
+        selectedPrice(row, amount = false, label = false) {
+            this.label_selected = label;
 
             if (this.isSelectedPrice(row) && !amount) {
                 this.form.item_unit_type_id = null

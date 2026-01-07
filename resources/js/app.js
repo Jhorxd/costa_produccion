@@ -52,6 +52,8 @@ Vue.component('tenant-dialog-header-menu', require('./views/tenant/configuration
 Vue.component('tenant-bank_accounts-index', require('./views/tenant/bank_accounts/index.vue'));
 Vue.component('tenant-items-index', require('./views/tenant/items/index.vue'));
 Vue.component('tenant-persons-index', require('./views/tenant/persons/index.vue'));
+Vue.component('tenant-items-reports-competence', require('./views/tenant/items/reports/competence.vue'));
+
 // Vue.component('tenant-customers-index', require('./views/tenant/customers/index.vue'));
  Vue.component('tenant-person-form', require('./views/tenant/persons/form.vue'));
 
@@ -389,6 +391,8 @@ Vue.component('system-configuration-apk-url', require('./views/system/configurat
 //token
 Vue.component('system-configuration-token', require('./views/system/configuration/token_ruc_dni.vue'))
 
+Vue.component('system-configuration-digemid-items', require('./views/system/configuration/upload_digemid_items.vue'))
+
 // php info
 Vue.component('system-php-configuration', require('./views/system/configuration/php_info.vue'))
 Vue.component('system-server-status', require('./views/system/configuration/server_status.vue'))
@@ -397,6 +401,9 @@ Vue.component('system-server-status', require('./views/system/configuration/serv
 Vue.component('system-login-settings', require('./views/system/configuration/login.vue'))
 
 Vue.component('system-login-other-configuration', require('./views/system/configuration/other_configuration.vue'))
+
+//Productos
+Vue.component('system-items-index', require('./views/system/items/index.vue'));
 
 // Configuración del login
 Vue.component('tenant-login-page', require('./views/tenant/login/index.vue'))

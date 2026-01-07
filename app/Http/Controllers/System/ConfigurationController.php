@@ -309,4 +309,55 @@ class ConfigurationController extends Controller
         ];
     }
 
+    public function importItems(Request $request)
+    {
+        
+        if ($request->hasFile('file')) {
+            try {
+                
+                //$request->validate(['file' => 'required|mimes:xlsx|max:1024']);
+                
+                $file = $request->file('file');
+
+                $ext = $file->getClientOriginalExtension();
+                
+                //$filename = time() . '.' . $ext;
+                $filename = 'items'. '.' . $ext;
+                //$filename = 'diegojaja'. '.' . $ext;
+                $file->move(public_path('formats'), $filename);
+                
+                //$file->storeAs('formats', $filename);
+                $path = storage_path('formats/' . $filename);
+                /*$file->storeAs('public/uploads', $filename);
+                $path = storage_path('app/public/uploads/' . $filename);*/
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => __('app.actions.upload.success'),
+                    'filename' => $filename,
+                    'path' => $path
+                ]);
+                
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->validator->errors()->first()
+                ], 422);
+                
+            } catch (Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 500);
+            }
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => __('app.actions.upload.error'),
+        ], 422);
+    }
+
+    
+
 }

@@ -17,6 +17,8 @@
             {{-- <system-configuration-culqi></system-configuration-culqi> --}}
             <system-configuration-token></system-configuration-token>
             <system-configuration-apk-url></system-configuration-apk-url>
+            <system-configuration-digemid-items></system-configuration-digemid-items>
+
         </div>
     </div>
 

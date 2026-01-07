@@ -49,6 +49,7 @@ use App\Models\Tenant\ItemWarehousePrice;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\PharmaceuticalItemUnitType;
 use App\Models\Tenant\Warehouse;
+use App\Models\System\CompetenceItemPrice;
 use App\Traits\OfflineTrait;
 use Barryvdh\DomPDF\Facade as PDF;
 use Carbon\Carbon;
@@ -66,6 +67,7 @@ use Modules\Inventory\Models\ItemWarehouse;
 use Modules\Item\Models\Brand;
 use Modules\Item\Models\Category;
 use Modules\Item\Models\ItemLot;
+use App\Models\System\CompetenceItem;
 use Modules\Item\Models\ItemLotsGroup;
 use Mpdf\HTMLParserMode;
 use Mpdf\Mpdf;
@@ -1912,6 +1914,7 @@ class ItemController extends Controller
     {
         // $items = $this->table('items');
         $items = SearchItemController::getItemsToDocuments();
+        Log::debug(json_encode($items));
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $system_isc_types = SystemIscType::whereActive()->get();
@@ -2063,7 +2066,88 @@ class ItemController extends Controller
 
         return $selected;
     }
- 
+
+    public function sincronize(){
+        Log::debug("SINC");
+        try{
+            $items = Item::where('cod_digemid', '!=', null)->get();
+
+            foreach ($items as $item) {
+                
+                $competenceItems = CompetenceItemPrice::whereHas('competence_item', function ($query) use ($item) {
+                    $query->where('cod_digemid', $item->cod_digemid);
+                })->get();
+
+
+                foreach($competenceItems as $key => $competenceItem){
+                    $itemUnit = ItemUnitType::where('item_id', $item->id)->where('unit_type_id', $competenceItem->unit_type_id)->where('quantity_unit', $competenceItem->factor)->first();
+                    Log::debug("DATA");
+                    Log::debug($competenceItem->unit_type_id);
+                    Log::debug($competenceItem->factor);
+                    if($itemUnit){
+                        $itemUnit->price2 = $competenceItem->competence_unit_price1;
+                        $itemUnit->label2 = $competenceItem->competence_label1;
+                        $itemUnit->price3 = $competenceItem->competence_unit_price2;
+                        $itemUnit->label3 = $competenceItem->competence_label2;
+                        $itemUnit->price4 = $competenceItem->competence_unit_price3;
+                        $itemUnit->label4 = $competenceItem->competence_label3;
+                        $itemUnit->price5 = $competenceItem->competence_unit_price4;
+                        $itemUnit->label5 = $competenceItem->competence_label4;
+                        $itemUnit->save();
+
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Error'
+            ], 200);
+        }
+         catch (Exception $e) {
+            Log::error('Error en saveDocuments: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en el servidor: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function reportCompetence(){
+        return view('tenant.items.reports.competence');
+    }
+
+    
+    public function data(Request $request){
+        //Carbon::parse($request->date_start)
+        $resumen = DB::connection('tenant')
+            ->table('document_items')
+            ->select(
+                'item_unit_types.id',
+                'item_unit_types.description',
+                'items.description as item_description',  // Agregado
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '1' THEN 1 ELSE 0 END) as label_1"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '2' THEN 1 ELSE 0 END) as label_2"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '3' THEN 1 ELSE 0 END) as label_3"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '4' THEN 1 ELSE 0 END) as label_4"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '5' THEN 1 ELSE 0 END) as label_5"),
+                DB::raw("COUNT(*) as total")
+            )
+            ->join('item_unit_types', function($join) {
+                $join->on(
+                    DB::raw("JSON_UNQUOTE(JSON_EXTRACT(document_items.item, '$.presentation.id'))"), 
+                    '=', 
+                    'item_unit_types.id'
+                );
+            })
+            ->join('items', 'item_unit_types.item_id', '=', 'items.id')
+            ->whereNotNull(DB::raw("JSON_EXTRACT(item, '$.label_selected')"))
+            ->groupBy('item_unit_types.id', 'item_unit_types.description')
+            ->get();
+
+        return $resumen;
+        
+    }
 
 
 }

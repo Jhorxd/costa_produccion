@@ -219,6 +219,7 @@ if ($hostname) {
             Route::get('items/images/delete/{id}', 'Tenant\ItemController@delete_images');
             Route::get('items/export', 'Tenant\ItemController@export')->name('tenant.items.export');
             Route::get('items/export/wp', 'Tenant\ItemController@exportWp')->name('tenant.items.export.wp');
+            Route::get('items/sincronize', 'Tenant\ItemController@sincronize');
             Route::get('items/export/digemid', 'Tenant\ItemController@exportDigemid');
             Route::get('items/search-items', 'Tenant\ItemController@searchItems');
             Route::get('items/search/item/{item}', 'Tenant\ItemController@searchItemById');
@@ -238,6 +239,8 @@ if ($hostname) {
             
             Route::get('items/positions/{location_id}/{item_id}', 'Tenant\ItemController@positions');
             //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
+            Route::get('items/report/competence', 'Tenant\ItemController@reportCompetence')->name('tenant.reports.products_competence.index');
+            Route::get('items/report/records', 'Tenant\ItemController@data');
 
             //InventoryStates
             Route::get('inventoryStates', 'Tenant\InventoryStateController@getData');
@@ -887,6 +890,13 @@ if ($hostname) {
             Route::get('auto-update/version', 'System\UpdateController@version')->name('system.update.version');
             Route::get('auto-update/changelog', 'System\UpdateController@changelog')->name('system.changelog');
 
+            //Ingreso de productos
+            Route::get('items', 'System\ItemConfigurationController@itemsIndex')->name('system.items');
+            Route::get('items/records', 'System\ItemConfigurationController@records');
+            Route::get('items/record/{recordId}', 'System\ItemConfigurationController@record');
+            Route::post('items', 'System\ItemConfigurationController@store');
+            Route::get('items/tables', 'System\ItemConfigurationController@tables');
+            Route::delete('items/item-unit-type/{item}', 'System\ItemConfigurationController@destroyItemUnitType');
             //Configuration
 
             Route::post('configurations', 'System\ConfigurationController@store');
@@ -915,6 +925,16 @@ if ($hostname) {
             Route::post('demo_environments/backup-restore', 'System\DemoEnvironmentController@restore')->name('system.demo.restore');
             Route::post('demo_environments/enable-cron', 'System\DemoEnvironmentController@enableCron')->name('system.demo.cron');
             Route::get('demo_environments/client/{client_id}', 'System\DemoEnvironmentController@client');
+
+            Route::post('configuration/items/import', 'System\ConfigurationController@importItems');
+            Route::post('items_configuration/items/import', 'System\ItemConfigurationController@importItems');
+
+            /*Route::get('brands', 'CompetitorController@index')->name('tenant.brands.index')->middleware('redirect.level');*/
+            Route::get('competitors/records', 'System\CompetitorController@records');
+            Route::get('competitors/record/{brand}', 'System\CompetitorController@record');
+            Route::post('competitors', 'System\CompetitorController@store');
+            Route::get('competitors/columns', 'System\CompetitorController@columns');
+            Route::delete('competitors/{brand}', 'System\CompetitorController@destroy');
 
             /*
             Route::get('ajuste_claves_mysql', function(){

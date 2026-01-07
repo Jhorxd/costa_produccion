@@ -27,22 +27,22 @@
             <div class="card-body">
                 <h6 class="card-title">General</h6>
                 <ul class="card-report-links">
-                        @if($user->type != 'integrator')
-                    <li>
-                        <a href="{{ url('list-banks') }}">Listado de bancos</a>
-                    </li>
-                    <li>
-                        <a href="{{url('list-bank-accounts')}}">Listado de cuentas bancarias</a>
-                    </li>
-                    <li>
-                        <a href="{{url('list-currencies')}}">Lista de monedas</a>
-                    </li>
-                    <li>
-                        <a href="{{url('list-cards')}}">Listado de tarjetas</a>
-                    </li>
-                    {{-- <li>
-                        <a href="{{url('list-platforms')}}">Plataformas</a>
-                    </li> --}}
+                    @if($user->type != 'integrator')
+                        <li>
+                            <a href="{{ url('list-banks') }}">Listado de bancos</a>
+                        </li>
+                        <li>
+                            <a href="{{url('list-bank-accounts')}}">Listado de cuentas bancarias</a>
+                        </li>
+                        <li>
+                            <a href="{{url('list-currencies')}}">Lista de monedas</a>
+                        </li>
+                        <li>
+                            <a href="{{url('list-cards')}}">Listado de tarjetas</a>
+                        </li>
+                        {{-- <li>
+                            <a href="{{url('list-platforms')}}">Plataformas</a>
+                        </li> --}}
                     @endif
                 </ul>
             </div>

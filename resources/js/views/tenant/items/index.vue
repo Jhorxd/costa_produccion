@@ -10,6 +10,14 @@
                 <li class="active"><span>{{ titleTopBar }}</span></li>
             </ol>
             <div class="right-wrapper pull-right">
+                <button
+                    v-if="can_add_new_product"
+                    class="btn btn-custom btn-sm mt-2 mr-2"
+                    type="button"
+                    @click.prevent="clickSincronizar()"
+                >
+                    <i class="fa fa-plus-circle"></i> Sincronizar
+                </button>
                 <template v-if="typeUser === 'admin'">
                     <div class="btn-group flex-wrap">
                         <button
@@ -740,6 +748,18 @@ export default {
                     }
             })
         },
+        clickSincronizar(){
+            this.$http.get(`${this.resource}/sincronize`).then((response) => {
+                if (response.data.success) {
+                    this.$message.success(
+                        "Los datos fueron actualizados satisfactoriamente."
+                    );
+                    this.$eventHub.$emit("reloadData");
+                } else {
+                    this.$message.error("No se pudieron actualizar los datos");
+                }
+            });
+        }
     },
 };
 </script>

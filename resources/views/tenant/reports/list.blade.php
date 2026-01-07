@@ -66,6 +66,11 @@
                                 Bandeja descarga de reportes
                             </a>
                         </li>
+                        <li>
+                            <a href="{{route('tenant.reports.products_competence.index')}}">
+                                Reporte de ventas por precios de Competencia
+                            </a>
+                        </li>
                         
                         {{-- Actividades del sistema --}}
                         {{-- <li>

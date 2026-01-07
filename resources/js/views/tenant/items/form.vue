@@ -2465,7 +2465,7 @@ export default {
             this.resetForm();
             this.positions_selected = [];
             this.positions = [];
-            this.location_id = null;
+            c
             this.$emit('update:showDialog', false);
         },
         changeHasIsc() {

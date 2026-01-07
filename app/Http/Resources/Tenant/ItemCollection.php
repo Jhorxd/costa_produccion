@@ -94,6 +94,11 @@ class ItemCollection extends ResourceCollection
                         'price1' => number_format($row->price1, $configuration->decimal_quantity, ".",""),
                         'price2' => number_format($row->price2, $configuration->decimal_quantity, ".",""),
                         'price3' => number_format($row->price3, $configuration->decimal_quantity, ".",""),
+                        'price4' => number_format($row->price4, $configuration->decimal_quantity, ".",""),
+                        'label1' => $row->label1,
+                        'label2' => $row->label2,
+                        'label3' => $row->label3,
+                        'label4' => $row->label4,
                         'price_default' => $row->price_default,
                     ];
                 }),
