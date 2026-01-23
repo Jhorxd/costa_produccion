@@ -24,24 +24,6 @@
                         </advanced-items-search>
                     </div>
                 </template>
-                <template v-else>
-                    <div class="col-md-6 form-modern">
-                        <label class="control-label">Almacén</label>
-                        <el-select v-model="form.warehouse_id"
-                                   @change="changeWarehouse">
-                            <el-option v-for="option in warehouses" :key="option.id" :value="option.id"
-                                       :label="option.name"></el-option>
-                        </el-select>
-                    </div>
-                    <div class="col-md-6 form-modern">
-                        <label class="control-label">Producto</label>
-                        <el-select v-model="form.item_id"
-                                   filterable clearable>
-                            <el-option v-for="option in items" :key="option.id" :value="option.id"
-                                       :label="option.full_description"></el-option>
-                        </el-select>
-                    </div>
-                </template>
 
                 <div class="col-md-3 form-modern">
                     <label class="control-label">Fecha inicio</label>
@@ -67,10 +49,10 @@
                         <el-button class="submit" type="danger" icon="el-icon-tickets"
                                    @click.prevent="clickDownload('pdf')">Exportar PDF
                         </el-button>
-                        <el-button class="submit" type="success" @click.prevent="clickDownload('excel')"><i
+                        <!--<el-button class="submit" type="success" @click.prevent="clickDownload('excel')"><i
                             class="fa fa-file-excel"></i> Exportar Excel
-                        </el-button>
-                        <p class="text-danger"><b>NOTA:</b> Las descarga de los reportes corresponden a su almacén asignado.</p>
+                        </el-button>-->
+                        <p class="text-danger"><b>NOTA:</b> Si coloca fechas, se tomaran las ventas entre ese rango de fechas.</p>
                     </template>
                 </div>
             </div>
@@ -139,6 +121,7 @@ export default {
     created() {
         this.initForm()
         this.events()
+        this.getRecords()
     },
     computed: {
         ...mapState([
@@ -149,7 +132,7 @@ export default {
         },
     },
     async mounted() {
-        if (!this.isEnabledAdvancedRecordsSearch) {
+        /*if (!this.isEnabledAdvancedRecordsSearch) {
             await this.$http.get(`/${this.resource}/filter`)
                 .then(response => {
                     this.warehouses = response.data.warehouses;
@@ -167,7 +150,7 @@ export default {
         else
         {
             this.getFilters()
-        }
+        }()*/
     },
     methods: {
         changeWarehouseAdvancedSearch()
@@ -233,9 +216,9 @@ export default {
             }
         },
         clickDownload(type) {
-            if (!this.form.item_id) {
+            /*if (!this.form.item_id) {
                 return this.$message.error('El producto es obligatorio')
-            }
+            }*/
             let query = queryString.stringify({
                 ...this.form
             });
@@ -245,9 +228,9 @@ export default {
             return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
         },
         async getRecordsByFilter() {
-            if (!this.form.item_id) {
+            /*if (!this.form.item_id) {
                 return this.$message.error('El producto es obligatorio')
-            }
+            }*/
             this.loading_submit = true
             await this.getRecords();
             this.loading_submit = false
@@ -256,10 +239,13 @@ export default {
             this.$eventHub.$emit('emitItemID', this.form.item_id)
             this.records = [];
             await this.$http.get(`/${this.resource}/records?${this.getQueryParameters()}`).then((response) => {
+                console.log(">>>>>", response.data)
                 this.records = response.data.data
                 console.log(response.data.data)
-                this.pagination = response.data.meta
-                this.pagination.per_page = parseInt(response.data.meta.per_page)
+                this.pagination = response.data
+                //this.pagination = response.data.meta
+                //this.pagination.per_page = parseInt(response.data.meta.per_page)
+                this.pagination.per_page = parseInt(response.data.per_page)
                 this.loading_submit = false
             });
         },

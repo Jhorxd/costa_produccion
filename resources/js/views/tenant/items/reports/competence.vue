@@ -17,9 +17,8 @@
                     <div class="col-lg-12 col-md-12 col-sm-12  ">
                        
                         <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                <tr width="100%">
+                            <data-table :resource="resource">
+                                <tr slot="heading">
                                     <th width="5%">#</th>
                                     <th>Nombre Producto</th>
                                     <th>Descripción</th>
@@ -29,9 +28,8 @@
                                     <th>P. Competencia 3</th>
                                     <th>P. Competencia 4</th>
                                 </tr>
-                                </thead>
-                                <tbody>
-                                <tr v-for="(row, index) in records">
+                                <tr slot-scope="{ index, row }">
+                                <!--<tr v-for="(row, index) in records">-->
                                     <td>{{ index + 1 }}</td>
                                     <td>{{ row.item_description }}</td>
                                     <td>{{ row.description }}</td>
@@ -41,8 +39,8 @@
                                     <td>{{ row.label_4 }}</td>
                                     <td>{{ row.label_5 }}</td>
                                 </tr>
-                                </tbody>
-                            </table>
+                                
+                            </data-table>
                         </div>
                                 
                     </div>
@@ -62,7 +60,8 @@ export default {
     data() {
         return {
             activeName: "first",
-            resource: 'reports/kardex',
+            //resource: 'items/report/records',
+            resource: 'items/report',
             form: {},
             item_id: null,
             records: []

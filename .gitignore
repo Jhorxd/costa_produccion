@@ -40,3 +40,4 @@ resources/views/tenant/layouts/partials/header_bk.blade.php
 **/.DS_Store
 public/porto-light/js/bloquear_cliente.js
 .codegpt
+*.zip

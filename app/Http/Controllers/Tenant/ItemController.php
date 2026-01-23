@@ -2142,10 +2142,81 @@ class ItemController extends Controller
             })
             ->join('items', 'item_unit_types.item_id', '=', 'items.id')
             ->whereNotNull(DB::raw("JSON_EXTRACT(item, '$.label_selected')"))
-            ->groupBy('item_unit_types.id', 'item_unit_types.description')
-            ->get();
+            ->groupBy('item_unit_types.id',  'item_unit_types.description', 'items.description')
+            //->get();
+            ->paginate(config('tenant.items_per_page'));
 
         return $resumen;
+        
+    }
+
+    /**
+     * PDF
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function pdf(Request $request)
+    {
+        $data = $this->getData($request);
+        /*$balance = 0;
+        if($request->date_start){
+            $balanceRequest = $request->duplicate();
+            $dateStartInitial = Carbon::parse($request->date_start)->subDay()->format('Y-m-d');
+            $balanceRequest->merge([
+                'date_end' => $dateStartInitial,
+                'date_start' => null,
+            ]);
+            $dataBalance = $this->getData($balanceRequest);
+            $balance = $this->getFirstBalanceKardex($dataBalance["records"]);
+        }*/
+
+        //$data["balance"] = $balance;
+        Log::debug($data);
+        $pdf = PDF::loadView('tenant.items.reports.report_pdf', $data);
+        $filename = 'Report_Ventas_Precio_Competencia_' . date('YmdHis');
+
+        return $pdf->download($filename . '.pdf');
+    }
+
+    public function getData(Request $request){
+        //Carbon::parse($request->date_start)
+        $resumen = DB::connection('tenant')
+            ->table('document_items')
+            ->select(
+                'item_unit_types.id',
+                'item_unit_types.description',
+                'items.description as item_description',  // Agregado
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '1' THEN 1 ELSE 0 END) as label_1"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '2' THEN 1 ELSE 0 END) as label_2"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '3' THEN 1 ELSE 0 END) as label_3"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '4' THEN 1 ELSE 0 END) as label_4"),
+                DB::raw("SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(item, '$.label_selected')) = '5' THEN 1 ELSE 0 END) as label_5"),
+                DB::raw("COUNT(*) as total")
+            )
+            ->join('item_unit_types', function($join) {
+                $join->on(
+                    DB::raw("JSON_UNQUOTE(JSON_EXTRACT(document_items.item, '$.presentation.id'))"), 
+                    '=', 
+                    'item_unit_types.id'
+                );
+            })
+            ->join('items', 'item_unit_types.item_id', '=', 'items.id')
+            ->whereNotNull(DB::raw("JSON_EXTRACT(item, '$.label_selected')"))
+            ->groupBy('item_unit_types.id', 'item_unit_types.description', 'items.description')
+            ->get();
+
+        $company = Company::query()->first();
+        $establishment = Establishment::query()->find(auth()->user()->establishment_id);
+        $date_start = now();
+        $date_end = now();
+        //return $resumen;
+        return [
+            'company' => $company,
+            'establishment' => $establishment,
+            'date_start' => $date_start,
+            'date_end' => $date_end,
+            'records' => $resumen,
+        ];
         
     }
 

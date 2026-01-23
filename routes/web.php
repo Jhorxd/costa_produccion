@@ -241,6 +241,7 @@ if ($hostname) {
             //Route::get('items/positions/{location_id}', 'Tenant\ItemController@positions');
             Route::get('items/report/competence', 'Tenant\ItemController@reportCompetence')->name('tenant.reports.products_competence.index');
             Route::get('items/report/records', 'Tenant\ItemController@data');
+            Route::get('items/report/pdf', 'Tenant\ItemController@pdf');
 
             //InventoryStates
             Route::get('inventoryStates', 'Tenant\InventoryStateController@getData');

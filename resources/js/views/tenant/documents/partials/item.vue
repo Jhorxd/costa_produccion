@@ -1407,7 +1407,7 @@ export default {
                 charges: [],
                 discounts: [],
                 attributes: [],
-                has_igv: null,
+                has_igv: false,
                 is_set: false,
                 item_unit_types: [],
                 has_plastic_bag_taxes: false,

@@ -24,7 +24,7 @@
                                 :limit="1"
                                 :data="form"
                                 :on-success="successUpload">
-                            <el-button slot="trigger" type="primary">Seleccione un archivo (xlsx)</el-button>
+                            <el-button slot="trigger" type="primary">Seleccione un archivo digemid (xlsx)</el-button>
                         </el-upload>
                         <small class="form-control-feedback" v-if="errors.file" v-text="errors.file[0]"></small>
                     </div>
