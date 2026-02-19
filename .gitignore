@@ -1,43 +1,38 @@
-/node_modules
-/public/hot
-/public/downloads
-public/cookie.txt
-/public/storage
-/public/padron_extract/*
-/public/padron_rar/*
-/storage/*.key
+# Node & PHP dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.dusk
+.env.dusk.local
+
+# Laravel compiled / caches that are rebuildable
 /storage/backups/*
-/storage/framework/laravel-excel/*
-/vendor
-/vendor_
+/storage/framework/cache/*
+/storage/framework/views/*
+/storage/logs/*
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+access_log
+error_log
+debug.log
+
+# IDE / Editor / OS
 /.idea
 /.vscode
+**/.DS_Store
 /.vagrant
 Homestead.json
 Homestead.yaml
-npm-debug.log
-yarn-error.log
-.env
-.phpunit.result.cache
-access_log
-error_log
-.env.dusk
-.env.dusk.local
-debug.log
-phpunit.dusk.xml
+
+# Misc
 docker-compose.yml
-composer.lock
-/ssh
-/.project
-app/CoreFacturalo/Templates/pdf/personalizada*
-public/templates/pdf/personalizada*
+.phpunit.result.cache
+phpunit.dusk.xml
 supervisor.conf
-
-app/Models/Tenant/item_bk.php
-env-bk
-resources/views/tenant/layouts/partials/header_bk.blade.php
-
-**/.DS_Store
-public/porto-light/js/bloquear_cliente.js
-.codegpt
-*.zip
+/.project
+.env.backup
+.env.production
