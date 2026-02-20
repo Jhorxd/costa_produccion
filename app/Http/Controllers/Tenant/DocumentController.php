@@ -1039,11 +1039,6 @@ public function getPdfSunat($id)
     {
         self::setChildrenToData($data);
 
-        /* return [
-            'success' => true,
-            'data' => $data
-        ]; */
-        
         $fact = DB::connection('tenant')->transaction(function () use ($data) {
             $facturalo = new Facturalo();
             $facturalo->save($data);
@@ -1053,7 +1048,6 @@ public function getPdfSunat($id)
             $facturalo->updateHash($service_pse_xml['hash']);
             $facturalo->updateQr();
             $facturalo->createPdf();
-            $facturalo->senderXmlSignedBill($service_pse_xml['code']);
 
             return $facturalo;
         });
@@ -1070,6 +1064,7 @@ public function getPdfSunat($id)
             ]
         ];
     }
+
 
     private function associateSaleNoteToDocument(Request $request, int $documentId)
     {
