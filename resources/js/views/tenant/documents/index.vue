@@ -535,43 +535,54 @@
                         <td v-if="columns.purchase_order.visible">
                             {{ row.purchase_order }}
                         </td>
-                        <td class="text-center">
-                            <button
-                                type="button"
-                                style="min-width: 41px"
-                                class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                @click.prevent="clickDownload(row.download_xml)"
-                                v-if="row.has_xml"
-                            >
-                                XML
-                            </button>
-                            <button
-                                type="button"
-                                style="min-width: 41px"
-                                class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                @click.prevent="clickDownload(row.download_pdf)"
-                                v-if="row.has_pdf"
-                            >
-                                PDF
-                            </button>
-                            <button
-                                type="button"
-                                style="min-width: 41px"
-                                class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                @click.prevent="clickDownload(row.download_cdr)"
-                                v-if="row.has_cdr"
-                            >
-                                CDR
-                            </button>
-                            <button
-                                type="button"
-                                style="min-width: 90px"
-                                class="btn waves-effect waves-light btn-xs btn-success m-1__2"
-                                @click.prevent="clickSendSunat(row.id)"
-                            >
-                                ENVIO SUNAT
-                            </button>
-                        </td>
+                            <td class="text-center">
+                                <button
+                                    type="button"
+                                    style="min-width: 41px"
+                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                    @click.prevent="clickDownload(row.download_xml)"
+                                    v-if="row.has_xml"
+                                >
+                                    XML
+                                </button>
+                                <button
+                                    type="button"
+                                    style="min-width: 41px"
+                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                    @click.prevent="clickDownload(row.download_pdf)"
+                                    v-if="row.has_pdf"
+                                >
+                                    PDF
+                                </button>
+                                <button
+                                    type="button"
+                                    style="min-width: 41px"
+                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                    @click.prevent="clickDownload(row.download_cdr)"
+                                    v-if="row.has_cdr"
+                                >
+                                    CDR
+                                </button>
+                                <!-- Botón PDF SUNAT siempre visible -->
+                                <button
+                                    type="button"
+                                    style="min-width: 90px"
+                                    class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
+                                    @click.prevent="clickPdfSunat(row.id)"
+                                >
+                                    PDF SUNAT
+                                </button>
+                                <button
+                                    type="button"
+                                    style="min-width: 90px"
+                                    class="btn waves-effect waves-light btn-xs btn-success m-1__2"
+                                    @click.prevent="clickSendSunat(row.id)"
+                                >
+                                    ENVIO SUNAT
+                                </button>
+                            </td>
+
+
 
 
                         <td class="text-right" v-if="typeUser != 'integrator'">
@@ -893,6 +904,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 import DocumentsVoided from "./partials/voided.vue";
 import DocumentOptions from "./partials/options.vue";
 import DocumentPayments from "./partials/payments.vue";
@@ -1081,6 +1093,48 @@ export default {
             this.recordId = recordId;
             this.showDialogVoided = true;
         },
+        async clickPdfSunat(id) {
+            try {
+                const response = await this.$http.get(`/documents/pdf-sunat/${id}`);
+                
+                const url = response.data.url;
+                
+                if (!url) {
+                    this.$swal({
+                        icon: 'warning',
+                        title: 'Atención',
+                        text: 'NO TIENE PDF SUNAT',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
+                
+                // Abrir PDF en nueva ventana
+                window.open(url, '_blank');
+                
+            } catch (error) {
+                let errorMessage = 'NO TIENE PDF SUNAT';
+                
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.error) {
+                        errorMessage = error.response.data.error;
+                    }
+                }
+                
+                // Modal de error
+                this.$swal({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMessage,
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        },
+
+
+
         clickSendSunat(documentId) {
             // Crear el loading
             const loadingInstance = this.$loading({

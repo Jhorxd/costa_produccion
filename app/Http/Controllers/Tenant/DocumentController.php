@@ -40,6 +40,7 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Document;
+use App\Models\Tenant\DocumentResponse;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\PaymentCondition;
@@ -347,7 +348,31 @@ class DocumentController extends Controller
         $respuesta = curl_exec($ch);
         curl_close($ch);
 
-        $leer_respuesta = json_decode($respuesta, true);
+            $leer_respuesta = json_decode($respuesta, true);
+
+            // --- Guardar la respuesta en la base de datos ---
+            DocumentResponse::create([
+                'document_id' => $document->id,
+                'tipo_de_comprobante' => $leer_respuesta['tipo_de_comprobante'] ?? null,
+                'serie' => $leer_respuesta['serie'] ?? null,
+                'numero' => $leer_respuesta['numero'] ?? null,
+                'enlace' => $leer_respuesta['enlace'] ?? null,
+                'aceptada_por_sunat' => isset($leer_respuesta['aceptada_por_sunat']) ? (int)$leer_respuesta['aceptada_por_sunat'] : null,
+                'sunat_description' => $leer_respuesta['sunat_description'] ?? null,
+                'sunat_note' => $leer_respuesta['sunat_note'] ?? null,
+                'sunat_responsecode' => $leer_respuesta['sunat_responsecode'] ?? null,
+                'sunat_soap_error' => $leer_respuesta['sunat_soap_error'] ?? null,
+                'pdf_zip_base64' => $leer_respuesta['pdf_zip_base64'] ?? null,
+                'xml_zip_base64' => $leer_respuesta['xml_zip_base64'] ?? null,
+                'cdr_zip_base64' => $leer_respuesta['cdr_zip_base64'] ?? null,
+                'enlace_del_pdf' => $leer_respuesta['enlace_del_pdf'] ?? null,
+                'enlace_del_xml' => $leer_respuesta['enlace_del_xml'] ?? null,
+                'enlace_del_cdr' => $leer_respuesta['enlace_del_cdr'] ?? null,
+                'codigo_hash' => $leer_respuesta['codigo_hash'] ?? null,
+                'cadena_para_codigo_qr' => $leer_respuesta['cadena_para_codigo_qr'] ?? null,
+                'respuesta_json' => $respuesta
+            ]);
+
 
         // --- Devolver JSON ---
         if (isset($leer_respuesta['errors'])) {
@@ -372,6 +397,19 @@ class DocumentController extends Controller
         }
 
     }
+
+        // DocumentController.php
+public function getPdfSunat($id)
+{
+    // ✅ Usa el modelo DocumentResponse que ya maneja el tenant
+    $documentResponse = DocumentResponse::where('document_id', $id)->first();
+
+    if (!$documentResponse || !$documentResponse->enlace_del_pdf) {
+        return response()->json(['error' => 'PDF no encontrado'], 404);
+    }
+
+    return response()->json(['url' => $documentResponse->enlace_del_pdf]);
+}
 
 
 
