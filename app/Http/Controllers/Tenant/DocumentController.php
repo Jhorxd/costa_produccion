@@ -310,18 +310,25 @@ class DocumentController extends Controller
         // --- Agregar items ---
         foreach ($document->items as $doc_item) {
             $item = $doc_item->item;
+            
+            // unit_price ya incluye IGV
+            $precio_unitario = $doc_item->unit_price; // CON IGV
+            
+            // Calcular valor unitario (SIN IGV)
+            $valor_unitario = $precio_unitario / 1.18;
+            
             $data['items'][] = [
                 "unidad_de_medida" => $item->unit_type_id,
                 "codigo" => $doc_item->item_id,
                 "descripcion" => $item->description,
                 "cantidad" => $doc_item->quantity,
-                "valor_unitario" => $doc_item->total_value,
-                "precio_unitario" => $doc_item->unit_price,
+                "valor_unitario" => round($valor_unitario, 2),  // SIN IGV
+                "precio_unitario" => $precio_unitario,           // CON IGV (unit_price original)
                 "descuento" => "",
-                "subtotal" => $doc_item->total_value,
+                "subtotal" => round($valor_unitario * $doc_item->quantity, 2), // valor_unitario × cantidad
                 "tipo_de_igv" => "1",
-                "igv" => $doc_item->total_taxes,
-                "total" => $doc_item->total,
+                "igv" => round(($precio_unitario - $valor_unitario) * $doc_item->quantity, 2),
+                "total" => round($precio_unitario * $doc_item->quantity, 2),
                 "anticipo_regularizacion" => "false",
                 "anticipo_documento_serie" => "",
                 "anticipo_documento_numero" => ""
