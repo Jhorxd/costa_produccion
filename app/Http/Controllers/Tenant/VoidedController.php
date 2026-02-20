@@ -57,56 +57,66 @@ class VoidedController extends Controller
         return new VoidedCollection($voided->union($summaries)->orderBy('date_of_issue', 'DESC')->paginate(config('tenant.items_per_page')));
     }
 
-    public function store(VoidedRequest $request)
-    {
-        $validate = $this->validateVoided($request);
-        if(!$validate['success']) return $validate;
+public function store(VoidedRequest $request)
+{
+    $validate = $this->validateVoided($request);
+    if(!$validate['success']) return $validate;
 
-        $fact = DB::connection('tenant')->transaction(function () use($request) {
-            $facturalo = new Facturalo();
-            $inputs = $request->all();
-            $facturalo->save($inputs);
-            $facturalo->createXmlUnsigned();
-            $service_pse_xml = $facturalo->servicePseSendXml();
-            $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
-            $facturalo->senderXmlSignedSummary();
+    $fact = DB::connection('tenant')->transaction(function () use($request) {
+        $facturalo = new Facturalo();
+        $inputs = $request->all();
 
-            return $facturalo;
-        });
+        \Log::info('Iniciando store voided', $inputs);
+        $facturalo->save($inputs);
+        \Log::info('Save OK');
+        $facturalo->createXmlUnsigned();
+        \Log::info('createXmlUnsigned OK');
+        $service_pse_xml = $facturalo->servicePseSendXml();
+        \Log::info('servicePseSendXml OK', $service_pse_xml);
+        $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
+        \Log::info('signXmlUnsigned OK');
+        $facturalo->senderXmlSignedSummary();
+        \Log::info('senderXmlSignedSummary OK');
 
-        $document = $fact->getDocument();
+        return $facturalo;
+    });
 
-        // Llamar bajaSunat por cada documento a anular
-        foreach ($request->documents as $doc) {
-            $docId = $doc['document_id'];
-            $motivo = $doc['description'] ?? 'ANULACION DE COMPROBANTE';
+    $document = $fact->getDocument();
+    \Log::info('getDocument OK', ['identifier' => $document->identifier]);
 
-            $resultado = $this->bajaSunat($docId, $motivo);
-            $resultadoData = json_decode($resultado->getContent(), true);
+    // Llamar bajaSunat por cada documento a anular
+    foreach ($request->documents as $doc) {
+        $docId = $doc['document_id'];
+        $motivo = $doc['description'] ?? 'ANULACION DE COMPROBANTE';
 
-            if (!$resultadoData['success']) {
-                \Log::warning("bajaSunat falló para documento ID $docId: " . $resultadoData['message']);
+        \Log::info("Llamando bajaSunat para documento ID $docId");
+        $resultado = $this->bajaSunat($docId, $motivo);
+        $resultadoData = json_decode($resultado->getContent(), true);
+        \Log::info("Resultado bajaSunat ID $docId", $resultadoData);
 
-                return [
-                    'success' => false,
-                    'message' => $resultadoData['message'],
-                ];
-            }
+        if (!$resultadoData['success']) {
+            \Log::warning("bajaSunat falló para documento ID $docId: " . $resultadoData['message']);
 
-            // ✅ Solo actualiza si SUNAT confirmó la anulación (no si está pendiente)
-            if ($resultadoData['aceptada_por_sunat'] === true) {
-                $docModel = Document::find($docId);
-                if ($docModel) {
-                    $docModel->update(['state_type_id' => '11']);
-                }
-            }
+            return [
+                'success' => false,
+                'message' => $resultadoData['message'],
+            ];
         }
 
-        return [
-            'success' => true,
-            'message' => "La anulación {$document->identifier} fue creado correctamente",
-        ];
+        // ✅ Solo actualiza si SUNAT confirmó la anulación (no si está pendiente)
+        if ($resultadoData['aceptada_por_sunat'] === true) {
+            $docModel = Document::find($docId);
+            if ($docModel) {
+                $docModel->update(['state_type_id' => '11']);
+            }
+        }
     }
+
+    return [
+        'success' => true,
+        'message' => "La anulación {$document->identifier} fue creado correctamente",
+    ];
+}
 
     /**
      * Validaciones previas
