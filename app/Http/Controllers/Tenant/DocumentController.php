@@ -357,9 +357,10 @@ class DocumentController extends Controller
 
             $leer_respuesta = json_decode($respuesta, true);
 
-            // --- Guardar la respuesta en la base de datos ---
-            DocumentResponse::create([
-                'document_id' => $document->id,
+// --- Guardar o actualizar la respuesta en la base de datos ---
+        DocumentResponse::updateOrCreate(
+            ['document_id' => $document->id], // Condición de búsqueda
+            [ // Datos a actualizar o crear
                 'tipo_de_comprobante' => $leer_respuesta['tipo_de_comprobante'] ?? null,
                 'serie' => $leer_respuesta['serie'] ?? null,
                 'numero' => $leer_respuesta['numero'] ?? null,
@@ -378,7 +379,8 @@ class DocumentController extends Controller
                 'codigo_hash' => $leer_respuesta['codigo_hash'] ?? null,
                 'cadena_para_codigo_qr' => $leer_respuesta['cadena_para_codigo_qr'] ?? null,
                 'respuesta_json' => $respuesta
-            ]);
+            ]
+        );
 
 
         // --- Devolver JSON ---
