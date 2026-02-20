@@ -280,6 +280,8 @@ if ($hostname) {
             //Documents
             Route::post('documents/enviosunat/{id}', [App\Http\Controllers\Tenant\DocumentController::class, 'enviosunat'])
             ->name('tenant.document.enviosunat');
+            Route::get('documents/{id}/consultar-anulacion', [App\Http\Controllers\Tenant\DocumentController::class, 'consultarAnulacionSunat'])
+            ->name('tenant.document.consultarAnulacion');
             Route::post('documents/categories', 'Tenant\DocumentController@storeCategories');
             Route::post('documents/brands', 'Tenant\DocumentController@storeBrands');
             Route::get('documents/search/customers', 'Tenant\DocumentController@searchCustomers');

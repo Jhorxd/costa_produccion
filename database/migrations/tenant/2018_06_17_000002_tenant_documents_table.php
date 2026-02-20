@@ -21,7 +21,9 @@ class TenantDocumentsTable extends Migration
             $table->json('establishment');
             $table->char('soap_type_id', 2);
             $table->char('state_type_id', 2);
-            $table->string('state_sunat', 50)->nullable();
+            $table->string('state_sunat', 50)
+            ->default('PENDIENTE')
+            ->nullable(false);
             $table->string('ubl_version');
             $table->char('group_id', 2);
             $table->string('document_type_id');

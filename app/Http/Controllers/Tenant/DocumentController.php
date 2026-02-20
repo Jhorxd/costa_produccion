@@ -218,6 +218,7 @@ class DocumentController extends Controller
         $is_contingency = 0;
         return view('tenant.documents.form_tensu', compact('is_contingency'));
     }
+    
     public function enviosunat($id)
     {
         // --- Obtener documento con cliente e items ---
@@ -393,29 +394,166 @@ class DocumentController extends Controller
         );
 
 
-        // --- Devolver JSON ---
-        if (isset($leer_respuesta['errors'])) {
-            return response()->json([
-                'success' => false,
-                'message' => is_array($leer_respuesta['errors']) 
-                                ? implode(", ", $leer_respuesta['errors']) 
-                                : $leer_respuesta['errors'],
-                'document_id' => $id,
-                'raw' => $leer_respuesta // opcional, para depuración
-            ]);
-        } else {
+            // 🔥 ACTUALIZAR ESTADO SUNAT
+            if (!isset($leer_respuesta['errors'])) {
+                $document->update(['state_sunat' => 'ACEPTADO']);
+            } else {
+                $document->update(['state_sunat' => 'RECHAZADO']);
+            }
+
+            if (isset($leer_respuesta['errors'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => is_array($leer_respuesta['errors'])
+                        ? implode(", ", $leer_respuesta['errors'])
+                        : $leer_respuesta['errors'],
+                    'document_id' => $id
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Comprobante enviado correctamente',
                 'document_id' => $id,
                 'enlace' => $leer_respuesta['enlace'] ?? "",
                 'aceptada_por_sunat' => $leer_respuesta['aceptada_por_sunat'] ?? false,
-                'codigo_hash' => $leer_respuesta['codigo_hash'] ?? "",
-                'raw' => $leer_respuesta // opcional, para depuración
+                'codigo_hash' => $leer_respuesta['codigo_hash'] ?? ""
             ]);
-        }
 
     }
+
+    public function consultarAnulacionSunat($id)
+{
+    // --- Obtener documento ---
+    $document = Document::findOrFail($id);
+
+    // Obtener tipo de documento
+    $tipo_documento_id = is_object($document->document_type) ? $document->document_type->id : $document->document_type;
+
+    // Mapear tipo de comprobante según NubeFact
+    switch ($tipo_documento_id) {
+        case '01':
+            $tipo_comprobante = 1;
+            break;
+        case '03':
+            $tipo_comprobante = 2;
+            break;
+        case '07':
+            $tipo_comprobante = 3;
+            break;
+        case '08':
+            $tipo_comprobante = 4;
+            break;
+        default:
+            $tipo_comprobante = 0;
+            break;
+    }
+
+    \Log::info("consultarAnulacionSunat: Documento ID $id, tipo original: ".$tipo_documento_id.", tipo mapeado: $tipo_comprobante");
+
+    // --- Obtener token ---
+    $tokenRecord = Tokens::first();
+
+    if (!$tokenRecord) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se encontró configuración de token/ruta para NubeFact.',
+            'document_id' => $id
+        ]);
+    }
+
+    $ruta  = $tokenRecord->ruta;
+    $token = $tokenRecord->token;
+
+    // --- Construir JSON de consulta ---
+    $data = [
+        "operacion"           => "consultar_anulacion",
+        "tipo_de_comprobante" => $tipo_comprobante,
+        "serie"               => $document->series,
+        "numero"              => ltrim($document->number, "0")
+    ];
+
+    $data_json = json_encode($data);
+
+    // --- CURL ---
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $ruta);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Token token="'.$token.'"',
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $respuesta = curl_exec($ch);
+    curl_close($ch);
+
+    $leer_respuesta = json_decode($respuesta, true);
+
+    // --- Si hay errores ---
+    if (isset($leer_respuesta['errors'])) {
+        return response()->json([
+            'success'     => false,
+            'message'     => 'El documento no fue encontrado en NubeFact.',
+            'document_id' => $id
+        ]);
+    }
+
+    // --- Si SUNAT aceptó la anulación ---
+    if (isset($leer_respuesta['aceptada_por_sunat']) && (int)$leer_respuesta['aceptada_por_sunat'] === 1) {
+
+        // Actualizar respuesta en BD
+        DocumentResponse::updateOrCreate(
+            ['document_id' => $document->id],
+            [
+                'tipo_de_comprobante'   => $leer_respuesta['tipo_de_comprobante'] ?? null,
+                'serie'                 => $leer_respuesta['serie'] ?? null,
+                'numero'                => $leer_respuesta['numero'] ?? null,
+                'enlace'                => $leer_respuesta['enlace'] ?? null,
+                'aceptada_por_sunat'    => 1,
+                'sunat_description'     => $leer_respuesta['sunat_description'] ?? null,
+                'sunat_note'            => $leer_respuesta['sunat_note'] ?? null,
+                'sunat_responsecode'    => $leer_respuesta['sunat_responsecode'] ?? null,
+                'sunat_soap_error'      => $leer_respuesta['sunat_soap_error'] ?? null,
+                'pdf_zip_base64'        => $leer_respuesta['pdf_zip_base64'] ?? null,
+                'xml_zip_base64'        => $leer_respuesta['xml_zip_base64'] ?? null,
+                'cdr_zip_base64'        => $leer_respuesta['cdr_zip_base64'] ?? null,
+                'enlace_del_pdf'        => $leer_respuesta['enlace_del_pdf'] ?? null,
+                'enlace_del_xml'        => $leer_respuesta['enlace_del_xml'] ?? null,
+                'enlace_del_cdr'        => $leer_respuesta['enlace_del_cdr'] ?? null,
+                'codigo_hash'           => $leer_respuesta['codigo_hash'] ?? null,
+                'cadena_para_codigo_qr' => $leer_respuesta['cadena_para_codigo_qr'] ?? null,
+                'respuesta_json'        => $respuesta
+            ]
+        );
+
+        // ✅ Actualizar estado del documento
+        $document->update([
+            'state_sunat'   => 'ANULADO',
+            'state_type_id' => '11'
+        ]);
+
+        return response()->json([
+            'success'            => true,
+            'message'            => $leer_respuesta['sunat_description'] ?? 'Anulación aceptada por SUNAT.',
+            'document_id'        => $id,
+            'aceptada_por_sunat' => true,
+            'enlace'             => $leer_respuesta['enlace'] ?? ''
+        ]);
+
+    } else {
+        // Pendiente / en observación
+        return response()->json([
+            'success'            => false,
+            'message'            => 'El documento se encuentra en observación, por favor comuníquese con SOPORTE TÉCNICO.',
+            'document_id'        => $id,
+            'aceptada_por_sunat' => false
+        ]);
+    }
+}
+
 
         // DocumentController.php
 public function getPdfSunat($id)

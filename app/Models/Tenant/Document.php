@@ -169,6 +169,7 @@ class Document extends ModelTenant
         'establishment',
         'soap_type_id',
         'state_type_id',
+        'state_sunat',
         'ubl_version',
         'group_id',
         'document_type_id',

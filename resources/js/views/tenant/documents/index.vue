@@ -461,6 +461,7 @@
                                 :class="{
                                     'bg-danger': row.state_sunat === 'RECHAZADO',
                                     'bg-warning': row.state_sunat === 'OBSERVADO',
+                                    'bg-danger': row.state_sunat === 'ANULADO',
                                     'bg-success': row.state_sunat === 'ACEPTADO'
                                 }"
                             >
@@ -741,6 +742,12 @@
                                         @click.prevent="clickOptions(row.id)"
                                     >
                                         Opciones
+                                    </button>
+                                    <button
+                                        class="dropdown-item"
+                                        @click.prevent="clickConsultarAnulacion(row.id)"
+                                    >
+                                        Consultar Anulación
                                     </button>
 
                                     <template
@@ -1155,7 +1162,7 @@ export default {
 
 
         clickSendSunat(documentId) {
-            // Crear el loading
+
             const loadingInstance = this.$loading({
                 lock: true,
                 text: 'Enviando a SUNAT...',
@@ -1165,21 +1172,29 @@ export default {
 
             this.$http.post(`/documents/enviosunat/${documentId}`)
                 .then(response => {
+
                     if (response.data.success) {
+
                         this.$message.success(response.data.message);
+
+                        // 🔥 AQUÍ RECARGAS LA TABLA
+                        this.$eventHub.$emit("reloadData");
+
                     } else {
+
                         this.$message.error(response.data.message);
                     }
+
                 })
                 .catch(error => {
                     this.$message.error('Error de conexión o servidor');
                     console.error(error);
                 })
                 .finally(() => {
-                    // Cerrar el loading
                     loadingInstance.close();
                 });
         },
+
 
 
         clickDownload(download) {
@@ -1241,6 +1256,37 @@ export default {
         clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;
+        },
+        clickConsultarAnulacion(recordId = null) {
+            const documentId = recordId;
+
+            const loadingInstance = this.$loading({
+                lock: true,
+                text: 'Consultando anulación en SUNAT...',
+                spinner: 'el-icon-loading',
+                background: 'rgba(36, 5, 5, 0.7)'
+            });
+
+            this.$http.get(`/documents/${documentId}/consultar-anulacion`)
+                .then(response => {
+
+                    if (response.data.success) {
+                        this.$message.success(response.data.message);
+                    } else {
+                        this.$message.warning(response.data.message);
+                    }
+
+                    // 🔥 Recarga siempre, tanto si fue aceptado como si está pendiente
+                    this.$eventHub.$emit("reloadData");
+
+                })
+                .catch(error => {
+                    this.$message.error('Error de conexión o servidor');
+                    console.error(error);
+                })
+                .finally(() => {
+                    loadingInstance.close();
+                });
         },
         clickReStore(document_id) {
             this.$http

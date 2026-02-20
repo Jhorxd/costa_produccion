@@ -48,6 +48,8 @@ class DocumentCollection extends ResourceCollection
             }
 
             if ($row->group_id === '02') {
+                $btn_voided = true;
+                
                 if ($row->state_type_id === '05') {
                     $btn_note = true;
                     $btn_voided = true;
