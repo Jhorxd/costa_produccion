@@ -1,38 +1,48 @@
-# Node & PHP dependencies
+# --- Dependencias (NUNCA se suben) ---
 node_modules/
 vendor/
+composer.lock
 
-# Environment files
+# --- Archivos de Entorno (Privacidad) ---
 .env
 .env.dusk
 .env.dusk.local
+.env.backup
+.env.production
 
-# Laravel compiled / caches that are rebuildable
+# --- Compilados de Frontend (Lo que causó el problema) ---
+# Ignoramos todo lo que genera npm run production
+/public/js/*
+/public/css/*
+/public/mix-manifest.json
+# Permitimos que las carpetas existan pero vacías
+!/public/js/.gitignore
+!/public/css/.gitignore
+
+# --- Caché y Logs de Laravel ---
 /storage/backups/*
 /storage/framework/cache/*
 /storage/framework/views/*
+/storage/framework/sessions/*
 /storage/logs/*
-
-# Logs
+/storage/debugbar/*.json
 npm-debug.log*
 yarn-error.log*
 access_log
 error_log
 debug.log
 
-# IDE / Editor / OS
+# --- IDE / Editor / OS ---
 /.idea
 /.vscode
 **/.DS_Store
 /.vagrant
 Homestead.json
 Homestead.yaml
-
-# Misc
-docker-compose.yml
+/.project
 .phpunit.result.cache
+
+# --- Configuración de Infraestructura ---
+docker-compose.yml
 phpunit.dusk.xml
 supervisor.conf
-/.project
-.env.backup
-.env.production
