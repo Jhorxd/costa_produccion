@@ -1915,4 +1915,12 @@ class Document extends ModelTenant
         return null;
     }
 
+        // Relación con cliente
+    public function customer()
+    {
+        return $this->belongsTo(Person::class, 'customer_id');
+    }
+
+
+
 }

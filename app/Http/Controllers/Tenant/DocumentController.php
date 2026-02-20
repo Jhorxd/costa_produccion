@@ -216,6 +216,163 @@ class DocumentController extends Controller
         $is_contingency = 0;
         return view('tenant.documents.form_tensu', compact('is_contingency'));
     }
+    public function enviosunat($id)
+    {
+        // --- Obtener documento con cliente e items ---
+        $document = Document::with(['customer', 'items.item'])->findOrFail($id);
+
+        // Obtener el ID real del tipo de documento
+        $tipo_documento_id = is_object($document->document_type) ? $document->document_type->id : $document->document_type;
+
+        // Mapear tipo de comprobante según NubeFact
+        switch ($tipo_documento_id) {
+            case '01': // Factura
+                $tipo_comprobante = 1;
+                break;
+            case '03': // Boleta
+                $tipo_comprobante = 2;
+                break;
+            case '07': // Nota de crédito
+                $tipo_comprobante = 3;
+                break;
+            case '08': // Nota de débito
+                $tipo_comprobante = 4;
+                break;
+            default:
+                $tipo_comprobante = 0;
+                break;
+        }
+
+        // --- Log para depuración ---
+        \Log::info("enviosunat: Documento ID $id, tipo original: ".$tipo_documento_id.", tipo mapeado: $tipo_comprobante");
+
+        // Fechas
+        $fecha_emision = $document->date_of_issue ? date('Y-m-d', strtotime($document->date_of_issue)) : date('Y-m-d');
+        $fecha_vencimiento = $document->due_date ? date('Y-m-d', strtotime($document->due_date)) : $fecha_emision;
+
+        // Validar tipo de nota (solo números válidos según NubeFact)
+        $tipo_nota_credito = in_array($document->credit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->credit_note_type : "";
+        $tipo_nota_debito  = in_array($document->debit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->debit_note_type : "";
+
+        // --- Construir JSON ---
+        $data = [
+            "operacion" => "generar_comprobante",
+            "tipo_de_comprobante" => $tipo_comprobante,
+            "serie" => $document->series,
+            "numero" => $document->number,
+            "sunat_transaction" => "1",
+            "cliente_tipo_de_documento" => $document->customer->identity_document_type_id,
+            "cliente_numero_de_documento" => $document->customer->number,
+            "cliente_denominacion" => $document->customer->name,
+            "cliente_direccion" => $document->customer->address ?? "",
+            "cliente_email" => $document->customer->email ?? "",
+            "cliente_email_1" => "",
+            "cliente_email_2" => "",
+            "fecha_de_emision" => $fecha_emision,
+            "fecha_de_vencimiento" => $fecha_vencimiento,
+            "moneda" => 1,
+            "tipo_de_cambio" => "",
+            "porcentaje_de_igv" => "18.00",
+            "descuento_global" => "",
+            "total_descuento" => "",
+            "total_anticipo" => "",
+            "total_gravada" => $document->total_value,
+            "total_inafecta" => "",
+            "total_exonerada" => "",
+            "total_igv" => $document->total_taxes,
+            "total_gratuita" => "",
+            "total_otros_cargos" => "",
+            "total" => $document->total,
+            "percepcion_tipo" => "",
+            "percepcion_base_imponible" => "",
+            "total_percepcion" => "",
+            "total_incluido_percepcion" => "",
+            "detraccion" => "false",
+            "observaciones" => "",
+            "documento_que_se_modifica_tipo" => "",
+            "documento_que_se_modifica_serie" => "",
+            "documento_que_se_modifica_numero" => "",
+            "tipo_de_nota_de_credito" => $tipo_nota_credito,
+            "tipo_de_nota_de_debito" => $tipo_nota_debito,
+            "enviar_automaticamente_a_la_sunat" => "true",
+            "enviar_automaticamente_al_cliente" => "true",
+            "codigo_unico" => "",
+            "condiciones_de_pago" => "",
+            "medio_de_pago" => "",
+            "placa_vehiculo" => "",
+            "orden_compra_servicio" => "",
+            "tabla_personalizada_codigo" => "",
+            "formato_de_pdf" => "",
+            "items" => []
+        ];
+
+        // --- Agregar items ---
+        foreach ($document->items as $doc_item) {
+            $item = $doc_item->item;
+            $data['items'][] = [
+                "unidad_de_medida" => $item->unit_type_id,
+                "codigo" => $doc_item->item_id,
+                "descripcion" => $item->description,
+                "cantidad" => $doc_item->quantity,
+                "valor_unitario" => $doc_item->total_value,
+                "precio_unitario" => $doc_item->unit_price,
+                "descuento" => "",
+                "subtotal" => $doc_item->total_value,
+                "tipo_de_igv" => "1",
+                "igv" => $doc_item->total_taxes,
+                "total" => $doc_item->total,
+                "anticipo_regularizacion" => "false",
+                "anticipo_documento_serie" => "",
+                "anticipo_documento_numero" => ""
+            ];
+        }
+
+        $data_json = json_encode($data);
+
+        // --- CURL ---
+        $ruta = "https://api.pse.pe/api/v1/782529ec6e184f9faf631b905df687ba6dae035978a643d1912dee909929a80e";
+        $token = "eyJhbGciOiJIUzI1NiJ9.Ijk1Y2E1ZDEwY2I3YjQ1ODFhY2FlMGY1NzE5NTkxMmI2OWZiNTM4NGUwOGZmNDVkYmJmYTI0YmY4YjAyYTA5YzMi.SsNS80SG3XRAkCSqgeksrLQVRYgdhG4rPiPiDG6cwUU";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $ruta);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Token token="'.$token.'"',
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $respuesta = curl_exec($ch);
+        curl_close($ch);
+
+        $leer_respuesta = json_decode($respuesta, true);
+
+        // --- Devolver JSON ---
+        if (isset($leer_respuesta['errors'])) {
+            return response()->json([
+                'success' => false,
+                'message' => is_array($leer_respuesta['errors']) 
+                                ? implode(", ", $leer_respuesta['errors']) 
+                                : $leer_respuesta['errors'],
+                'document_id' => $id,
+                'raw' => $leer_respuesta // opcional, para depuración
+            ]);
+        } else {
+            return response()->json([
+                'success' => true,
+                'message' => 'Comprobante enviado correctamente',
+                'document_id' => $id,
+                'enlace' => $leer_respuesta['enlace'] ?? "",
+                'aceptada_por_sunat' => $leer_respuesta['aceptada_por_sunat'] ?? false,
+                'codigo_hash' => $leer_respuesta['codigo_hash'] ?? "",
+                'raw' => $leer_respuesta // opcional, para depuración
+            ]);
+        }
+
+    }
+
 
 
     public function tables()

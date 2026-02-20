@@ -563,7 +563,16 @@
                             >
                                 CDR
                             </button>
+                            <button
+                                type="button"
+                                style="min-width: 90px"
+                                class="btn waves-effect waves-light btn-xs btn-success m-1__2"
+                                @click.prevent="clickSendSunat(row.id)"
+                            >
+                                ENVIO SUNAT
+                            </button>
                         </td>
+
 
                         <td class="text-right" v-if="typeUser != 'integrator'">
                             <div class="dropdown">
@@ -1072,6 +1081,34 @@ export default {
             this.recordId = recordId;
             this.showDialogVoided = true;
         },
+        clickSendSunat(documentId) {
+            // Crear el loading
+            const loadingInstance = this.$loading({
+                lock: true,
+                text: 'Enviando a SUNAT...',
+                spinner: 'el-icon-loading',
+                background: 'rgba(36, 5, 5, 0.7)'
+            });
+
+            this.$http.post(`/documents/enviosunat/${documentId}`)
+                .then(response => {
+                    if (response.data.success) {
+                        this.$message.success(response.data.message);
+                    } else {
+                        this.$message.error(response.data.message);
+                    }
+                })
+                .catch(error => {
+                    this.$message.error('Error de conexión o servidor');
+                    console.error(error);
+                })
+                .finally(() => {
+                    // Cerrar el loading
+                    loadingInstance.close();
+                });
+        },
+
+
         clickDownload(download) {
             window.open(download, "_blank");
         },

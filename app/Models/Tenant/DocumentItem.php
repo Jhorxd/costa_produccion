@@ -603,4 +603,10 @@
         {
             $this->attributes['additional_data'] = (is_null($value)) ? null : json_encode($value);
         }
+
+            // Relación con item
+            public function item()
+            {
+                return $this->belongsTo(Item::class, 'item_id');
+            }
     }
