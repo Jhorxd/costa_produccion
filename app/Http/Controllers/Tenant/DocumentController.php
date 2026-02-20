@@ -40,6 +40,7 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Document;
+use App\Models\Tenant\Tokens;
 use App\Models\Tenant\DocumentResponse;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Item;
@@ -338,9 +339,18 @@ class DocumentController extends Controller
         $data_json = json_encode($data);
 
         // --- CURL ---
-        $ruta = "https://api.pse.pe/api/v1/782529ec6e184f9faf631b905df687ba6dae035978a643d1912dee909929a80e";
-        $token = "eyJhbGciOiJIUzI1NiJ9.Ijk1Y2E1ZDEwY2I3YjQ1ODFhY2FlMGY1NzE5NTkxMmI2OWZiNTM4NGUwOGZmNDVkYmJmYTI0YmY4YjAyYTA5YzMi.SsNS80SG3XRAkCSqgeksrLQVRYgdhG4rPiPiDG6cwUU";
+        // --- Obtener el token del tenant activo ---
+        $tokenRecord = Tokens::first(); // o firstOrFail() si quieres que lance error si no existe
 
+        if ($tokenRecord) {
+            $ruta = $tokenRecord->ruta;
+            $token = $tokenRecord->token;
+        } else {
+            // Opcional: manejo si no hay token registrado
+            $ruta = null;
+            $token = null;
+            // o lanzar excepción, según tu lógica
+        }
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $ruta);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -1388,6 +1398,7 @@ public function getPdfSunat($id)
         $date_of_issue = $request->date_of_issue;
         $document_type_id = $request->document_type_id;
         $state_type_id = $request->state_type_id;
+        $state_sunat = $request->state_sunat;
         $number = $request->number;
         $series = $request->series;
         $pending_payment = ($request->pending_payment == "true") ? true : false;
@@ -1420,6 +1431,11 @@ public function getPdfSunat($id)
         if ($state_type_id) {
             $records->where('state_type_id', 'like', '%' . $state_type_id . '%');
         }
+
+        if ($state_sunat) {
+            $records->where('state_sunat', $state_sunat);
+        }
+
         if ($purchase_order) {
             $records->where('purchase_order', $purchase_order);
         }

@@ -183,6 +183,7 @@
                         <th v-if="columns.order_note.visible">Pedidos</th>
                         <th v-if="columns.send_it.visible">Email Enviado</th>
                         <th>Estado</th>
+                        <th>Estado SUNAT</th>
                         <th v-if="columns.user_name.visible">Usuario</th>
                         <th
                             class="text-right"
@@ -453,6 +454,18 @@
                                     ></i>
                                 </el-tooltip>
                             </template>
+                        </td>
+                        <td>
+                            <span
+                                class="badge bg-secondary text-white"
+                                :class="{
+                                    'bg-danger': row.state_sunat === 'RECHAZADO',
+                                    'bg-warning': row.state_sunat === 'OBSERVADO',
+                                    'bg-success': row.state_sunat === 'ACEPTADO'
+                                }"
+                            >
+                                {{ row.state_sunat }}
+                            </span>
                         </td>
                         <td v-if="columns.user_name.visible">
                             {{ row.user_name }}

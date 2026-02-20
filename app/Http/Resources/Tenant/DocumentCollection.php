@@ -164,6 +164,7 @@ class DocumentCollection extends ResourceCollection
                 'total_igv' => $row->total_igv,
                 'total' => $row->total,
                 'state_type_id' => $row->state_type_id,
+                'state_sunat' => $row->state_sunat,
                 'state_type_description' => $row->state_type->description,
                 'document_type_description' => $row->document_type->description,
                 'document_type_id' => $row->document_type->id,

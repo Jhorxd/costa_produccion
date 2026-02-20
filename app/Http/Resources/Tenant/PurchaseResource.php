@@ -61,7 +61,7 @@ class PurchaseResource extends JsonResource
 
     public static function getTransformItems($items, $purchase_id){
         return $items->transform(function($row, $key) {
-            $item = Item::select('stock_max', 'stock')->find($row->id);
+            $item = Item::select('stock_max', 'stock')->find($row->item_id);
             return [
                 'id' => $row->id,
                 'purchase_id' => $row->purchase_id,
