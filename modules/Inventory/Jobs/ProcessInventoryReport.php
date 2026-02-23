@@ -191,9 +191,15 @@
                     $tray->path = $path;
                     $tray->save();
 
-                } catch (Exception $e) {
-                    Log::debug("ProcessInventoryReport Error transaction" . $e);
-                }
+            } catch (Exception $e) {
+                Log::error("ProcessInventoryReport Error: " . $e->getMessage());
+                Log::error("Line: " . $e->getLine() . " File: " . $e->getFile());
+                
+                $tray->status = 'ERROR';
+                $tray->date_end = date('Y-m-d H:i:s');
+                $tray->save();
+            }
+
             }
 
             Log::debug("ProcessInventoryReport Finish transaction");
@@ -208,16 +214,20 @@
 
             $data = [];
 
-            $records->chunk(1000, function ($items) use (&$data) {
+            $exchange = ExchangeRate::get()->last(); // ✅ muévelo FUERA del chunk para no consultar la BD 1000 veces
+            $exchangeSale = $exchange ? $exchange->sale : 1; // ✅ evita null
+
+            $records->chunk(1000, function ($items) use (&$data, $exchangeSale) { // ✅ pasa $exchangeSale al closure
                 foreach ($items as $row) {
                     $item = $row->item;
                     $sale_unit_price = $item->sale_unit_price;
                     $purchase_unit_price = $item->purchase_unit_price;
-                    $exchange = ExchangeRate::get()->last();
+
                     if($item->currency_type_id === 'USD') {
-                        $sale_unit_price = $sale_unit_price * $exchange->sale;
-                        $purchase_unit_price = $purchase_unit_price * $exchange->sale;
+                        $sale_unit_price = $sale_unit_price * $exchangeSale;
+                        $purchase_unit_price = $purchase_unit_price * $exchangeSale;
                     }
+
                     $data[] = [
                         'barcode' => $item->barcode,
                         'internal_id' => $item->internal_id,
@@ -235,11 +245,11 @@
                         'warehouse_name' => $row->warehouse->description,
                         'currency_type_id' => $item->currency_type_id,
                         'sale_unit_price_pen' => $item->sale_unit_price,
-                        'exchange' => $exchange->sale,
+                        'exchange' => $exchangeSale, // ✅ corregido
                     ];
-
                 }
             });
+
 
             Log::debug("getRecordsTranform finish" . date('H:i:s'));
 
