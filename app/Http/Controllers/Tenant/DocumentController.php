@@ -250,8 +250,16 @@ class DocumentController extends Controller
         \Log::info("enviosunat: Documento ID $id, tipo original: ".$tipo_documento_id.", tipo mapeado: $tipo_comprobante");
 
         // Fechas
-        $fecha_emision = $document->date_of_issue ? date('Y-m-d', strtotime($document->date_of_issue)) : date('Y-m-d');
-        $fecha_vencimiento = $document->due_date ? date('Y-m-d', strtotime($document->due_date)) : $fecha_emision;
+        $fecha_emision = $document->date_of_issue 
+            ? date('Y-m-d', strtotime($document->date_of_issue)) 
+            : date('Y-m-d');
+
+        // ✅ Jalar fecha_vencimiento desde invoices
+        $invoice = \App\Models\Tenant\Invoice::where('document_id', $id)->first();
+        $fecha_vencimiento = $invoice && $invoice->date_of_due 
+            ? $invoice->date_of_due->format('Y-m-d')  // ya es cast a date, usa ->format()
+            : $fecha_emision;
+
 
         // Validar tipo de nota (solo números válidos según NubeFact)
         $tipo_nota_credito = in_array($document->credit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->credit_note_type : "";
@@ -396,9 +404,15 @@ class DocumentController extends Controller
 
             // 🔥 ACTUALIZAR ESTADO SUNAT
             if (!isset($leer_respuesta['errors'])) {
-                $document->update(['state_sunat' => 'ACEPTADO']);
+                $document->update([
+                    'state_sunat' => 'ACEPTADO',
+                    'state_type_id' => '05'  // ✅ AGREGAR
+                ]);
             } else {
-                $document->update(['state_sunat' => 'RECHAZADO']);
+                $document->update([
+                    'state_sunat' => 'RECHAZADO'
+                    // ❌ No cambiar state_type_id si fue rechazado
+                ]);
             }
 
             if (isset($leer_respuesta['errors'])) {

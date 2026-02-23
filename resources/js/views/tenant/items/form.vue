@@ -193,6 +193,25 @@
                                        v-text="errors.sale_unit_price[0]"></small>
                             </div>
                         </div>
+                        <!-- ✅ AGREGAR ESTE BLOQUE AL LADO -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="control-label">
+                                    ¿Precio incluye IGV?
+                                    <el-tooltip class="item" content="Indica si el precio de venta ya incluye el IGV (18%)" 
+                                                effect="dark" placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </label>
+                                <el-select v-model="form.hasigv" style="width:100%" :disabled="!show_has_igv">
+                                    <el-option :value="1" label="Sí (precio con IGV)"></el-option>
+                                    <el-option :value="0" label="No (precio sin IGV)"></el-option>
+                                </el-select>
+                                <small v-if="!show_has_igv" class="text-muted">
+                                    Exonerado/Inafecto: no aplica IGV
+                                </small>
+                            </div>
+                        </div>
                         <div v-show="form.unit_type_id !='ZZ'"
                              class="col-md-3">
                             <div :class="{'has-danger': errors.stock}"
@@ -1813,13 +1832,15 @@ export default {
             }
         },
         setDefaultConfiguration() {
-            this.form.sale_affectation_igv_type_id = (this.config) ? this.config.affectation_igv_type_id : '10'
-
+            this.form.saleaffectationigvtypeid = this.config ? this.config.affectation_igv_type_id : 10
             this.$http.get(`/configurations/record`).then(response => {
-                this.form.has_igv = response.data.data.include_igv
-                this.form.purchase_has_igv = response.data.data.include_igv
-                // this.$setStorage('configuration',response.data.data)
-                this.$store.commit('setConfiguration', response.data.data);
+                // ✅ Solo aplica defaults si es item NUEVO, y convierte a entero
+                if (!this.recordId) {
+                    this.form.hasigv = response.data.data.include_igv ? 1 : 0
+                    this.form.purchasehasigv = response.data.data.include_igv ? 1 : 0
+                }
+                this.setStorage('configuration', response.data.data)
+                this.$store.commit('setConfiguration', response.data.data)
                 this.loadConfiguration()
             })
         },
@@ -2008,7 +2029,7 @@ export default {
                 stock_old: 1,
                 stock_min: 1,
                 stock_total: 0,
-                has_igv: true,
+                hasigv: 1,
                 has_perception: false,
                 has_sales: false,
                 item_unit_types: [],
@@ -2030,7 +2051,7 @@ export default {
                 //lot:0,
                 attributes: [],
                 series_enabled: false,
-                purchase_has_igv: true,
+                purchase_has_igv: 1,
                 web_platform_id: null,
                 has_plastic_bag_taxes: false,
                 item_warehouse_prices: [],
@@ -2065,19 +2086,18 @@ export default {
                 this.$message.error(response.message)
             }
         },
-        changeAffectationIgvType() {
+            changeAffectationIgvType() {
+                let affectationIgvTypeExonerated = [20,21,30,31,32,33,34,35,36,37]
+                let isExonerated = affectationIgvTypeExonerated.includes(parseInt(this.form.sale_affectation_igv_type_id))
 
-            let affectation_igv_type_exonerated = [20, 21, 30, 31, 32, 33, 34, 35, 36, 37]
-            let is_exonerated = affectation_igv_type_exonerated.includes((parseInt(this.form.sale_affectation_igv_type_id)));
+                if (isExonerated) {
+                    this.show_has_igv = false
+                    this.form.hasigv = 0   // ✅ 0 en vez de false
+                } else {
+                    this.show_has_igv = true
+                }
+            },
 
-            if (is_exonerated) {
-                this.show_has_igv = false
-                this.form.has_igv = true
-            } else {
-                this.show_has_igv = true
-            }
-
-        },
         changePurchaseAffectationIgvType() {
 
             let affectation_igv_type_exonerated = [20, 21, 30, 31, 32, 33, 34, 35, 36, 37]
@@ -2129,6 +2149,8 @@ export default {
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data;
+                        this.$set(this.form, 'hasigv', this.form.has_igv ? 1 : 0);
+                        this.$set(this.form, 'purchase_has_igv', this.form.purchase_has_igv ? 1 : 0);
                         this.form.stock_old = this.form.stock;
                         if(this.form.lots.length>0){
                             this.form.lots.forEach(lot => {
@@ -2262,11 +2284,14 @@ export default {
                 this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data
+                        this.form.hasigv = this.form.hasigv ? 1 : 0                  // ✅
+                        this.form.purchasehasigv = this.form.purchasehasigv ? 1 : 0  // ✅
                         console.error(this.form.is_for_production)
                         this.changeAffectationIgvType()
                         this.changePurchaseAffectationIgvType()
                     })
             }
+
         },
         calculatePercentageOfProfitBySale() {
             let difference = parseFloat(this.form.sale_unit_price) - parseFloat(this.form.purchase_unit_price);
@@ -2372,6 +2397,7 @@ export default {
             this.form.positions_selected = this.positions_selected;
             
             this.form.location_id = this.location_id;
+            this.form.has_igv = this.form.hasigv;
 
             this.loading_submit = true;
             
