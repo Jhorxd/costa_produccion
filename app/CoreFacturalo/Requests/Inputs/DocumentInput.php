@@ -206,7 +206,7 @@ class DocumentInput
                         'is_set' => $item->is_set,
                         'lots' => self::lots($row),
                         'IdLoteSelected' => (isset($row['IdLoteSelected']) ? $row['IdLoteSelected'] : null),
-                        'label_selected' => $row['label_selected'],
+                        'label_selected' => $row['label_selected'] ?? null,
                         'model' => $item->model,
                         'sanitary' => $item->sanitary,
                         'cod_digemid' => $item->cod_digemid,
