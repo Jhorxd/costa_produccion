@@ -78,7 +78,7 @@ class ItemsImport implements ToCollection
                 $date_of_due = $row[18];
                 $barcode = $row[19] ?? null;
                 $concentration = $row[20] ?? null;
-                $pharmaceutical_unit_type_description = $row[21];
+                $pharmaceutical_unit_type_description = $row[21] ?? null;
                 $sanitary = $row[22] ?? null;
                 $laboratory = $row[23] ?? null;
                 $active_principle = $row[24] ?? null;
@@ -149,7 +149,10 @@ class ItemsImport implements ToCollection
                 }
                 // $establishment_id = auth()->user()->establishment->id;
 
-               $pharmaceutical_unit_type = PharmaceuticalItemUnitType::updateOrCreate(['description' => $pharmaceutical_unit_type_description]);
+               $pharmaceutical_unit_type = $pharmaceutical_unit_type_description 
+                ? PharmaceuticalItemUnitType::updateOrCreate(['description' => $pharmaceutical_unit_type_description])
+                : PharmaceuticalItemUnitType::first();
+
                
                 if(!$item) {
                     $category = $category_name ? Category::updateOrCreate(['name' => $category_name]):null;
