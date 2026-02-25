@@ -1486,22 +1486,25 @@ export default {
         focusTotalItem(change) {
             if (!change && this.form.item.calculate_quantity) {
                 this.$refs.total_item.$el.getElementsByTagName('input')[0].focus()
-                this.total_item = this.form.unit_price
+                this.total_item = this.form.unit_price_value
             }
         },
         calculateQuantity() {
             if (this.form.item.calculate_quantity) {
-                this.form.quantity = _.round((this.total_item / this.form.unit_price), 4)
+                this.form.quantity = _.round((this.total_item / this.form.unit_price_value), 4)
             }
             this.calculateTotal()
         },
         calculateTotal() {
-            this.readonly_total = _.round((this.form.quantity * this.form.unit_price), 4)
+            this.readonly_total = _.round((this.form.quantity * this.form.unit_price_value), 4)
         },
         cleanTotalItem() {
             this.total_item = null
         },
         async clickAddItem() {
+                console.log('unit_price_value ANTES:', this.form.unit_price_value)
+                console.log('unit_price ANTES:', this.form.unit_price)
+                console.log('quantity ANTES:', this.form.quantity)
             if(this.isRestrictedForSale) return this.$message.error('No puede agregar el producto, está restringido para venta.')
 
             if (!this.form.item.description || !this.form.item.description.trim().length) {
@@ -1521,7 +1524,7 @@ export default {
 
             let affectation_igv_type_id = this.form.affectation_igv_type_id
             // let unit_price = (this.form.has_igv) ? this.form.unit_price : this.form.unit_price_value * 1.18;
-            let unit_price = this.form.unit_price;
+            let unit_price = this.form.unit_price_value;
             if (this.form.has_igv === false) {
                 if (
                     affectation_igv_type_id === "20" ||
@@ -1531,12 +1534,12 @@ export default {
                     // do nothing
                     // exonerado de igv
                 } else {
-                    unit_price = this.form.unit_price * (1 + this.percentageIgv);
+                    unit_price = this.form.unit_price_value * (1 + this.percentageIgv);
 
                 }
             }
 
-            this.form.input_unit_price_value = this.form.unit_price;
+            this.form.input_unit_price_value = this.form.unit_price_value;
             // this.form.input_unit_price_value = this.form.unit_price_value;
             // let unit_price = (this.form.has_igv) ? this.form.unit_price : this.form.unit_price * 1.18;
 
