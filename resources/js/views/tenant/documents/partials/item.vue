@@ -1447,6 +1447,10 @@ export default {
                 await this.reloadDataItems(this.recordItem.item_id)
                 this.form.item_id = await this.recordItem.item_id
                 await this.changeItem()
+
+                // ✅ Agregar esta línea aquí
+                this.selectedRow = _.find(this.items, {id: this.recordItem.item_id}) || null
+
                 if (this.recordItem.item.barcode === this.various_item_barcode) {
                     this.various_item = true;
                     this.form.item.description = this.recordItem.item.description;
@@ -1470,15 +1474,12 @@ export default {
                     this.form.item.currency_type_symbol = (this.currencyTypeIdActive == 'PEN') ? 'S/' : '$'
 
                     if (this.documentTypeId == '07' && this.noteCreditOrDebitTypeId == '07') {
-
                         this.form.document_item_id = this.recordItem.id ? this.recordItem.id : this.recordItem.document_item_id
                         this.form.item.lots = this.recordItem.item.lots
                         await this.regularizeLots()
                         this.lots = this.form.item.lots
                     }
-
                 } else {
-
                     this.form.item.lots = this.recordItem.item.lots
                     this.lots = this.recordItem.item.lots
                 }
@@ -1488,25 +1489,21 @@ export default {
                 if (this.recordItem.item.name_product_pdf) {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf
                 }
-                // if(this.recordItem.name_product_pdf){
-                //     this.form.name_product_pdf = this.recordItem.name_product_pdf
-                // }
 
                 if (this.recordItem.item.change_free_affectation_igv) {
-
                     this.form.affectation_igv_type_id = '15'
                     this.form.item.change_free_affectation_igv = true
-
                 } else {
                     if (this.recordItem.item.original_affectation_igv_type_id) {
                         this.form.affectation_igv_type_id = this.recordItem.item.original_affectation_igv_type_id
                     }
                 }
+
                 this.calculateQuantity()
                 this.calculateTotal()
                 if (this.recordItem.item.exchanged_for_points) this.form.item.exchanged_for_points = this.recordItem.item.exchanged_for_points
-
-            } else {
+            }
+            else {
                 this.isUpdateWarehouseId = null;
 
                 if (this.various_item) {

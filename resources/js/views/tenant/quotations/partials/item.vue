@@ -1266,6 +1266,10 @@ export default {
                 await this.reloadDataItems(this.recordItem.item_id)
                 this.form.item_id = await this.recordItem.item_id
                 await this.changeItem()
+
+                // ✅ Agregar aquí
+                this.selectedRow = _.find(this.items, {id: this.recordItem.item_id}) || null
+
                 if (this.recordItem.item.barcode === this.various_item_barcode) {
                     this.various_item = true;
                     this.form.item.description = this.recordItem.item.description;
@@ -1285,10 +1289,6 @@ export default {
                         this.form.unit_price_value = "0"
                     }
                 }
-                // this.form.unit_price_value = this.recordItem.input_unit_price_value
-                // if (this.recordItem.item.has_igv == false) {
-                //     this.form.unit_price = this.recordItem.total_base_igv
-                // }
 
                 this.setHasIgvUpdate()
                 this.form.has_plastic_bag_taxes = (this.recordItem.total_plastic_bag_taxes > 0) ? true : false
@@ -1297,10 +1297,8 @@ export default {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf
                 }
                 if (this.recordItem.item.change_free_affectation_igv) {
-
                     this.form.affectation_igv_type_id = '15'
                     this.form.item.change_free_affectation_igv = true
-
                 } else {
                     if (this.recordItem.item.original_affectation_igv_type_id) {
                         this.form.affectation_igv_type_id = this.recordItem.item.original_affectation_igv_type_id
@@ -1308,7 +1306,8 @@ export default {
                 }
                 this.calculateQuantity()
                 this.calculateTotal()
-            } else {
+            }
+                else {
                 this.isUpdateWarehouseId = null;
 
                 if (this.various_item) {
