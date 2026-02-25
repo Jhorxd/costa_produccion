@@ -403,17 +403,24 @@ class DocumentController extends Controller
 
 
             // 🔥 ACTUALIZAR ESTADO SUNAT
-            if (!isset($leer_respuesta['errors'])) {
-                $document->update([
-                    'state_sunat' => 'ACEPTADO',
-                    'state_type_id' => '05'  // ✅ AGREGAR
-                ]);
-            } else {
-                $document->update([
-                    'state_sunat' => 'RECHAZADO'
-                    // ❌ No cambiar state_type_id si fue rechazado
-                ]);
-            }
+                if (!isset($leer_respuesta['errors'])) {
+                    $document->update([
+                        'state_sunat'   => 'ACEPTADO',
+                        'state_type_id' => '05'
+                    ]);
+
+                    // ✅ Solo incrementa cuando SUNAT acepta
+                    $configuration = Configuration::first();
+                    if ($configuration) {
+                        $configuration->increment('quantity_documents');
+                    }
+
+                } else {
+                    $document->update([
+                        'state_sunat' => 'RECHAZADO'
+                    ]);
+                }
+
 
             if (isset($leer_respuesta['errors'])) {
                 return response()->json([

@@ -43,7 +43,7 @@ class LockedEmissionProvider extends ServiceProvider
     {
         $this->locked_emission();
         $this->locked_users();
-        $this->update_quantity_documents();
+        // $this->update_quantity_documents();
 
         $this->lockedCreateEstablishments();
 
