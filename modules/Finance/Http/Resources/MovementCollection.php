@@ -65,8 +65,19 @@ class MovementCollection extends ResourceCollection
 
             // $timedate = $payment->date_of_payment->format('Y-m-d');
             if ($payment->date_of_payment && $payment->date_of_payment != null) {
-                $timedate = $payment->date_of_payment->format('d-m-Y h:i A');
-
+                if (get_class($payment) === \Modules\Pos\Models\CashTransaction::class) {
+                    $cash = $payment->cash;
+                    if ($cash && $cash->time_opening) {
+                        $timedate = Carbon::createFromFormat(
+                            'Y-m-d H:i:s',
+                            $payment->date_of_payment->format('Y-m-d') . ' ' . $cash->time_opening
+                        )->format('d-m-Y h:i A');
+                    } else {
+                        $timedate = $payment->date_of_payment->format('d-m-Y h:i A');
+                    }
+                } else {
+                    $timedate = $payment->date_of_payment->format('d-m-Y h:i A');
+                }
             }
 
 

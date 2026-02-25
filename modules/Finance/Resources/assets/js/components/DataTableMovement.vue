@@ -101,7 +101,7 @@
                 <div class="table-responsive">
                     <el-table
                         :data="currentTableData"
-                        :default-sort="{prop: 'date_of_payment', order: 'ascending'}"
+                        :default-sort="{prop: 'date_of_payment', order: 'descending'}"
                         :summary-method="getSummaries"
                         show-summary
                         style="width: 100%"
@@ -656,34 +656,32 @@ export default {
             var fieldName = column.prop;
             var sortingType = column.order;
             if (sortingType == null) {
-                sortingType = 'ascending';
+                sortingType = 'descending';
             }
+
             this.filterdata = {
                 order: fieldName,
                 prop: sortingType,
             };
+
             if (fieldName == "date_of_payment") {
-                this.records.map(item => {
-                    item.date_of_payment = moment(item.date_of_payment).valueOf();
+                // Especificar el formato exacto que viene del backend
+                this.records = this.records.sort((a, b) => {
+                    let dateA = moment(a.date_of_payment, 'DD-MM-YYYY hh:mm A').valueOf();
+                    let dateB = moment(b.date_of_payment, 'DD-MM-YYYY hh:mm A').valueOf();
+                    return (sortingType == 'descending') ? dateB - dateA : dateA - dateB;
                 });
-            }
-            if (sortingType == "descending") {
-                this.records = this.records.sort((a, b) => b[fieldName] - a[fieldName]);
             } else {
-                this.records = this.records.sort((a, b) => a[fieldName] - b[fieldName]);
+                this.records = this.records.sort((a, b) =>
+                    sortingType == 'descending' ? b[fieldName] - a[fieldName] : a[fieldName] - b[fieldName]
+                );
             }
-            if (fieldName == "date_of_payment") {
-                this.records.map(item => {
-                    item.date_of_payment = moment(item.date_of_payment).format(
-                        "YYYY-MM-DD HH:mm:ss"
-                    );
-                });
-            }
+
             this.currentTableData = this.records.slice(
                 (this.currentPage - 1) * this.itemsPerPage,
                 this.currentPage * this.itemsPerPage
             )
         }
-    }
-}
+            }
+        }
 </script>
