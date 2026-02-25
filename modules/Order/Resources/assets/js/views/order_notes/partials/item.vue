@@ -1535,6 +1535,9 @@ export default {
             this.total_item = null;
         },
         async clickAddItem() {
+                            console.log('unit_price_value ANTES:', this.form.unit_price_value)
+                console.log('unit_price ANTES:', this.form.unit_price)
+                console.log('quantity ANTES:', this.form.quantity)
 
             this.validateQuantity()
 
@@ -1553,7 +1556,7 @@ export default {
             if (this.validateTotalItem().total_item) return;
 
             // this.form.item.unit_price = this.form.unit_price;
-            let unit_price = (this.form.has_igv) ? this.form.unit_price : this.form.unit_price * (1 + this.percentageIgv);
+            let unit_price = this.form.unit_price_value;
 
             // this.form.item.unit_price = this.form.unit_price
             this.form.unit_price = unit_price;
