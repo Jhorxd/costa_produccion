@@ -9,128 +9,124 @@
             <ol class="breadcrumbs">
                 <li class="active"><span>{{ titleTopBar }}</span></li>
             </ol>
-            <div class="right-wrapper pull-right">
-                <button
-                    v-if="can_add_new_product"
-                    class="btn btn-custom btn-sm mt-2 mr-2"
-                    type="button"
-                    @click.prevent="clickSincronizar()"
-                >
-                    <i class="fa fa-plus-circle"></i> Sincronizar
-                </button>
-                <template v-if="typeUser === 'admin'">
-                    <div class="btn-group flex-wrap">
-                        <button
-                            aria-expanded="false"
-                            class="btn btn-custom btn-sm mt-2 mr-2 dropdown-toggle"
-                            data-toggle="dropdown"
-                            type="button"
-                        >
-                            <i class="fa fa-download"></i> Exportar
-                            <span class="caret"></span>
-                        </button>
-                        <div
-                            class="dropdown-menu"
-                            role="menu"
-                            style="
-                                position: absolute;
-                                will-change: transform;
-                                top: 0px;
-                                left: 0px;
-                                transform: translate3d(0px, 42px, 0px);
-                            "
-                            x-placement="bottom-start"
-                        >
-                            <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickExport()"
-                            >Listado</a
-                            >
-                            <!-- <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickExportWp()"
-                            >Woocommerce</a
-                            > -->
-                            <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickExportBarcode()"
-                            >Etiquetas</a>
-                            <template v-if="config.show_extra_info_to_item">
-                            <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickExportExtra()"
-                            >
-                                Atributos Extra
-                            </a>
-                            </template>
-                            <!-- <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickExportBartender()"
-                            >Bartender</a> -->
-                        </div>
-                    </div>
-                    <div class="btn-group flex-wrap">
-                        <button
-                            aria-expanded="false"
-                            class="btn btn-custom btn-sm mt-2 mr-2 dropdown-toggle"
-                            data-toggle="dropdown"
-                            type="button"
-                        >
-                            <i class="fa fa-upload"></i> Importar
-                            <span class="caret"></span>
-                        </button>
-                        <div
-                            class="dropdown-menu"
-                            role="menu"
-                            style="
-                                position: absolute;
-                                will-change: transform;
-                                top: 0px;
-                                left: 0px;
-                                transform: translate3d(0px, 42px, 0px);
-                            "
-                            x-placement="bottom-start"
-                        >
-                            <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickImport()"
-                            >Productos</a
-                            >
-                            <a
-                                class="dropdown-item text-1"
-                                href="#"
-                                @click.prevent="clickImportListPrice()"
-                            >L. Precios</a
-                            >
-                            <template v-if="config.show_extra_info_to_item">
-                                <a
-                                    class="dropdown-item text-1"
-                                    href="#"
-                                    @click.prevent="clickImportExtraWithExtraInfo()"
-                                >L. Atributos</a
-                                >
-                            </template>
-                            
-                            <a class="dropdown-item text-1" href="#" @click.prevent="clickImportUpdatePrice()">Actualizar precios</a>
+<div class="right-wrapper pull-right">
+  <!-- Sincronizar: todos lo ven -->
+  <button
+    class="btn btn-custom btn-sm mt-2 mr-2"
+    type="button"
+    @click.prevent="clickSincronizar()"
+  >
+    <i class="fa fa-plus-circle"></i> Sincronizar
+  </button>
 
-                        </div>
-                    </div>
-                </template>
-                <button
-                    v-if="can_add_new_product"
-                    class="btn btn-custom btn-sm mt-2 mr-2"
-                    type="button"
-                    @click.prevent="clickCreate()"
-                >
-                    <i class="fa fa-plus-circle"></i> Nuevo
-                </button>
-            </div>
+  <!-- Exportar: todos lo ven -->
+  <div class="btn-group flex-wrap">
+    <button
+      aria-expanded="false"
+      class="btn btn-custom btn-sm mt-2 mr-2 dropdown-toggle"
+      data-toggle="dropdown"
+      type="button"
+    >
+      <i class="fa fa-download"></i> Exportar
+      <span class="caret"></span>
+    </button>
+    <div
+      class="dropdown-menu"
+      role="menu"
+      style="
+        position: absolute;
+        will-change: transform;
+        top: 0px;
+        left: 0px;
+        transform: translate3d(0px, 42px, 0px);
+      "
+      x-placement="bottom-start"
+    >
+      <a
+        class="dropdown-item text-1"
+        href="#"
+        @click.prevent="clickExport()"
+      >Listado</a>
+
+      <a
+        class="dropdown-item text-1"
+        href="#"
+        @click.prevent="clickExportBarcode()"
+      >Etiquetas</a>
+
+      <template v-if="config.show_extra_info_to_item">
+        <a
+          class="dropdown-item text-1"
+          href="#"
+          @click.prevent="clickExportExtra()"
+        >
+          Atributos Extra
+        </a>
+      </template>
+    </div>
+  </div>
+
+    <!-- Importar: todos lo ven -->
+    <div class="btn-group flex-wrap">
+        <button
+        aria-expanded="false"
+        class="btn btn-custom btn-sm mt-2 mr-2 dropdown-toggle"
+        data-toggle="dropdown"
+        type="button"
+        >
+        <i class="fa fa-upload"></i> Importar
+        <span class="caret"></span>
+        </button>
+        <div
+        class="dropdown-menu"
+        role="menu"
+        style="
+            position: absolute;
+            will-change: transform;
+            top: 0px;
+            left: 0px;
+            transform: translate3d(0px, 42px, 0px);
+        "
+        x-placement="bottom-start"
+        >
+        <a
+            class="dropdown-item text-1"
+            href="#"
+            @click.prevent="clickImport()"
+        >Productos</a>
+
+        <a
+            class="dropdown-item text-1"
+            href="#"
+            @click.prevent="clickImportListPrice()"
+        >L. Precios</a>
+
+        <template v-if="config.show_extra_info_to_item">
+            <a
+            class="dropdown-item text-1"
+            href="#"
+            @click.prevent="clickImportExtraWithExtraInfo()"
+            >L. Atributos</a>
+        </template>
+
+        <a
+            class="dropdown-item text-1"
+            href="#"
+            @click.prevent="clickImportUpdatePrice()"
+        >Actualizar precios</a>
+        </div>
+    </div>
+
+    <!-- Nuevo: todos lo ven -->
+    <button
+        class="btn btn-custom btn-sm mt-2 mr-2"
+        type="button"
+        @click.prevent="clickCreate()"
+    >
+        <i class="fa fa-plus-circle"></i> Nuevo
+    </button>
+    </div>
+
         </div>
         <div class="card tab-content-default row-new mb-0">
             <!-- <div class="card-header bg-info">
