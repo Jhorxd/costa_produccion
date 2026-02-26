@@ -181,6 +181,11 @@ class UploadFileHelper
      */
     public static function checkIfValidFile($filename, $temp_path, $is_image = true, $mimes = null, $allowed_file_types = null)
     {
+
+        if (App::environment('local')) {
+            return true;
+        }
+
         $error_message = 'Tipo de archivo no permitido';
         $mimes = $mimes ?? self::getGeneralMimes();
         $allowed_file_types = $allowed_file_types ?? self::getGeneralAllowedFileTypes();
