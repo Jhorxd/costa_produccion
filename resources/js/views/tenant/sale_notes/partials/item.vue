@@ -1775,36 +1775,43 @@ export default {
             this.form.unit_price_value = price;
             this.form.item.unit_type_id = this.item_unit_type.unit_type_id;
         },
-        selectedPrice(row) {
-            if (this.isSelectedPrice(row)) {
+        selectedPrice(row, amount = false, label = false) {
+            this.label_selected = label;
+
+            if (this.isSelectedPrice(row) && !amount) {
                 this.form.item_unit_type_id = null
                 this.item_unit_type = {}
                 this.form.unit_price = this.form.item.sale_unit_price
                 this.form.unit_price_value = this.form.item.sale_unit_price
                 this.form.item.unit_type_id = this.form.item.original_unit_type_id
-            } else {
-                let valor = 0
-                switch (row.price_default) {
-                    case 1:
-                        valor = row.price1
-                        break
-                    case 2:
-                        valor = row.price2
-                        break
-                    case 3:
-                        valor = row.price3
-                        break
 
+            } else {
+                let value = 0
+                if(amount) {
+                    value = amount
+                } else {
+                    switch (row.price_default) {
+                        case 1:
+                            value = row.price1
+                            break
+                        case 2:
+                            value = row.price2
+                            break
+                        case 3:
+                            value = row.price3
+                            break
+
+                    }
                 }
                 this.factorSelected = row.quantity_unit;
                 this.form.item_unit_type_id = row.id
                 this.item_unit_type = row
-                this.form.unit_price = valor
-                this.form.unit_price_value = valor
+                this.form.unit_price = value
+                this.form.unit_price_value = value
                 this.form.item.unit_type_id = row.unit_type_id
             }
+
             this.calculateQuantity()
-            this.getTables()
         },
         addRowLotGroup(id) {
             this.form.IdLoteSelected = id
