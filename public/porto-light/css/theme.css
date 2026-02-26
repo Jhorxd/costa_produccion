@@ -19661,18 +19661,14 @@ label.control-label.font-weight-bold.text-info a {
     border-radius: 6px;
 }
 
-article.auth__image {
-    background: url("https://fura.pe/wp-content/uploads/2025/03/banner-login.png") !important;
-}
-
 .btn-signin {
     background-color: #46b2ff !important;
 }
 
 article.auth__image {
-    background: url(https://fura.pe/wp-content/uploads/2025/03/banner-login.png) !important;
-    background-size: cover !important;
     background-position: center;
+    background-size: contain;   /* o cover */
+    background-repeat: no-repeat;
 }
 
 img.auth__logo.top-left {
