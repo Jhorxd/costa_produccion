@@ -695,19 +695,20 @@ public function item_tables()
         // si es modelo
         if (isset($item->date_of_due)) {
             $item->date_of_due = $item->date_of_due
-                ? $item->date_of_due->format('Y-m-d H:i:s')
+                ? $item->date_of_due->format('Y-m-d')
                 : null;
         }
 
         // si llegara como array
         if (isset($item['date_of_due'])) {
             $item['date_of_due'] = $item['date_of_due']
-                ? $item['date_of_due']->format('Y-m-d H:i:s')
+                ? $item['date_of_due']->format('Y-m-d')
                 : null;
         }
 
         return $item;
     });
+
 
     $categories = Category::all();
     $brands = Brand::all();
