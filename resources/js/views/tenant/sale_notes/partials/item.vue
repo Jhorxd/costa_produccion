@@ -267,16 +267,37 @@
                             <th class="text-left" style="min-width: 95px;">Estado</th>
                             <!-- <th class="text-left" style="min-width: 95px;">Accion</th> -->
                         </tr>
-                         <tr
+                        <tr
                             v-for="(row, index) in items"
                             :key="index"
                             :class="{
                                 'row-selected': selectedRow && selectedRow.id === row.id,
-                                'row-expiring': row.date_of_due && (
-                                    new Date(
-                                        (row.date_of_due.date || row.date_of_due).substr(0, 10)
-                                    ) <= new Date(new Date().setMonth(new Date().getMonth() + 1))
-                                )
+                                'row-expiring': (function () {
+                                    if (!row.date_of_due) return false;
+
+                                    // Normalizar valor bruto
+                                    let raw = null;
+
+                                    if (row.date_of_due.date && typeof row.date_of_due.date === 'string') {
+                                        // Caso objeto { date: '2026-04-30 ...' }
+                                        raw = row.date_of_due.date;
+                                    } else if (typeof row.date_of_due === 'string') {
+                                        // Caso string simple '2026-04-30' o '2026-04-30 00:00:00'
+                                        raw = row.date_of_due;
+                                    } else {
+                                        // Otros tipos (Date, número, etc.) no los usamos
+                                        return false;
+                                    }
+
+                                    const dateStr = raw.substr(0, 10);       // 'YYYY-MM-DD'
+                                    const due = new Date(dateStr);
+                                    if (isNaN(due.getTime())) return false;
+
+                                    const limit = new Date();
+                                    limit.setMonth(limit.getMonth() + 1);
+
+                                    return due <= limit;
+                                })()
                             }"
                         >
                             <td class="text-left">
