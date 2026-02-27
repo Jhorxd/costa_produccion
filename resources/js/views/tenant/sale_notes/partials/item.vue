@@ -267,39 +267,14 @@
                             <th class="text-left" style="min-width: 95px;">Estado</th>
                             <!-- <th class="text-left" style="min-width: 95px;">Accion</th> -->
                         </tr>
-                        <tr
+                            <tr
                             v-for="(row, index) in items"
                             :key="index"
                             :class="{
                                 'row-selected': selectedRow && selectedRow.id === row.id,
-                                'row-expiring': (function () {
-                                    if (!row.date_of_due) return false;
-
-                                    // Normalizar valor bruto
-                                    let raw = null;
-
-                                    if (row.date_of_due.date && typeof row.date_of_due.date === 'string') {
-                                        // Caso objeto { date: '2026-04-30 ...' }
-                                        raw = row.date_of_due.date;
-                                    } else if (typeof row.date_of_due === 'string') {
-                                        // Caso string simple '2026-04-30' o '2026-04-30 00:00:00'
-                                        raw = row.date_of_due;
-                                    } else {
-                                        // Otros tipos (Date, número, etc.) no los usamos
-                                        return false;
-                                    }
-
-                                    const dateStr = raw.substr(0, 10);       // 'YYYY-MM-DD'
-                                    const due = new Date(dateStr);
-                                    if (isNaN(due.getTime())) return false;
-
-                                    const limit = new Date();
-                                    limit.setMonth(limit.getMonth() + 1);
-
-                                    return due <= limit;
-                                })()
+                                'row-expiring': isRowExpiring(row)
                             }"
-                        >
+                            >
                             <td class="text-left">
                                 <el-button
                                     v-if="!(selectedRow && selectedRow.id === row.id)"
@@ -789,6 +764,13 @@
     background-color: #a2d8ff !important;
     color: black; /* Para que el texto sea legible */
 }
+/*******************
+ALERTA PARA PRODUCTOS PRÓXIMOS A VENCER
+*******************/
+tr.row-expiring {
+    background-color: #f58e8e !important;
+}
+
 .slide-bar-top{
     overflow-x: auto;
     max-width: 100%;
@@ -1060,6 +1042,32 @@ export default {
 
             return false;
         },
+        isRowExpiring(row) {
+        if (!row || !row.date_of_due) return false
+
+        const raw = String(row.date_of_due)
+        const dateStr = raw.substring(0, 10) // 'YYYY-MM-DD'
+
+        const parts = dateStr.split('-')
+        if (parts.length !== 3) return false
+
+        const year  = parseInt(parts[0], 10)
+        const month = parseInt(parts[1], 10) - 1
+        const day   = parseInt(parts[2], 10)
+
+        const due = new Date(year, month, day)
+        if (isNaN(due.getTime())) return false
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const limit = new Date()
+        limit.setMonth(limit.getMonth() + 1)
+        limit.setHours(0, 0, 0, 0)
+
+        return due >= today && due <= limit
+        },
+
         ItemSlotTooltipView(item) {
             return ItemSlotTooltip(item);
         },
