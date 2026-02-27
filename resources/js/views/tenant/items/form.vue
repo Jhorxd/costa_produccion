@@ -165,6 +165,23 @@
                                        v-text="errors.concentration[0]"></small>
                             </div>
                         </div>
+                        <div class="col-md-3">
+                            <div class="has-danger" :class="{'has-danger': errors.date_of_due}">
+                                <div class="form-group">
+                                    <label class="control-label">Fec. Vencimiento</label>
+                                    <el-date-picker
+                                        v-model="form.date_of_due"
+                                        clearable="true"
+                                        type="date"
+                                        value-format="yyyy-MM-dd">
+                                    </el-date-picker>
+                                    <small v-if="errors.date_of_due"
+                                        class="form-control-feedback"
+                                        v-text="errors.date_of_due[0]"></small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="col-md-6">
                             <div :class="{'has-danger': errors.pharmaceutical_unit_type_id}"
                                  class="form-group">

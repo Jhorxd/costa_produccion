@@ -278,6 +278,7 @@
                             <th class="text-left" style="min-width: 95px;">Categoria</th>
                             <th class="text-left" style="min-width: 95px;">Precio</th>
                             <th class="text-left" style="min-width: 95px;">Stock</th>
+                            <th class="text-left" style="min-width: 120px;">Fecha Venc.</th>
                             <th class="text-left" style="min-width: 170px;">Ubicación</th>
                             <th class="text-left" style="min-width: 95px;">DIGEMID</th>
                             <th class="text-left" style="min-width: 120px;">Concentración</th>
@@ -290,11 +291,26 @@
                         <tr
                             v-for="(row, index) in items"
                             :key="index"
-                            :class="{'row-selected': selectedRow && selectedRow.id === row.id}"
+                            :class="{
+                                'row-selected': selectedRow && selectedRow.id === row.id,
+                                'row-expiring': row.date_of_due && (
+                                    new Date(
+                                        (row.date_of_due.date || row.date_of_due).substr(0, 10)
+                                    ) <= new Date(new Date().setMonth(new Date().getMonth() + 1))
+                                )
+                            }"
                         >
                             <td class="text-left">
-                                <el-button v-if="!(selectedRow && selectedRow.id === row.id)" @click="selectItem(row)" style="border:none; width: 40px;" title="Agregar producto">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="#60769a" width="12" height="12">
+                                <el-button
+                                    v-if="!(selectedRow && selectedRow.id === row.id)"
+                                    @click="selectItem(row)"
+                                    style="border:none; width: 40px;"
+                                    title="Agregar producto"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 448 512"
+                                        fill="#60769a"
+                                        width="12" height="12">
                                         <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
                                     </svg>
                                 </el-button>
@@ -305,6 +321,9 @@
                             <td class="text-left">{{ row.sale_unit_price }}</td>
                             <td class="text-left">{{ row.stock }}</td>
                             <td class="text-left">
+                                {{ row.date_of_due && row.date_of_due.date ? row.date_of_due.date.substr(0, 10) : '' }}
+                            </td>
+                            <td class="text-left">
                                 <div v-for="(location, i) in row.locations" :key="i">
                                     <div v-for="(col, idx) in location.columns" :key="idx">
                                         {{ location.code_location }} - {{ col }} - {{ numberToLetter(col) }}
@@ -313,12 +332,18 @@
                             </td>
                             <td class="text-left">{{ row.cod_digemid }}</td>
                             <td class="text-left">{{ row.concentration }}</td>
-                            <td class="text-center">{{ row.sales_condition ? row.sales_condition.description : ''  }}</td>
-                            <td class="text-left">{{ row.pharmaceutical_unit_type ? row.pharmaceutical_unit_type.description : '' }}</td>
+                            <td class="text-center">
+                                {{ row.sales_condition ? row.sales_condition.description : '' }}
+                            </td>
+                            <td class="text-left">
+                                {{ row.pharmaceutical_unit_type ? row.pharmaceutical_unit_type.description : '' }}
+                            </td>
                             <td class="text-left">{{ row.active_principle }}</td>
-                            <td class="text-left">{{ row.inventory_state_description ? row.inventory_state_description : ''  }}</td>
-                            <!-- <td class="text-left">{{ row.accion }}</td> -->
+                            <td class="text-left">
+                                {{ row.inventory_state_description ? row.inventory_state_description : '' }}
+                            </td>
                         </tr>
+
                         <tr v-if="items.length === 0">
                             <td colspan="7" class="text-center">No hay registros disponibles</td>
                         </tr>
