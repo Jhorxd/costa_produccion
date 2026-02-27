@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use Illuminate\Support\Facades\Log;
 use App\CoreFacturalo\Facturalo;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Template\ReportHelper;
@@ -685,73 +686,74 @@ public function getPdfSunat($id)
 
     }
 
-    public function item_tables()
-    {
-        // $items = $this->table('items');
-        $items = SearchItemController::getItemsToDocuments();
-        $categories = Category::all();
-        $brands = Brand::all();
-        $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::whereActive()->get();
-        $price_types = PriceType::whereActive()->get();
-        $operation_types = OperationType::whereActive()->get();
-        $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
-        $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
-        $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
-        $is_client = $this->getIsClient();
-        $validate_stock_add_item = InventoryConfiguration::getRecordIndividualColumn('validate_stock_add_item');
+public function item_tables()
+{
+    $items = SearchItemController::getItemsToDocuments();
+    $categories = Category::all();
+    $brands = Brand::all();
+    $affectation_igv_types = AffectationIgvType::whereActive()->get();
+    $system_isc_types = SystemIscType::whereActive()->get();
+    $price_types = PriceType::whereActive()->get();
+    $operation_types = OperationType::whereActive()->get();
+    $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
+    $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
+    $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
+    $is_client = $this->getIsClient();
+    $validate_stock_add_item = InventoryConfiguration::getRecordIndividualColumn('validate_stock_add_item');
 
-        $configuration = Configuration::first();
+    $configuration = Configuration::first();
 
-        /** Informacion adicional */
-        $colors = collect([]);
-        $CatItemSize = $colors;
-        $CatItemStatus = $colors;
-        $CatItemUnitBusiness = $colors;
-        $CatItemMoldCavity = $colors;
-        $CatItemPackageMeasurement = $colors;
-        $CatItemUnitsPerPackage = $colors;
-        $CatItemMoldProperty = $colors;
-        $CatItemProductFamily = $colors;
-        if ($configuration->isShowExtraInfoToItem()) {
-
-            $colors = CatColorsItem::all();
-            $CatItemSize = CatItemSize::all();
-            $CatItemStatus = CatItemStatus::all();
-            $CatItemUnitBusiness = CatItemUnitBusiness::all();
-            $CatItemMoldCavity = CatItemMoldCavity::all();
-            $CatItemPackageMeasurement = CatItemPackageMeasurement::all();
-            $CatItemUnitsPerPackage = CatItemUnitsPerPackage::all();
-            $CatItemMoldProperty = CatItemMoldProperty::all();
-            $CatItemProductFamily = CatItemProductFamily::all();
-        }
-
-
-        /** Informacion adicional */
-
-        return compact(
-            'items',
-            'categories',
-            'brands',
-            'affectation_igv_types',
-            'system_isc_types',
-            'price_types',
-            'operation_types',
-            'discount_types',
-            'charge_types',
-            'attribute_types',
-            'is_client',
-            'colors',
-            'CatItemSize',
-            'CatItemMoldCavity',
-            'CatItemMoldProperty',
-            'CatItemUnitBusiness',
-            'CatItemStatus',
-            'CatItemPackageMeasurement',
-            'CatItemProductFamily',
-            'validate_stock_add_item',
-            'CatItemUnitsPerPackage');
+    /** Informacion adicional */
+    $colors = collect([]);
+    $CatItemSize = $colors;
+    $CatItemStatus = $colors;
+    $CatItemUnitBusiness = $colors;
+    $CatItemMoldCavity = $colors;
+    $CatItemPackageMeasurement = $colors;
+    $CatItemUnitsPerPackage = $colors;
+    $CatItemMoldProperty = $colors;
+    $CatItemProductFamily = $colors;
+    if ($configuration->isShowExtraInfoToItem()) {
+        $colors = CatColorsItem::all();
+        $CatItemSize = CatItemSize::all();
+        $CatItemStatus = CatItemStatus::all();
+        $CatItemUnitBusiness = CatItemUnitBusiness::all();
+        $CatItemMoldCavity = CatItemMoldCavity::all();
+        $CatItemPackageMeasurement = CatItemPackageMeasurement::all();
+        $CatItemUnitsPerPackage = CatItemUnitsPerPackage::all();
+        $CatItemMoldProperty = CatItemMoldProperty::all();
+        $CatItemProductFamily = CatItemProductFamily::all();
     }
+
+    Log::info('item_tables FIRST ITEM BEFORE RESPONSE', [
+        'item' => $items[0] ?? null,
+        'date_of_due' => $items[0]['date_of_due'] ?? null,
+    ]);
+
+    return compact(
+        'items',
+        'categories',
+        'brands',
+        'affectation_igv_types',
+        'system_isc_types',
+        'price_types',
+        'operation_types',
+        'discount_types',
+        'charge_types',
+        'attribute_types',
+        'is_client',
+        'colors',
+        'CatItemSize',
+        'CatItemMoldCavity',
+        'CatItemMoldProperty',
+        'CatItemUnitBusiness',
+        'CatItemStatus',
+        'CatItemPackageMeasurement',
+        'CatItemProductFamily',
+        'validate_stock_add_item',
+        'CatItemUnitsPerPackage'
+    );
+}
 
     public function table($table)
     {
