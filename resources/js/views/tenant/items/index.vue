@@ -317,7 +317,7 @@
                                 <div aria-labelledby="dropdownMenuButton"
                                      class="dropdown-menu">
 
-                                    <template v-if="typeUser === 'admin'">
+                                    <template>
                                         <button
                                             class="dropdown-item"
                                             @click.prevent="clickCreate(row.id)"
