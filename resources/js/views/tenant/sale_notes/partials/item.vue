@@ -272,7 +272,8 @@
                             :key="index"
                             :class="{
                                 'row-selected': selectedRow && selectedRow.id === row.id,
-                                'row-expiring': isRowExpiring(row)
+                                'row-expiring-soon': isRowExpiringSoon(row),
+                                'row-expired': isRowExpired(row)
                             }"
                             >
                             <td class="text-left">
@@ -762,8 +763,21 @@
 }
 .row-selected {
     background-color: #a2d8ff !important;
-    color: black; /* Para que el texto sea legible */
+    color: black;
 }
+
+/* Próximos a vencer (naranja / warning) */
+tr.row-expiring-soon {
+    background-color: #e9b788 !important;
+    color: #000;
+}
+
+/* Vencidos (rojo / danger) */
+tr.row-expired {
+    background-color: #e67681 !important;
+    color: #000000;
+}
+
 /*******************
 ALERTA PARA PRODUCTOS PRÓXIMOS A VENCER
 *******************/
@@ -1042,31 +1056,48 @@ export default {
 
             return false;
         },
-        isRowExpiring(row) {
-        if (!row || !row.date_of_due) return false
+         parseDueDate(row) {
+            if (!row || !row.date_of_due) return null
 
-        const raw = String(row.date_of_due)
-        const dateStr = raw.substring(0, 10) // 'YYYY-MM-DD'
+            const raw = String(row.date_of_due)
+            const dateStr = raw.substring(0, 10)
+            const parts = dateStr.split('-')
+            if (parts.length !== 3) return null
 
-        const parts = dateStr.split('-')
-        if (parts.length !== 3) return false
+            const year  = parseInt(parts[0], 10)
+            const month = parseInt(parts[1], 10) - 1
+            const day   = parseInt(parts[2], 10)
 
-        const year  = parseInt(parts[0], 10)
-        const month = parseInt(parts[1], 10) - 1
-        const day   = parseInt(parts[2], 10)
+            const due = new Date(year, month, day)
+            if (isNaN(due.getTime())) return null
 
-        const due = new Date(year, month, day)
-        if (isNaN(due.getTime())) return false
+            return due
+            },
 
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+            isRowExpired(row) {
+            const due = this.parseDueDate(row)
+            if (!due) return false
 
-        const limit = new Date()
-        limit.setMonth(limit.getMonth() + 1)
-        limit.setHours(0, 0, 0, 0)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
 
-        return due >= today && due <= limit
-        },
+            return due < today
+            },
+
+            isRowExpiringSoon(row) {
+            const due = this.parseDueDate(row)
+            if (!due) return false
+
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
+            const limit = new Date()
+            limit.setMonth(limit.getMonth() + 1)
+            limit.setHours(0, 0, 0, 0)
+
+            return due >= today && due <= limit
+            },
+
 
         ItemSlotTooltipView(item) {
             return ItemSlotTooltip(item);
