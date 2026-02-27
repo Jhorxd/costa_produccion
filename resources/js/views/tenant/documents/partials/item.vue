@@ -1221,35 +1221,42 @@ export default {
         ItemOptionDescriptionView(item) {
             return ItemOptionDescription(item)
         },
-        getTables() {
-            this.$http.get(`/${this.resource}/item/tables`).then(response => {                
-                let data = response.data
-                this.all_items = data.items
-                this.operation_types = data.operation_types
-                this.all_affectation_igv_types = data.affectation_igv_types
-                this.system_isc_types = data.system_isc_types
-                this.discount_types = data.discount_types
-                this.charge_types = data.charge_types
-                this.attribute_types = data.attribute_types
-                this.is_client = data.is_client;
-                this.validate_stock_add_item = data.validate_stock_add_item
+getTables() {
+  this.$http.get(`/${this.resource}/item/tables`).then(response => {        
+    let data = response.data
 
-                if (this.canShowExtraData) {
-                    this.$store.commit('setColors', data.colors);
-                    this.$store.commit('setCatItemUnitsPerPackage', data.CatItemUnitsPerPackage);
-                    this.$store.commit('setCatItemStatus', data.CatItemStatus);
-                    this.$store.commit('setCatItemMoldCavity', data.CatItemMoldCavity);
-                    this.$store.commit('setCatItemMoldProperty', data.CatItemMoldProperty);
-                    this.$store.commit('setCatItemUnitBusiness', data.CatItemUnitBusiness);
-                    this.$store.commit('setCatItemPackageMeasurement', data.CatItemPackageMeasurement);
-                    this.$store.commit('setCatItemProductFamily', data.CatItemPackageMeasurement);
-                    this.$store.commit('setCatItemSize', data.CatItemSize);
-                }
-                this.$store.commit('setConfiguration', data.configuration);
-                this.filterItems()
+    console.log(
+      'ITEMS FROM API (FIRST ROW)',
+      JSON.parse(JSON.stringify(data.items[0] || null))
+    )
 
-            })
-        },
+    this.all_items = data.items
+    this.operation_types = data.operation_types
+    this.all_affectation_igv_types = data.affectation_igv_types
+    this.system_isc_types = data.system_isc_types
+    this.discount_types = data.discount_types
+    this.charge_types = data.charge_types
+    this.attribute_types = data.attribute_types
+    this.is_client = data.is_client
+    this.validate_stock_add_item = data.validate_stock_add_item
+
+    if (this.canShowExtraData) {
+      this.$store.commit('setColors', data.colors)
+      this.$store.commit('setCatItemUnitsPerPackage', data.CatItemUnitsPerPackage)
+      this.$store.commit('setCatItemStatus', data.CatItemStatus)
+      this.$store.commit('setCatItemMoldCavity', data.CatItemMoldCavity)
+      this.$store.commit('setCatItemMoldProperty', data.CatItemMoldProperty)
+      this.$store.commit('setCatItemUnitBusiness', data.CatItemUnitBusiness)
+      this.$store.commit('setCatItemPackageMeasurement', data.CatItemPackageMeasurement)
+      this.$store.commit('setCatItemProductFamily', data.CatItemPackageMeasurement)
+      this.$store.commit('setCatItemSize', data.CatItemSize)
+    }
+
+    this.$store.commit('setConfiguration', data.configuration)
+    this.filterItems()
+  })
+}
+,
         canCreateProduct() {
             if (this.typeUser === 'admin') {
                 this.can_add_new_product = true
