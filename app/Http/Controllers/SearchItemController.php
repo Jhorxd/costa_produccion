@@ -13,7 +13,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Collection;
     use Modules\Inventory\Traits\InventoryTrait;
-
+    use Illuminate\Support\Facades\Log;
     /**
      * Tener en cuenta como base modules/Document/Traits/SearchTrait.php
      * Class SearchItemController
@@ -553,9 +553,23 @@
             return $items
                 ->transform(function ($row) use ($warehouse) {
                     /** @var Item $row */
-                    return $row->getDataToItemModal($warehouse);
-                });
 
+                    // Antes de transformar: cómo viene date_of_due desde la consulta
+                    Log::info('TransformToModal BEFORE getDataToItemModal', [
+                        'id' => $row->id ?? null,
+                        'raw_date_of_due' => $row->date_of_due ?? null,
+                    ]);
+
+                    $data = $row->getDataToItemModal($warehouse);
+
+                    // Después de transformar: qué se termina enviando a item_tables()
+                    Log::info('TransformToModal AFTER getDataToItemModal', [
+                        'id' => $data['id'] ?? null,
+                        'final_date_of_due' => $data['date_of_due'] ?? null,
+                    ]);
+
+                    return $data;
+                });
         }
         /**
          * @param Item[]|\Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection|Builder[]|Collection|mixed $items

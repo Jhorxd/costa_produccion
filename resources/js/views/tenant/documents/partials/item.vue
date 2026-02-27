@@ -1226,17 +1226,11 @@ getTables() {
     let data = response.data
 
     console.log(
-      'API RAW FIRST ROW',
+      'ITEMS FROM API (FIRST ROW)',
       JSON.parse(JSON.stringify(data.items[0] || null))
     )
 
     this.all_items = data.items
-
-    console.log(
-      'AFTER ASSIGN all_items[0]',
-      JSON.parse(JSON.stringify(this.all_items[0] || null))
-    )
-
     this.operation_types = data.operation_types
     this.all_affectation_igv_types = data.affectation_igv_types
     this.system_isc_types = data.system_isc_types
@@ -1261,23 +1255,7 @@ getTables() {
     this.$store.commit('setConfiguration', data.configuration)
     this.filterItems()
   })
-},
-
-filterItems() {
-  console.log(
-    'FILTER BEFORE items[0]',
-    JSON.parse(JSON.stringify(this.all_items[0] || null))
-  )
-
-  this.items = this.all_items
-
-  console.log(
-    'FILTER AFTER items[0]',
-    JSON.parse(JSON.stringify(this.items[0] || null))
-  )
 }
-
-
 ,
         canCreateProduct() {
             if (this.typeUser === 'admin') {
