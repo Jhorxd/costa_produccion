@@ -689,6 +689,26 @@ public function getPdfSunat($id)
 public function item_tables()
 {
     $items = SearchItemController::getItemsToDocuments();
+
+    // Normalizar date_of_due
+    $items = $items->map(function ($item) {
+        // si es modelo
+        if (isset($item->date_of_due)) {
+            $item->date_of_due = $item->date_of_due
+                ? $item->date_of_due->format('Y-m-d H:i:s')
+                : null;
+        }
+
+        // si llegara como array
+        if (isset($item['date_of_due'])) {
+            $item['date_of_due'] = $item['date_of_due']
+                ? $item['date_of_due']->format('Y-m-d H:i:s')
+                : null;
+        }
+
+        return $item;
+    });
+
     $categories = Category::all();
     $brands = Brand::all();
     $affectation_igv_types = AffectationIgvType::whereActive()->get();
@@ -700,10 +720,8 @@ public function item_tables()
     $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
     $is_client = $this->getIsClient();
     $validate_stock_add_item = InventoryConfiguration::getRecordIndividualColumn('validate_stock_add_item');
-
     $configuration = Configuration::first();
 
-    /** Informacion adicional */
     $colors = collect([]);
     $CatItemSize = $colors;
     $CatItemStatus = $colors;
@@ -713,6 +731,7 @@ public function item_tables()
     $CatItemUnitsPerPackage = $colors;
     $CatItemMoldProperty = $colors;
     $CatItemProductFamily = $colors;
+
     if ($configuration->isShowExtraInfoToItem()) {
         $colors = CatColorsItem::all();
         $CatItemSize = CatItemSize::all();
@@ -725,12 +744,7 @@ public function item_tables()
         $CatItemProductFamily = CatItemProductFamily::all();
     }
 
-    Log::info('item_tables FIRST ITEM BEFORE RESPONSE', [
-        'item' => $items[0] ?? null,
-        'date_of_due' => $items[0]['date_of_due'] ?? null,
-    ]);
-
-    return compact(
+    return response()->json(compact(
         'items',
         'categories',
         'brands',
@@ -752,8 +766,9 @@ public function item_tables()
         'CatItemProductFamily',
         'validate_stock_add_item',
         'CatItemUnitsPerPackage'
-    );
+    ));
 }
+
 
     public function table($table)
     {
