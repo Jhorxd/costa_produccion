@@ -66,7 +66,9 @@ if ($hostname) {
             //warehouse
             Route::post('orders/warehouse', 'Tenant\OrderController@searchWarehouse');
             Route::get('orders/tables', 'Tenant\OrderController@tables');
-
+            Route::get('/perfil/cambiar', function () {
+                return redirect('login-page'); // o url('login-page')
+            })->name('tenant.profile.switch');
             Route::get('orders/tables/item/{internal_id}', 'Tenant\OrderController@item');
 
             //Status Orders

@@ -774,19 +774,32 @@
 
             if ($request->input('type') == 'admin') {
                 $array_modules = [];
-                $array_levels = [];
+                $array_levels  = [];
+
                 foreach ($request->modules as $module) {
-                    array_push($array_modules, [
-                        'module_id' => $module, 'user_id' => $user_id
-                    ]);
+                    // si el módulo es 52, asignar al usuario 0
+                    $uid = ((int) $module === 52) ? 0 : $user_id;
+
+                    $array_modules[] = [
+                        'module_id' => $module,
+                        'user_id'   => $uid,
+                    ];
                 }
+
                 foreach ($request->levels as $level) {
-                    array_push($array_levels, [
-                        'module_level_id' => $level, 'user_id' => $user_id
-                    ]);
+                    // si el level es 45, asignar al usuario 0
+                    $uid = ((int) $level === 45) ? 0 : $user_id;
+
+                    $array_levels[] = [
+                        'module_level_id' => $level,
+                        'user_id'         => $uid,
+                    ];
                 }
+
                 DB::connection('tenant')->table('module_user')->insert($array_modules);
                 DB::connection('tenant')->table('module_level_user')->insert($array_levels);
+
+
 
                 $this->insertAppModules($user_id);
 
