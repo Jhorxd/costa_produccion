@@ -695,7 +695,7 @@
                 'config_system_env' => $request->config_system_env,
                 'login' => json_encode([
                     'type' => 'image',
-                    'image' => $http.$fqdn.'/images/fondo-5.svg',
+                    'image' => $http.$fqdn.'/images/fondo-6.png',
                     'position_form' => 'right',
                     'show_logo_in_form' => false,
                     'position_logo' => 'top-left',
