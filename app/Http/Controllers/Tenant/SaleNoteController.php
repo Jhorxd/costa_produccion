@@ -568,22 +568,39 @@ class SaleNoteController extends Controller
     }
 
 
-    public function item_tables()
-    {
-        // $items = $this->table('items');
-        $items = SearchItemController::getItemsToSaleNote();
-        $categories = [];
-        $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::whereActive()->get();
-        $price_types = PriceType::whereActive()->get();
-        $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
-        $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
-        $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
+public function item_tables()
+{
+    $items = SearchItemController::getItemsToSaleNote();
 
-        $operation_types = OperationType::whereActive()->get();
-        $is_client = $this->getIsClient();
+    // Normalizar date_of_due a solo fecha
+    $items = $items->map(function ($item) {
+        if (isset($item->date_of_due)) {
+            $item->date_of_due = $item->date_of_due
+                ? $item->date_of_due->format('Y-m-d')
+                : null;
+        }
 
-        return compact('items',
+        if (isset($item['date_of_due'])) {
+            $item['date_of_due'] = $item['date_of_due']
+                ? $item['date_of_due']->format('Y-m-d')
+                : null;
+        }
+
+        return $item;
+    });
+
+    $categories = [];
+    $affectation_igv_types = AffectationIgvType::whereActive()->get();
+    $system_isc_types = SystemIscType::whereActive()->get();
+    $price_types = PriceType::whereActive()->get();
+    $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
+    $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
+    $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
+    $operation_types = OperationType::whereActive()->get();
+    $is_client = $this->getIsClient();
+
+    return response()->json(compact(
+        'items',
         'categories',
         'affectation_igv_types',
         'system_isc_types',
@@ -593,8 +610,9 @@ class SaleNoteController extends Controller
         'attribute_types',
         'operation_types',
         'is_client'
-        );
-    }
+    ));
+}
+
 
     public function record($id)
     {
