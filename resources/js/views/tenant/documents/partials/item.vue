@@ -342,7 +342,16 @@
                             <td class="text-left">{{ row.sale_unit_price }}</td>
                             <td class="text-left">{{ row.stock }}</td>
                             <td class="text-left">
-                                {{ row.date_of_due && row.date_of_due.date ? row.date_of_due.date.substr(0, 10) : '' }}
+                                {{
+                                    row.date_of_due
+                                        ? (
+                                            (typeof row.date_of_due === 'string'
+                                                ? row.date_of_due
+                                                : row.date_of_due.date
+                                            ).substr(0, 10)
+                                        )
+                                        : ''
+                                }}
                             </td>
                             <td class="text-left">
                                 <div v-for="(location, i) in row.locations" :key="i">
