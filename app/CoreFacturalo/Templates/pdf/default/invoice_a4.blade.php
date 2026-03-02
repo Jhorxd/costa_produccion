@@ -43,7 +43,7 @@
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body>
-@if ($type->soap_type_id === '01')
+<!-- @if ($type->soap_type_id === '01')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">
@@ -51,7 +51,7 @@
             </td>
         </tr>
     </table>
-@endif
+@endif -->
 @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img

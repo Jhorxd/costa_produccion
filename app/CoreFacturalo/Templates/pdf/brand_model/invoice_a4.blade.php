@@ -49,7 +49,7 @@
             alt="anulado" class="" style="opacity: 0.6;">
     </div>
 @endif
-@if ($type->soap_type_id === '01')
+<!-- @if ($type->soap_type_id === '01')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">
@@ -57,7 +57,7 @@
             </td>
         </tr>
     </table>
-@endif
+@endif -->
 <table class="full-width">
     <tr>
         @if($company->logo)

@@ -667,18 +667,30 @@ public function recordsTotal(Request $request)
 }
 
 
-        // DocumentController.php
-public function getPdfSunat($id)
-{
-    // ✅ Usa el modelo DocumentResponse que ya maneja el tenant
-    $documentResponse = DocumentResponse::where('document_id', $id)->first();
+    // DocumentController.php
+    public function getPdfSunat($id)
+    {
+        // ✅ Usa el modelo DocumentResponse que ya maneja el tenant
+        $documentResponse = DocumentResponse::where('document_id', $id)->first();
 
-    if (!$documentResponse || !$documentResponse->enlace_del_pdf) {
-        return response()->json(['error' => 'PDF no encontrado'], 404);
+        if (!$documentResponse || !$documentResponse->enlace_del_pdf) {
+            return response()->json(['error' => 'PDF no encontrado'], 404);
+        }
+
+        return response()->json(['url' => $documentResponse->enlace_del_pdf]);
     }
 
-    return response()->json(['url' => $documentResponse->enlace_del_pdf]);
-}
+        public function getXmlSunat($id)
+    {
+        // ✅ Usa el modelo DocumentResponse que ya maneja el tenant
+        $documentResponse = DocumentResponse::where('document_id', $id)->first();
+
+        if (!$documentResponse || !$documentResponse->enlace_del_xml) {
+            return response()->json(['error' => 'XML no encontrado'], 404);
+        }
+
+        return response()->json(['url' => $documentResponse->enlace_del_xml]);
+    }
 
 
 

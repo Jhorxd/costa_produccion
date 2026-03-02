@@ -550,7 +550,7 @@
                             {{ row.purchase_order }}
                         </td>
                             <td class="text-center">
-                                <button
+                                <!-- <button
                                     type="button"
                                     style="min-width: 41px"
                                     class="btn waves-effect waves-light btn-xs btn-info m-1__2"
@@ -576,24 +576,48 @@
                                     v-if="row.has_cdr"
                                 >
                                     CDR
-                                </button>
-                                <!-- Botón PDF SUNAT siempre visible -->
-                                <button type="button"
-                                        style="min-width: 90px"
-                                        class="btn waves-effect waves-light btn-xs btn-warning m-1-2"
+                                </button> -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <button
+                                        type="button"
+                                        style="min-width: 41px"
+                                        class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                        @click.prevent="clickXmlSunat(row.id)"
+                                        v-if="row.has_xml"
+                                    >
+                                    XML
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn waves-effect waves-light btn-xs btn-warning"
+                                        v-if="row.state_sunat === 'ACEPTADO'"
                                         @click.prevent="clickPdfSunat(row.id)"
-                                        v-if="row.state_sunat === 'ACEPTADO'">
-                                    PDF SUNAT
-                                </button>
+                                    >
+                                        PDF SUNAT
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn waves-effect waves-light btn-xs btn-success"
+                                        v-if="row.state_sunat === 'PENDIENTE'"
+                                        @click.prevent="clickSendSunat(row.id)"
+                                    >
+                                        ENVIO SUNAT
+                                    </button>
+                                </div>
+
+
                                 <button
                                     type="button"
                                     style="min-width: 90px"
-                                    class="btn waves-effect waves-light btn-xs btn-success m-1__2"
+                                    class="btn waves-effect waves-light btn-xs btn-success m-1-2"
+                                    v-if="row.state_sunat === 'PENDIENTE'"
                                     @click.prevent="clickSendSunat(row.id)"
-                                    v-if="row.state_sunat == 'PENDIENTE'"
                                 >
                                     ENVIO SUNAT
                                 </button>
+
                             </td>
 
 
@@ -741,7 +765,7 @@
                                         class="dropdown-item"
                                         @click.prevent="clickOptions(row.id)"
                                     >
-                                        Opciones
+                                        Imprimir
                                     </button>
                                     <button
                                         class="dropdown-item"
@@ -1141,6 +1165,51 @@ export default {
                     
                 } catch (error) {
                     let errorMessage = 'NO TIENE PDF SUNAT';
+                    
+                    if (error.response && error.response.data) {
+                        if (error.response.data.message) {
+                            errorMessage = error.response.data.message;
+                        } else if (error.response.data.error) {
+                            errorMessage = error.response.data.error;
+                        }
+                    }
+                    
+                    this.$message({
+                        type: 'error',
+                        message: errorMessage,
+                        duration: 3000,
+                        showClose: true
+                    });
+                }
+            },
+            async clickXmlSunat(id) {
+                try {
+                    const response = await this.$http.get(`/documents/xml-sunat/${id}`);
+                    
+                    const url = response.data.url;
+                    
+                    if (!url) {
+                        this.$message({
+                            type: 'warning',
+                            message: 'NO TIENE XML SUNAT',
+                            duration: 3000,
+                            showClose: true
+                        });
+                        return;
+                    }
+                    
+                    // Abrir PDF en nueva ventana
+                    window.open(url, '_blank');
+                    
+                    // Opcional: Notificación de éxito
+                    this.$message({
+                        type: 'success',
+                        message: 'XML abierto correctamente',
+                        duration: 2000
+                    });
+                    
+                } catch (error) {
+                    let errorMessage = 'NO TIENE XML SUNAT';
                     
                     if (error.response && error.response.data) {
                         if (error.response.data.message) {
