@@ -13,6 +13,8 @@ use App\Http\Requests\Tenant\VoidedRequest;
 use Carbon\Carbon;
 use App\Models\Tenant\Tokens;
 use App\Models\Tenant\DocumentResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log; 
 use App\Models\Tenant\{
     Document,
     Configuration,
@@ -241,25 +243,74 @@ public function store(VoidedRequest $request)
             ]);
         }
 
-        $ruta  = $tokenRecord->ruta;
-        $token = $tokenRecord->token;
+        // --- Obtener token según establishment del usuario ---
+            $user = Auth::user();
 
-        // --- CURL ---
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $ruta);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Token token="'.$token.'"',
-            'Content-Type: application/json'
-        ]);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            Log::info('XOperacion: usuario autenticado', [
+                'user_id'          => optional($user)->id,
+                'establishment_id' => optional($user)->establishment_id,
+            ]);
 
-        $respuesta = curl_exec($ch);
-        curl_close($ch);
+            $tokenRecord = null;
 
-        $leer_respuesta = json_decode($respuesta, true);
+            if ($user && $user->establishment) {
+                Log::info('XOperacion: buscando token por establishment', [
+                    'establishment_id' => $user->establishment->id,
+                ]);
+
+                $tokenRecord = $user->establishment->tokens()->first();
+
+                Log::info('XOperacion: resultado búsqueda token', [
+                    'token_found' => (bool) $tokenRecord,
+                    'ruta'        => $tokenRecord->ruta ?? null,
+                    'token'       => $tokenRecord->token ?? null,
+                ]);
+            } else {
+                Log::warning('XOperacion: usuario sin establishment o no autenticado');
+            }
+
+            if (! $tokenRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró token configurado para este establecimiento',
+                ], 500);
+            }
+
+            $ruta  = $tokenRecord->ruta;
+            $token = $tokenRecord->token;
+
+            // Log antes de enviar
+            Log::info('XOperacion: antes de enviar a API (cURL)', [
+                'ruta'  => $ruta,
+                'token' => $token,
+                'data'  => $data_json,
+            ]);
+
+            // --- CURL ---
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $ruta);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Token token="'.$token.'"',
+                'Content-Type: application/json',
+            ]);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $respuesta = curl_exec($ch);
+
+            if ($respuesta === false) {
+                Log::error('XOperacion: error en cURL', [
+                    'error' => curl_error($ch),
+                    'errno' => curl_errno($ch),
+                    'ruta'  => $ruta,
+                ]);
+            }
+
+            curl_close($ch);
+
+            $leer_respuesta = json_decode($respuesta, true);
 
         // --- Si hay errores en la respuesta ---
         if (isset($leer_respuesta['errors'])) {

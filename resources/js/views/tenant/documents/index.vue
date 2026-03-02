@@ -578,12 +578,11 @@
                                     CDR
                                 </button>
                                 <!-- Botón PDF SUNAT siempre visible -->
-                                <button
-                                    type="button"
-                                    style="min-width: 90px"
-                                    class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
-                                    @click.prevent="clickPdfSunat(row.id)"
-                                >
+                                <button type="button"
+                                        style="min-width: 90px"
+                                        class="btn waves-effect waves-light btn-xs btn-warning m-1-2"
+                                        @click.prevent="clickPdfSunat(row.id)"
+                                        v-if="row.state_sunat === 'ACEPTADO'">
                                     PDF SUNAT
                                 </button>
                                 <button
@@ -591,6 +590,7 @@
                                     style="min-width: 90px"
                                     class="btn waves-effect waves-light btn-xs btn-success m-1__2"
                                     @click.prevent="clickSendSunat(row.id)"
+                                    v-if="row.state_sunat == 'PENDIENTE'"
                                 >
                                     ENVIO SUNAT
                                 </button>

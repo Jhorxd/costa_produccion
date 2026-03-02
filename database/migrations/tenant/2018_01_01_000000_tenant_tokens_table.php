@@ -10,6 +10,7 @@ class TenantTokensTable extends Migration
     {
         Schema::create('tokens', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->unsignedBigInteger('establishment_id'); 
             $table->string('ruta', 500);
             $table->string('token', 500);
             $table->timestamps();

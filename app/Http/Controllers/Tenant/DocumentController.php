@@ -71,6 +71,7 @@ use Modules\Item\Http\Requests\CategoryRequest;
 use Modules\Item\Models\Brand;
 use Modules\Item\Models\Category;
 use Modules\Document\Helpers\DocumentHelper;
+use Illuminate\Support\Facades\Auth;
 use Modules\Inventory\Models\{
     InventoryConfiguration
 };
@@ -120,53 +121,55 @@ class DocumentController extends Controller
         ];
     }
 
-    public function records(Request $request)
-    {
-        $records = $this->getRecords($request);
+public function records(Request $request)
+{
+    $establishment_id = auth()->user()->establishment_id;
 
-        return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
-    }
+    $records = $this->getRecords($request)
+        ->where('establishment_id', $establishment_id);
 
-    /**
-     * Devuelve los totales de la busqueda,
-     *
-     * Implementado en resources/js/views/tenant/documents/index.vue
-     * @param Request $request
-     *
-     * @return array[]
-     */
-    public function recordsTotal(Request $request)
-    {
+    return new DocumentCollection(
+        $records->paginate(config('tenant.items_per_page'))
+    );
+}
 
-        $FT_t = DocumentType::find('01');
-        $BV_t = DocumentType::find('03');
-        $NC_t = DocumentType::find('07');
-        $ND_t = DocumentType::find('08');
+public function recordsTotal(Request $request)
+{
+    $establishment_id = auth()->user()->establishment_id;
 
-        $BV = $this->getRecords($request)->where('document_type_id', $BV_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        $FT = $this->getRecords($request)->where('document_type_id', $FT_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        $NC = $this->getRecords($request)->where('document_type_id', $NC_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        $ND = $this->getRecords($request)->where('document_type_id', $ND_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        return [
-            [
-                'name' => $FT_t->description,
-                'total' => "S/. " . ReportHelper::setNumber($FT),
-            ],
-            [
-                'name' => $BV_t->description,
-                'total' => "S/. " . ReportHelper::setNumber($BV),
+    $baseQuery = $this->getRecords($request)
+        ->where('establishment_id', $establishment_id);
 
-            ],
-            [
-                'name' => $NC_t->description,
-                'total' => "S/. " . ReportHelper::setNumber($NC),
-            ],
-            [
-                'name' => $ND_t->description,
-                'total' => "S/. " . ReportHelper::setNumber($ND),
-            ],
-        ];
-    }
+    $FT_t = DocumentType::find('01');
+    $BV_t = DocumentType::find('03');
+    $NC_t = DocumentType::find('07');
+    $ND_t = DocumentType::find('08');
+
+    $BV = (clone $baseQuery)->where('document_type_id', $BV_t->id)->where('currency_type_id', 'PEN')->sum('total');
+    $FT = (clone $baseQuery)->where('document_type_id', $FT_t->id)->where('currency_type_id', 'PEN')->sum('total');
+    $NC = (clone $baseQuery)->where('document_type_id', $NC_t->id)->where('currency_type_id', 'PEN')->sum('total');
+    $ND = (clone $baseQuery)->where('document_type_id', $ND_t->id)->where('currency_type_id', 'PEN')->sum('total');
+
+    return [
+        [
+            'name' => $FT_t->description,
+            'total' => "S/. " . ReportHelper::setNumber($FT),
+        ],
+        [
+            'name' => $BV_t->description,
+            'total' => "S/. " . ReportHelper::setNumber($BV),
+        ],
+        [
+            'name' => $NC_t->description,
+            'total' => "S/. " . ReportHelper::setNumber($NC),
+        ],
+        [
+            'name' => $ND_t->description,
+            'total' => "S/. " . ReportHelper::setNumber($ND),
+        ],
+    ];
+}
+
 
     public function searchCustomers(Request $request)
     {
@@ -349,18 +352,45 @@ class DocumentController extends Controller
         $data_json = json_encode($data);
 
         // --- CURL ---
-        // --- Obtener el token del tenant activo ---
-        $tokenRecord = Tokens::first(); // o firstOrFail() si quieres que lance error si no existe
+        $user = auth()->user();
+
+        Log::info('EnvioSunat: usuario autenticado', [
+            'user_id'          => optional($user)->id,
+            'establishment_id' => optional($user)->establishment_id,
+        ]);
+
+        $tokenRecord = null;
+
+        if ($user && $user->establishment) {
+            Log::info('EnvioSunat: buscando token por establishment', [
+                'establishment_id' => $user->establishment->id,
+            ]);
+
+            $tokenRecord = $user->establishment->tokens()->first();
+
+            Log::info('EnvioSunat: resultado búsqueda token', [
+                'token_found' => (bool) $tokenRecord,
+                'ruta'        => $tokenRecord->ruta ?? null,
+                'token'       => $tokenRecord->token ?? null,
+            ]);
+        } else {
+            Log::warning('EnvioSunat: usuario sin establishment o no autenticado');
+        }
 
         if ($tokenRecord) {
-            $ruta = $tokenRecord->ruta;
+            $ruta  = $tokenRecord->ruta;
             $token = $tokenRecord->token;
         } else {
-            // Opcional: manejo si no hay token registrado
-            $ruta = null;
+            $ruta  = null;
             $token = null;
-            // o lanzar excepción, según tu lógica
         }
+
+        Log::info('EnvioSunat: antes de enviar a API (cURL)', [
+            'ruta'  => $ruta,
+            'token' => $token,
+            'data'  => $data_json,
+        ]);
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $ruta);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -373,9 +403,19 @@ class DocumentController extends Controller
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $respuesta = curl_exec($ch);
+
+        if ($respuesta === false) {
+            Log::error('EnvioSunat: error en cURL', [
+                'error' => curl_error($ch),
+                'errno' => curl_errno($ch),
+                'ruta'  => $ruta,
+            ]);
+        }
+
         curl_close($ch);
 
-            $leer_respuesta = json_decode($respuesta, true);
+        $leer_respuesta = json_decode($respuesta, true);
+
 
 // --- Guardar o actualizar la respuesta en la base de datos ---
         DocumentResponse::updateOrCreate(
@@ -484,6 +524,40 @@ class DocumentController extends Controller
         ]);
     }
 
+    // --- Obtener token según establishment del usuario ---
+    $user = Auth::user();
+
+    Log::info('ConsultaAnulacion: usuario autenticado', [
+        'user_id'          => optional($user)->id,
+        'establishment_id' => optional($user)->establishment_id,
+    ]);
+
+    $tokenRecord = null;
+
+    if ($user && $user->establishment) {
+        Log::info('ConsultaAnulacion: buscando token por establishment', [
+            'establishment_id' => $user->establishment->id,
+        ]);
+
+        $tokenRecord = $user->establishment->tokens()->first();
+
+        Log::info('ConsultaAnulacion: resultado búsqueda token', [
+            'token_found' => (bool) $tokenRecord,
+            'ruta'        => $tokenRecord->ruta ?? null,
+            'token'       => $tokenRecord->token ?? null,
+        ]);
+    } else {
+        Log::warning('ConsultaAnulacion: usuario sin establishment o no autenticado');
+    }
+
+    if (! $tokenRecord) {
+        // Manejo si no hay token
+        return response()->json([
+            'success' => false,
+            'message' => 'No se encontró token configurado para este establecimiento',
+        ], 500);
+    }
+
     $ruta  = $tokenRecord->ruta;
     $token = $tokenRecord->token;
 
@@ -492,17 +566,24 @@ class DocumentController extends Controller
         "operacion"           => "consultar_anulacion",
         "tipo_de_comprobante" => $tipo_comprobante,
         "serie"               => $document->series,
-        "numero"              => ltrim($document->number, "0")
+        "numero"              => ltrim($document->number, "0"),
     ];
 
     $data_json = json_encode($data);
+
+    // Log antes de enviar
+    Log::info('ConsultaAnulacion: antes de enviar a API (cURL)', [
+        'ruta'  => $ruta,
+        'token' => $token,
+        'data'  => $data_json,
+    ]);
 
     // --- CURL ---
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $ruta);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Authorization: Token token="'.$token.'"',
-        'Content-Type: application/json'
+        'Content-Type: application/json',
     ]);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -510,6 +591,15 @@ class DocumentController extends Controller
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     $respuesta = curl_exec($ch);
+
+    if ($respuesta === false) {
+        Log::error('ConsultaAnulacion: error en cURL', [
+            'error' => curl_error($ch),
+            'errno' => curl_errno($ch),
+            'ruta'  => $ruta,
+        ]);
+    }
+
     curl_close($ch);
 
     $leer_respuesta = json_decode($respuesta, true);

@@ -408,7 +408,7 @@
 
 
 
-        @if($vc_document > 0)
+        <!-- @if($vc_document > 0)
             <span class="separator"></span>
             <ul class="notifications">
                 <li>
@@ -426,7 +426,7 @@
                     </a>
                 </li>
             </ul>
-        @endif
+        @endif -->
 
         @if($vc_document_regularize_shipping > 0)
             <span class="separator"></span>

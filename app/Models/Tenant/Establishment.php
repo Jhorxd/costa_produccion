@@ -8,6 +8,7 @@ use App\Models\Tenant\Catalogs\District;
 use App\Models\Tenant\Catalogs\Province;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Dispatch\Models\OriginAddress;
+use App\Models\Tenant\Tokens;
 
 class Establishment extends ModelTenant
 {
@@ -54,6 +55,11 @@ class Establishment extends ModelTenant
     public function district()
     {
         return $this->belongsTo(District::class);
+    }
+    
+        public function tokens()
+    {
+        return $this->hasMany(Tokens::class);
     }
 
     public function getAddressFullAttribute()
