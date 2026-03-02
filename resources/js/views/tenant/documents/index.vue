@@ -582,8 +582,8 @@
                                         type="button"
                                         style="min-width: 41px"
                                         class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                        v-if="row.state_sunat === 'ACEPTADO'"
                                         @click.prevent="clickXmlSunat(row.id)"
-                                        v-if="row.has_xml"
                                     >
                                     XML
                                     </button>
@@ -606,17 +606,6 @@
                                         ENVIO SUNAT
                                     </button>
                                 </div>
-
-
-                                <button
-                                    type="button"
-                                    style="min-width: 90px"
-                                    class="btn waves-effect waves-light btn-xs btn-success m-1-2"
-                                    v-if="row.state_sunat === 'PENDIENTE'"
-                                    @click.prevent="clickSendSunat(row.id)"
-                                >
-                                    ENVIO SUNAT
-                                </button>
 
                             </td>
 
