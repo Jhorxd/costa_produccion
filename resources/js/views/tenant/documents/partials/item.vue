@@ -289,14 +289,16 @@
                             <!-- <th class="text-left" style="min-width: 95px;">Accion</th> -->
                         </tr>
                             <tr
-                            v-for="(row, index) in items"
-                            :key="index"
-                            :class="{
-                                'row-selected': selectedRow && selectedRow.id === row.id,
-                                'row-expiring-soon': isRowExpiringSoon(row),
-                                'row-expired': isRowExpired(row)
-                            }"
+                                v-for="(row, index) in items"
+                                :key="index"
+                                :class="{
+                                    'row-selected': selectedRow && selectedRow.id === row.id,
+                                    'row-expiring-soon': isRowExpiringSoon(row),
+                                    'row-expired': isRowExpired(row),
+                                    'row-normal': !selectedRow || selectedRow.id !== row.id && !isRowExpiringSoon(row) && !isRowExpired(row)
+                                }"
                             >
+
 
                             <td class="text-left">
                                 <el-button
@@ -823,6 +825,10 @@
 .row-selected {
     background-color: #a2d8ff !important;
     color: black;
+}
+
+.row-normal {
+    background-color: #ffffff !important;
 }
 
 /* Próximos a vencer (naranja / warning) */

@@ -182,7 +182,7 @@
                         <th v-if="columns.sales_note.visible">Nota de venta</th>
                         <th v-if="columns.order_note.visible">Pedidos</th>
                         <th v-if="columns.send_it.visible">Email Enviado</th>
-                        <th>Estado</th>
+                        <!-- <th>Estado</th> -->
                         <th>Estado SUNAT</th>
                         <th v-if="columns.user_name.visible">Usuario</th>
                         <th
@@ -388,7 +388,7 @@
                             </span>
                         </td>
 
-                        <td>
+                        <!-- <td>
                             <el-tooltip
                                 v-if="tooltip(row, false)"
                                 class="item"
@@ -454,7 +454,7 @@
                                     ></i>
                                 </el-tooltip>
                             </template>
-                        </td>
+                        </td> -->
                         <td>
                             <span
                                 class="badge bg-secondary text-white"
@@ -577,35 +577,32 @@
                                 >
                                     CDR
                                 </button> -->
-                                <div class="d-flex align-items-center gap-2">
-                                    <button
-                                        type="button"
-                                        style="min-width: 41px"
-                                        class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                            <div class="d-flex align-items-center gap-2" style="gap: 6px !important;">
+                                <button type="button"
+                                        style="height: 26px; min-width: 42px; font-size: 11px; padding: 0 6px;"
+                                        class="btn waves-effect waves-light btn-xs btn-info d-flex align-items-center justify-content-center"
                                         v-if="row.state_sunat === 'ACEPTADO'"
-                                        @click.prevent="clickXmlSunat(row.id)"
-                                    >
+                                        @click.prevent="clickXmlSunat(row.id)">
                                     XML
-                                    </button>
+                                </button>
 
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-warning"
+                                <button type="button"
+                                        style="height: 26px; min-width: 65px; font-size: 11px; padding: 0 6px;"
+                                        class="btn waves-effect waves-light btn-xs btn-warning d-flex align-items-center justify-content-center"
                                         v-if="row.state_sunat === 'ACEPTADO'"
-                                        @click.prevent="clickPdfSunat(row.id)"
-                                    >
-                                        PDF SUNAT
-                                    </button>
+                                        @click.prevent="clickPdfSunat(row.id)">
+                                    PDF SUNAT
+                                </button>
 
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-success"
+                                <button type="button"
+                                        style="height: 26px; min-width: 72px; font-size: 11px; padding: 0 6px;"
+                                        class="btn waves-effect waves-light btn-xs btn-success d-flex align-items-center justify-content-center"
                                         v-if="row.state_sunat === 'PENDIENTE'"
-                                        @click.prevent="clickSendSunat(row.id)"
-                                    >
-                                        ENVIO SUNAT
-                                    </button>
-                                </div>
+                                        @click.prevent="clickSendSunat(row.id)">
+                                    ENVIO SUNAT
+                                </button>
+                            </div>
+
 
                             </td>
 

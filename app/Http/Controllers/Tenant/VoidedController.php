@@ -68,17 +68,11 @@ public function store(VoidedRequest $request)
         $facturalo = new Facturalo();
         $inputs = $request->all();
 
-        \Log::info('Iniciando store voided', $inputs);
         $facturalo->save($inputs);
-        \Log::info('Save OK');
         $facturalo->createXmlUnsigned();
-        \Log::info('createXmlUnsigned OK');
         $service_pse_xml = $facturalo->servicePseSendXml();
-        \Log::info('servicePseSendXml OK', $service_pse_xml);
         $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
-        \Log::info('signXmlUnsigned OK');
         $facturalo->senderXmlSignedSummary();
-        \Log::info('senderXmlSignedSummary OK');
 
         return $facturalo;
     });
@@ -91,13 +85,10 @@ public function store(VoidedRequest $request)
         $docId = $doc['document_id'];
         $motivo = $doc['description'] ?? 'ANULACION DE COMPROBANTE';
 
-        \Log::info("Llamando bajaSunat para documento ID $docId");
         $resultado = $this->bajaSunat($docId, $motivo);
         $resultadoData = json_decode($resultado->getContent(), true);
-        \Log::info("Resultado bajaSunat ID $docId", $resultadoData);
 
         if (!$resultadoData['success']) {
-            \Log::warning("bajaSunat falló para documento ID $docId: " . $resultadoData['message']);
 
             return [
                 'success' => false,

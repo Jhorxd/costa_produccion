@@ -269,6 +269,23 @@ public function recordsTotal(Request $request)
         $tipo_nota_credito = in_array($document->credit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->credit_note_type : "";
         $tipo_nota_debito  = in_array($document->debit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->debit_note_type : "";
 
+        // --- Medio de pago ---
+
+        $payments = \App\Models\Tenant\DocumentPayment::where('document_id', $id)->get();
+
+        if ($payments->count() > 1) {
+            $medio_de_pago = "MULTIPLE";
+
+        } elseif ($payments->count() === 1) {
+
+            $paymentType = \App\Models\Tenant\PaymentMethodType::find($payment->payment_method_type_id);
+
+            $medio_de_pago = $paymentType ? $paymentType->description : "";
+
+        } else {
+            $medio_de_pago = "";
+        }
+
         // --- Construir JSON ---
         $data = [
             "operacion" => "generar_comprobante",
@@ -313,7 +330,7 @@ public function recordsTotal(Request $request)
             "enviar_automaticamente_al_cliente" => "true",
             "codigo_unico" => "",
             "condiciones_de_pago" => "",
-            "medio_de_pago" => "",
+            "medio_de_pago" => $medio_de_pago,
             "placa_vehiculo" => "",
             "orden_compra_servicio" => "",
             "tabla_personalizada_codigo" => "",
