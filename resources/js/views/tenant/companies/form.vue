@@ -315,7 +315,7 @@
                 </form>
             </div>
         </div>
-        <div class="card">
+        <!-- <div class="card">
             <div class="card-header bg-info">
                 <h3 class="my-0">Consulta integrada de CPE - Validador de documentos
                     <el-tooltip class="item"
@@ -359,8 +359,8 @@
                     </div>
                 </form>
             </div>
-        </div>
-        <div class="card">
+        </div> -->
+        <!-- <div class="card">
             <div class="card-header bg-info">
                 <h3 class="my-0">Guías electrónicas</h3>
             </div>
@@ -430,7 +430,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </div> -->
         <TokenRucDni></TokenRucDni>
         <SireConfiguration></SireConfiguration>
         <tenant-qr-chat></tenant-qr-chat>

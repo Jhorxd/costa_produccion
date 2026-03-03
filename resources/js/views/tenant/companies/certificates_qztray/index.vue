@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="card">
         <div class="card-header bg-info">
             <h3 class="my-0">Certificado Qz Tray</h3>
@@ -71,7 +71,7 @@
                 </div>
             </div>
         </div>
-</template>
+</template> -->
 
 <script>
 import {deletable} from '../../../../mixins/deletable'

@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="card mt-3">
     <div class="card-header bg-info">
       <h3 class="my-0">SIRE</h3>
@@ -79,7 +79,7 @@
       </form>
     </div>
   </div>
-</template>
+</template> -->
 
 <script>
 export default {

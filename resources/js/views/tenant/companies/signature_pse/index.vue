@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="card">
         <div class="card-header bg-info">
             <h3 class="my-0">Servicio PSE
@@ -83,7 +83,7 @@
             </form>
         </div>
     </div>
-</template>
+</template> -->
 
 <script>
 

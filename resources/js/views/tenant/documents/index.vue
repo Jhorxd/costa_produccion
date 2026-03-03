@@ -240,7 +240,7 @@
                         </th>
                         <th class="text-right">T.Gravado</th>
                         <th class="text-right">T.Igv</th>
-                        <th class="text-right" v-if="columns.total.visible">
+                        <th class="text-right">
                             Total
                         </th>
                         <th class="text-right" v-if="columns.balance.visible">
@@ -533,7 +533,7 @@
                         </td>
                         <td class="text-right">{{ row.total_taxed }}</td>
                         <td class="text-right">{{ row.total_igv }}</td>
-                        <td class="text-right" v-if="columns.total.visible">
+                        <td class="text-right">
                             {{ row.total }}
                         </td>
                         <td

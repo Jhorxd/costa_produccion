@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="card">
         <div class="card-header bg-info">
             <h3 class="my-0">Certificado</h3>
@@ -32,7 +32,7 @@
         <certificates-form :showDialog.sync="showDialog"
                            :recordId="recordId"></certificates-form>
     </div>
-</template>
+</template> -->
 
 <script>
 
