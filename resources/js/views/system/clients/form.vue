@@ -270,6 +270,7 @@
 
                     </el-collapse-item>
                     <el-collapse-item
+                    v-if="false"
                         name="2"
                         title="Entorno del sistema">
                         <div class="row mt-2">
@@ -571,11 +572,10 @@
 
                 </el-collapse>
 
-                <div class="row">
+                <div v-if="false" class="row">
                     <div class="col-md-6 center-el-checkbox mt-4">
                         <div class="form-group">
-                            <el-checkbox
-                                v-model="form.config_system_env">
+                            <el-checkbox v-model="form.config_system_env">
                                 ¿ Permitir a la empresa cambiar la configuración de producción ?
                             </el-checkbox>
                             <br>

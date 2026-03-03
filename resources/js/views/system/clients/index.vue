@@ -235,13 +235,13 @@
                             <th>Hostname</th>
                             <th>Nombre</th>
                             <th>RUC</th>
-                            <th>Plan</th>
+                            <!-- <th>Plan</th> -->
                             <th>Correo</th>
-                            <th>Entorno</th>
+                            <!-- <th>Entorno</th> -->
                             <th class="text-center">Total de Comprobantes</th>
-                            <th class="text-center">Notificaciones</th>
+                            <!-- <th class="text-center">Notificaciones</th> -->
                             <th class="text-right">Inicio Ciclo Facturacion</th>
-                            <th class="text-center">Comprobantes Ciclo Facturacion</th>
+                            <!-- <th class="text-center">Comprobantes Ciclo Facturacion</th> -->
                             <th class="text-center">Usuarios</th>
 
                             <th class="text-center">Sucursales</th>
@@ -250,12 +250,12 @@
 
 
                             <th class="text-center">F.Creación</th>
-                            <th class="text-center">Consultas <br>API Peru <br>(mes)</th>
+                            <!-- <th class="text-center">Consultas <br>API Peru <br>(mes)</th> -->
 
                             <th class="text-center">Cant.Notas de venta</th>
-                            <th class="text-center">Total<br><small>(Comprobantes por mes)</small></th>
+                            <!-- <th class="text-center">Total<br><small>(Comprobantes por mes)</small></th>
                             <th class="text-center">Total<br><small>(Comprobantes a PSE-GIOR)</small></th>
-                            <th class="text-center">Total<br><small>(Comprobantes <br>notas de venta)</small></th>
+                            <th class="text-center">Total<br><small>(Comprobantes <br>notas de venta)</small></th> -->
 
                             <th class="text-center">Bloquear cuenta</th>
 
@@ -292,23 +292,23 @@
                             </td>
                             <td>{{ row.name }}</td>
                             <td>{{ row.number }}</td>
-                            <td>{{ row.plan }}</td>
+                            <!-- <td>{{ row.plan }}</td> -->
                             <td>{{ row.email }}</td>
-                            <td>
+                            <!-- <td>
                                 <span v-if="row.soap_type == '01'"
                                       class="badge badge-default">Demo</span>
                                 <span v-if="row.soap_type == '02'"
                                       class="badge badge-success">Producción</span>
                                 <span v-if="row.soap_type == '03'"
                                       class="badge badge-info">Interno</span>
-                            </td>
+                            </td> -->
                             <td class="text-center">
                                 <label>
                                     <strong>{{ row.count_doc }}</strong>
                                 </label>
                             </td>
 
-                            <td class="text-center">
+                            <!-- <td class="text-center">
 
                                 <el-tooltip class="item"
                                             content="Comprobantes enviados / por enviar"
@@ -321,7 +321,7 @@
                                     </el-badge>
                                 </el-tooltip>
 
-                                <el-tooltip class="item"
+                                 <el-tooltip class="item"
                                             content="Comprobantes pendientes de rectificación"
                                             effect="dark"
                                             placement="top-start">
@@ -341,9 +341,9 @@
                                               :type="row.document_to_be_canceled == 0 ? 'primary' : 'danger'">
                                         <i class="fas fa-exclamation-circle text-secondary"></i>
                                     </el-badge>
-                                </el-tooltip>
+                                </el-tooltip> 
 
-                            </td>
+                            </td> -->
                             <td>
                                 <template v-if="row.start_billing_cycle">
                                     <span></span>
@@ -360,7 +360,7 @@
                                 </template>
                             </td>
 
-                            <td class="text-center">
+                            <!-- <td class="text-center">
                                 <strong>
                                     <template v-if="row.sale_notes_quantity_if_include > 0">
                                         {{ row.count_doc_month ? (row.count_doc_month + row.sale_notes_quantity_if_include) : 0 }} /
@@ -376,7 +376,7 @@
                                         <strong>{{ row.max_documents }}</strong>
                                     </template>
                                 </strong>
-                            </td>
+                            </td> -->
 
                             <td class="text-center">
                                 <template v-if="row.max_users !== 0 && row.count_user > row.max_users">
@@ -433,12 +433,12 @@
 
 
                             <td class="text-center">{{ row.created_at }}</td>
-                            <td>{{ row.queries_to_apiperu }}</td>
+                            <!-- <td>{{ row.queries_to_apiperu }}</td> -->
 
                             <td class="text-center"><strong>{{ row.count_sales_notes }}</strong></td>
-                            <td class="text-center"><strong>{{ row.current_count_doc_month }}</strong></td>
+                            <!-- <td class="text-center"><strong>{{ row.current_count_doc_month }}</strong></td>
                             <td class="text-center"><strong>{{ row.count_doc_pse }}</strong></td>
-                            <td class="text-center"><strong>{{ row.count_doc_month + row.count_sales_notes_month }}</strong></td>
+                            <td class="text-center"><strong>{{ row.count_doc_month + row.count_sales_notes_month }}</strong></td> -->
 
                             <td class="text-center">
                                 <template v-if="!row.locked">
@@ -525,11 +525,11 @@
                                             @click.prevent="clickEdit(row.id)">
                                             Editar
                                         </a>
-                                        <a v-if="row.soap_type=='01'" class="dropdown-item"
+                                        <!-- <a v-if="row.soap_type=='01'" class="dropdown-item"
                                             href="#"
                                             @click.prevent="clickDemoConfiguration(row.id)">
                                             Configurar Demo
-                                        </a>
+                                        </a> -->
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item"
                                             href="#"
