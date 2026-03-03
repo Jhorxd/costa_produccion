@@ -107,7 +107,7 @@ public function store(VoidedRequest $request)
 
     return [
         'success' => true,
-        'message' => "La anulación {$document->identifier} fue creado correctamente",
+        'message' => "La anulación {$document->documents->first()->document->series}-{$document->documents->first()->document->number} fue creada y enviada a SUNAT correctamente",
     ];
 }
 

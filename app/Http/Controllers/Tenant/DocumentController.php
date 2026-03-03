@@ -764,13 +764,16 @@ public function recordsTotal(Request $request)
             'state_type_id' => '11'
         ]);
 
-        return response()->json([
-            'success'            => true,
-            'message'            => $leer_respuesta['sunat_description'] ?? 'Anulación aceptada por SUNAT.',
-            'document_id'        => $id,
-            'aceptada_por_sunat' => true,
-            'enlace'             => $leer_respuesta['enlace'] ?? ''
-        ]);
+            $serie  = $document->series;              // ej: F001
+            $numero = $document->number;              // ej: 12
+
+            return response()->json([
+                'success'            => true,
+                'message'            => "La anulación {$serie}-{$numero} fue aceptada por SUNAT.",
+                'document_id'        => $id,
+                'aceptada_por_sunat' => true,
+                'enlace'             => $leer_respuesta['enlace'] ?? ''
+            ]);
 
     } else {
         // Pendiente / en observación

@@ -77,13 +77,13 @@
                         Pagos <span class="caret"></span>
                     </button>
                     <!-- validadores apiperu  -->
-                    <a
+                    <!-- <a
                         href="#"
                         @click.prevent="showDialogApiPeruDevValidate = true"
                         v-if="view_apiperudev_validator_cpe"
                         class="btn btn-custom btn-sm  mt-2 mr-2"
                         ><i class="fa fa-check"></i> Validación masiva</a
-                    >
+                    > -->
                     <a
                         href="#"
                         @click.prevent="showDialogValidate = true"
@@ -597,7 +597,7 @@
                                 <button type="button"
                                         style="height: 26px; min-width: 72px; font-size: 11px; padding: 0 6px;"
                                         class="btn waves-effect waves-light btn-xs btn-success d-flex align-items-center justify-content-center"
-                                        v-if="row.state_sunat === 'PENDIENTE'"
+                                        v-if="row.state_sunat === 'PENDIENTE' || row.state_sunat === 'RECHAZADO'"
                                         @click.prevent="clickSendSunat(row.id)">
                                     ENVIO SUNAT
                                 </button>
