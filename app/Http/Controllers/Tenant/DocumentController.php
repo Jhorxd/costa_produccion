@@ -224,282 +224,382 @@ public function recordsTotal(Request $request)
     }
     
     public function enviosunat($id)
-    {
-        // --- Obtener documento con cliente e items ---
+{
+    Log::info("EnvioSunat ▶ INICIO", ['document_id' => $id]);
+
+    // --- Obtener documento con cliente e items ---
+    try {
         $document = Document::with(['customer', 'items.item'])->findOrFail($id);
+        Log::info("EnvioSunat: documento cargado", [
+            'document_id'   => $document->id,
+            'series'        => $document->series,
+            'number'        => $document->number,
+            'document_type' => $document->document_type,
+            'customer_id'   => optional($document->customer)->id,
+            'items_count'   => $document->items->count(),
+        ]);
+    } catch (\Exception $e) {
+        Log::error("EnvioSunat: error al cargar documento", [
+            'document_id' => $id,
+            'error'       => $e->getMessage(),
+            'trace'       => $e->getTraceAsString(),
+        ]);
+        return response()->json(['success' => false, 'message' => 'Documento no encontrado.'], 404);
+    }
 
-        // Obtener el ID real del tipo de documento
-        $tipo_documento_id = is_object($document->document_type) ? $document->document_type->id : $document->document_type;
+    // Obtener el ID real del tipo de documento
+    $tipo_documento_id = is_object($document->document_type)
+        ? $document->document_type->id
+        : $document->document_type;
 
-        // Mapear tipo de comprobante según NubeFact
-        switch ($tipo_documento_id) {
-            case '01': // Factura
-                $tipo_comprobante = 1;
-                break;
-            case '03': // Boleta
-                $tipo_comprobante = 2;
-                break;
-            case '07': // Nota de crédito
-                $tipo_comprobante = 3;
-                break;
-            case '08': // Nota de débito
-                $tipo_comprobante = 4;
-                break;
-            default:
-                $tipo_comprobante = 0;
-                break;
-        }
+    // Mapear tipo de comprobante según NubeFact
+    switch ($tipo_documento_id) {
+        case '01': $tipo_comprobante = 1; break;
+        case '03': $tipo_comprobante = 2; break;
+        case '07': $tipo_comprobante = 3; break;
+        case '08': $tipo_comprobante = 4; break;
+        default:   $tipo_comprobante = 0; break;
+    }
 
-        // --- Log para depuración ---
-        \Log::info("enviosunat: Documento ID $id, tipo original: ".$tipo_documento_id.", tipo mapeado: $tipo_comprobante");
+    Log::info("EnvioSunat: tipo de documento mapeado", [
+        'tipo_documento_id' => $tipo_documento_id,
+        'tipo_comprobante'  => $tipo_comprobante,
+    ]);
 
-        // Fechas
-        $fecha_emision = $document->date_of_issue 
-            ? date('Y-m-d', strtotime($document->date_of_issue)) 
-            : date('Y-m-d');
+    // Fechas
+    $fecha_emision = $document->date_of_issue
+        ? date('Y-m-d', strtotime($document->date_of_issue))
+        : date('Y-m-d');
 
-        // ✅ Jalar fecha_vencimiento desde invoices
+    // Jalar fecha_vencimiento desde invoices
+    try {
         $invoice = \App\Models\Tenant\Invoice::where('document_id', $id)->first();
-        $fecha_vencimiento = $invoice && $invoice->date_of_due 
-            ? $invoice->date_of_due->format('Y-m-d')  // ya es cast a date, usa ->format()
+        $fecha_vencimiento = $invoice && $invoice->date_of_due
+            ? $invoice->date_of_due->format('Y-m-d')
             : $fecha_emision;
 
+        Log::info("EnvioSunat: fechas", [
+            'fecha_emision'     => $fecha_emision,
+            'fecha_vencimiento' => $fecha_vencimiento,
+            'invoice_found'     => (bool) $invoice,
+        ]);
+    } catch (\Exception $e) {
+        Log::warning("EnvioSunat: error al obtener invoice/fecha_vencimiento, usando fecha_emision", [
+            'error' => $e->getMessage(),
+        ]);
+        $fecha_vencimiento = $fecha_emision;
+    }
 
-        // Validar tipo de nota (solo números válidos según NubeFact)
-        $tipo_nota_credito = in_array($document->credit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->credit_note_type : "";
-        $tipo_nota_debito  = in_array($document->debit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13]) ? $document->debit_note_type : "";
+    // Validar tipo de nota
+    $tipo_nota_credito = in_array($document->credit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13])
+        ? $document->credit_note_type : "";
+    $tipo_nota_debito  = in_array($document->debit_note_type, [1,2,3,4,5,6,7,8,9,10,12,13])
+        ? $document->debit_note_type : "";
 
-        // --- Medio de pago ---
-
+    // --- Medio de pago ---
+    try {
         $payments = \App\Models\Tenant\DocumentPayment::where('document_id', $id)->get();
+        Log::info("EnvioSunat: pagos encontrados", ['payments_count' => $payments->count()]);
 
         if ($payments->count() > 1) {
             $medio_de_pago = "MULTIPLE";
-
         } elseif ($payments->count() === 1) {
-
+            $payment = $payments->first(); // ⚠️ Fix: faltaba esta línea en el original
             $paymentType = \App\Models\Tenant\PaymentMethodType::find($payment->payment_method_type_id);
-
             $medio_de_pago = $paymentType ? $paymentType->description : "";
-
+            Log::info("EnvioSunat: medio de pago", [
+                'payment_method_type_id' => $payment->payment_method_type_id,
+                'medio_de_pago'          => $medio_de_pago,
+            ]);
         } else {
             $medio_de_pago = "";
         }
+    } catch (\Exception $e) {
+        Log::warning("EnvioSunat: error al obtener medio de pago", ['error' => $e->getMessage()]);
+        $medio_de_pago = "";
+    }
 
-        // --- Construir JSON ---
-        $data = [
-            "operacion" => "generar_comprobante",
-            "tipo_de_comprobante" => $tipo_comprobante,
-            "serie" => $document->series,
-            "numero" => $document->number,
-            "sunat_transaction" => "1",
-            "cliente_tipo_de_documento" => $document->customer->identity_document_type_id,
-            "cliente_numero_de_documento" => $document->customer->number,
-            "cliente_denominacion" => $document->customer->name,
-            "cliente_direccion" => $document->customer->address ?? "",
-            "cliente_email" => $document->customer->email ?? "",
-            "cliente_email_1" => "",
-            "cliente_email_2" => "",
-            "fecha_de_emision" => $fecha_emision,
-            "fecha_de_vencimiento" => $fecha_vencimiento,
-            "moneda" => 1,
-            "tipo_de_cambio" => "",
-            "porcentaje_de_igv" => "18.00",
-            "descuento_global" => "",
-            "total_descuento" => "",
-            "total_anticipo" => "",
-            "total_gravada" => $document->total_value,
-            "total_inafecta" => "",
-            "total_exonerada" => "",
-            "total_igv" => $document->total_taxes,
-            "total_gratuita" => "",
-            "total_otros_cargos" => "",
-            "total" => $document->total,
-            "percepcion_tipo" => "",
-            "percepcion_base_imponible" => "",
-            "total_percepcion" => "",
-            "total_incluido_percepcion" => "",
-            "detraccion" => "false",
-            "observaciones" => "",
-            "documento_que_se_modifica_tipo" => "",
-            "documento_que_se_modifica_serie" => "",
-            "documento_que_se_modifica_numero" => "",
-            "tipo_de_nota_de_credito" => $tipo_nota_credito,
-            "tipo_de_nota_de_debito" => $tipo_nota_debito,
-            "enviar_automaticamente_a_la_sunat" => "true",
-            "enviar_automaticamente_al_cliente" => "true",
-            "codigo_unico" => "",
-            "condiciones_de_pago" => "",
-            "medio_de_pago" => $medio_de_pago,
-            "placa_vehiculo" => "",
-            "orden_compra_servicio" => "",
-            "tabla_personalizada_codigo" => "",
-            "formato_de_pdf" => "",
-            "items" => []
+    // --- Construir JSON ---
+    $data = [
+        "operacion"                          => "generar_comprobante",
+        "tipo_de_comprobante"                => $tipo_comprobante,
+        "serie"                              => $document->series,
+        "numero"                             => $document->number,
+        "sunat_transaction"                  => "1",
+        "cliente_tipo_de_documento"          => $document->customer->identity_document_type_id,
+        "cliente_numero_de_documento"        => $document->customer->number,
+        "cliente_denominacion"               => $document->customer->name,
+        "cliente_direccion"                  => $document->customer->address ?? "",
+        "cliente_email"                      => $document->customer->email ?? "",
+        "cliente_email_1"                    => "",
+        "cliente_email_2"                    => "",
+        "fecha_de_emision"                   => $fecha_emision,
+        "fecha_de_vencimiento"               => $fecha_vencimiento,
+        "moneda"                             => 1,
+        "tipo_de_cambio"                     => "",
+        "porcentaje_de_igv"                  => "18.00",
+        "descuento_global"                   => "",
+        "total_descuento"                    => "",
+        "total_anticipo"                     => "",
+        "total_gravada"                      => $document->total_value,
+        "total_inafecta"                     => "",
+        "total_exonerada"                    => "",
+        "total_igv"                          => $document->total_taxes,
+        "total_gratuita"                     => "",
+        "total_otros_cargos"                 => "",
+        "total"                              => $document->total,
+        "percepcion_tipo"                    => "",
+        "percepcion_base_imponible"          => "",
+        "total_percepcion"                   => "",
+        "total_incluido_percepcion"          => "",
+        "detraccion"                         => "false",
+        "observaciones"                      => "",
+        "documento_que_se_modifica_tipo"     => "",
+        "documento_que_se_modifica_serie"    => "",
+        "documento_que_se_modifica_numero"   => "",
+        "tipo_de_nota_de_credito"            => $tipo_nota_credito,
+        "tipo_de_nota_de_debito"             => $tipo_nota_debito,
+        "enviar_automaticamente_a_la_sunat"  => "true",
+        "enviar_automaticamente_al_cliente"  => "true",
+        "codigo_unico"                       => "",
+        "condiciones_de_pago"                => "",
+        "medio_de_pago"                      => $medio_de_pago,
+        "placa_vehiculo"                     => "",
+        "orden_compra_servicio"              => "",
+        "tabla_personalizada_codigo"         => "",
+        "formato_de_pdf"                     => "",
+        "items"                              => []
+    ];
+
+    // --- Agregar items ---
+    foreach ($document->items as $doc_item) {
+        $item = $doc_item->item;
+
+        if (!$item) {
+            Log::warning("EnvioSunat: item nulo en doc_item", ['doc_item_id' => $doc_item->id]);
+            continue;
+        }
+
+        $precio_unitario = $doc_item->unit_price;
+        $valor_unitario  = $precio_unitario / 1.18;
+
+        $data['items'][] = [
+            "unidad_de_medida"          => $item->unit_type_id,
+            "codigo"                    => $doc_item->item_id,
+            "descripcion"               => $item->description,
+            "cantidad"                  => $doc_item->quantity,
+            "valor_unitario"            => round($valor_unitario, 2),
+            "precio_unitario"           => $precio_unitario,
+            "descuento"                 => "",
+            "subtotal"                  => round($valor_unitario * $doc_item->quantity, 2),
+            "tipo_de_igv"               => "1",
+            "igv"                       => round(($precio_unitario - $valor_unitario) * $doc_item->quantity, 2),
+            "total"                     => round($precio_unitario * $doc_item->quantity, 2),
+            "anticipo_regularizacion"   => "false",
+            "anticipo_documento_serie"  => "",
+            "anticipo_documento_numero" => ""
         ];
+    }
 
-        // --- Agregar items ---
-        foreach ($document->items as $doc_item) {
-            $item = $doc_item->item;
-            
-            // unit_price ya incluye IGV
-            $precio_unitario = $doc_item->unit_price; // CON IGV
-            
-            // Calcular valor unitario (SIN IGV)
-            $valor_unitario = $precio_unitario / 1.18;
-            
-            $data['items'][] = [
-                "unidad_de_medida" => $item->unit_type_id,
-                "codigo" => $doc_item->item_id,
-                "descripcion" => $item->description,
-                "cantidad" => $doc_item->quantity,
-                "valor_unitario" => round($valor_unitario, 2),  // SIN IGV
-                "precio_unitario" => $precio_unitario,           // CON IGV (unit_price original)
-                "descuento" => "",
-                "subtotal" => round($valor_unitario * $doc_item->quantity, 2), // valor_unitario × cantidad
-                "tipo_de_igv" => "1",
-                "igv" => round(($precio_unitario - $valor_unitario) * $doc_item->quantity, 2),
-                "total" => round($precio_unitario * $doc_item->quantity, 2),
-                "anticipo_regularizacion" => "false",
-                "anticipo_documento_serie" => "",
-                "anticipo_documento_numero" => ""
-            ];
-        }
+    Log::info("EnvioSunat: items construidos", ['items_count' => count($data['items'])]);
 
-        $data_json = json_encode($data);
+    $data_json = json_encode($data);
 
-        // --- CURL ---
-        $user = auth()->user();
+    // --- Token y ruta ---
+    $user = auth()->user();
 
-        Log::info('EnvioSunat: usuario autenticado', [
+    Log::info('EnvioSunat: usuario autenticado', [
+        'user_id'          => optional($user)->id,
+        'establishment_id' => optional($user)->establishment_id,
+    ]);
+
+    $tokenRecord = null;
+
+    if ($user && $user->establishment) {
+        Log::info('EnvioSunat: buscando token por establishment', [
+            'establishment_id' => $user->establishment->id,
+        ]);
+
+        $tokenRecord = $user->establishment->tokens()->first();
+
+        Log::info('EnvioSunat: resultado búsqueda token', [
+            'token_found' => (bool) $tokenRecord,
+            'ruta'        => $tokenRecord->ruta ?? null,
+            // ⚠️ Muestra solo los últimos 6 chars del token por seguridad
+            'token_tail'  => $tokenRecord ? ('...' . substr($tokenRecord->token, -6)) : null,
+        ]);
+    } else {
+        Log::warning('EnvioSunat: usuario sin establishment o no autenticado', [
             'user_id'          => optional($user)->id,
-            'establishment_id' => optional($user)->establishment_id,
+            'establishment'    => optional($user)->establishment,
         ]);
+    }
 
-        $tokenRecord = null;
-
-        if ($user && $user->establishment) {
-            Log::info('EnvioSunat: buscando token por establishment', [
-                'establishment_id' => $user->establishment->id,
-            ]);
-
-            $tokenRecord = $user->establishment->tokens()->first();
-
-            Log::info('EnvioSunat: resultado búsqueda token', [
-                'token_found' => (bool) $tokenRecord,
-                'ruta'        => $tokenRecord->ruta ?? null,
-                'token'       => $tokenRecord->token ?? null,
-            ]);
-        } else {
-            Log::warning('EnvioSunat: usuario sin establishment o no autenticado');
-        }
-
-        if ($tokenRecord) {
-            $ruta  = $tokenRecord->ruta;
-            $token = $tokenRecord->token;
-        } else {
-            $ruta  = null;
-            $token = null;
-        }
-
-        Log::info('EnvioSunat: antes de enviar a API (cURL)', [
-            'ruta'  => $ruta,
-            'token' => $token,
-            'data'  => $data_json,
+    if ($tokenRecord) {
+        $ruta  = $tokenRecord->ruta;
+        $token = $tokenRecord->token;
+    } else {
+        Log::error('EnvioSunat: no se encontró tokenRecord, abortando envío', [
+            'document_id' => $id,
         ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'No se encontró configuración de token para el establecimiento.',
+        ], 500);
+    }
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $ruta);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Token token="'.$token.'"',
-            'Content-Type: application/json'
+    Log::info('EnvioSunat: antes de enviar a API (cURL)', [
+        'ruta'        => $ruta,
+        'token_tail'  => '...' . substr($token, -6),
+        'payload_size'=> strlen($data_json),
+        'data'        => $data, // JSON completo para revisión
+    ]);
+
+    // --- cURL ---
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL,            $ruta);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Token token="' . $token . '"',
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POST,            1);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER,  false);
+    curl_setopt($ch, CURLOPT_POSTFIELDS,      $data_json);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER,  true);
+    curl_setopt($ch, CURLOPT_TIMEOUT,         30);        // ⏱️ Timeout explícito
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,  10);        // ⏱️ Timeout de conexión
+
+    $respuesta    = curl_exec($ch);
+    $curl_errno   = curl_errno($ch);
+    $curl_error   = curl_error($ch);
+    $http_code    = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_info    = curl_getinfo($ch);
+
+    curl_close($ch);
+
+    Log::info('EnvioSunat: respuesta cURL recibida', [
+        'http_code'        => $http_code,
+        'curl_errno'       => $curl_errno,
+        'curl_error'       => $curl_error ?: null,
+        'response_length'  => strlen((string) $respuesta),
+        'total_time'       => $curl_info['total_time'] ?? null,
+        'connect_time'     => $curl_info['connect_time'] ?? null,
+        'namelookup_time'  => $curl_info['namelookup_time'] ?? null,
+        'url_effective'    => $curl_info['url_effective'] ?? null,
+    ]);
+
+    if ($respuesta === false || $curl_errno !== 0) {
+        Log::error('EnvioSunat: fallo en cURL', [
+            'document_id' => $id,
+            'curl_errno'  => $curl_errno,
+            'curl_error'  => $curl_error,
+            'ruta'        => $ruta,
+            'curl_info'   => $curl_info,
         ]);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        return response()->json([
+            'success' => false,
+            'message' => "Error de conexión con NubeFact: [{$curl_errno}] {$curl_error}",
+        ], 502);
+    }
 
-        $respuesta = curl_exec($ch);
+    if ($http_code >= 400) {
+        Log::error('EnvioSunat: HTTP error desde NubeFact', [
+            'http_code' => $http_code,
+            'response'  => $respuesta,
+        ]);
+    }
 
-        if ($respuesta === false) {
-            Log::error('EnvioSunat: error en cURL', [
-                'error' => curl_error($ch),
-                'errno' => curl_errno($ch),
-                'ruta'  => $ruta,
-            ]);
-        }
+    Log::info('EnvioSunat: respuesta raw de NubeFact', ['response' => $respuesta]);
 
-        curl_close($ch);
+    $leer_respuesta = json_decode($respuesta, true);
 
-        $leer_respuesta = json_decode($respuesta, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        Log::error('EnvioSunat: respuesta no es JSON válido', [
+            'json_error' => json_last_error_msg(),
+            'response'   => $respuesta,
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Respuesta inválida del servidor NubeFact.',
+        ], 502);
+    }
 
-
-// --- Guardar o actualizar la respuesta en la base de datos ---
+    // --- Guardar o actualizar la respuesta ---
+    try {
         DocumentResponse::updateOrCreate(
-            ['document_id' => $document->id], // Condición de búsqueda
-            [ // Datos a actualizar o crear
-                'tipo_de_comprobante' => $leer_respuesta['tipo_de_comprobante'] ?? null,
-                'serie' => $leer_respuesta['serie'] ?? null,
-                'numero' => $leer_respuesta['numero'] ?? null,
-                'enlace' => $leer_respuesta['enlace'] ?? null,
-                'aceptada_por_sunat' => isset($leer_respuesta['aceptada_por_sunat']) ? (int)$leer_respuesta['aceptada_por_sunat'] : null,
-                'sunat_description' => $leer_respuesta['sunat_description'] ?? null,
-                'sunat_note' => $leer_respuesta['sunat_note'] ?? null,
-                'sunat_responsecode' => $leer_respuesta['sunat_responsecode'] ?? null,
-                'sunat_soap_error' => $leer_respuesta['sunat_soap_error'] ?? null,
-                'pdf_zip_base64' => $leer_respuesta['pdf_zip_base64'] ?? null,
-                'xml_zip_base64' => $leer_respuesta['xml_zip_base64'] ?? null,
-                'cdr_zip_base64' => $leer_respuesta['cdr_zip_base64'] ?? null,
-                'enlace_del_pdf' => $leer_respuesta['enlace_del_pdf'] ?? null,
-                'enlace_del_xml' => $leer_respuesta['enlace_del_xml'] ?? null,
-                'enlace_del_cdr' => $leer_respuesta['enlace_del_cdr'] ?? null,
-                'codigo_hash' => $leer_respuesta['codigo_hash'] ?? null,
-                'cadena_para_codigo_qr' => $leer_respuesta['cadena_para_codigo_qr'] ?? null,
-                'respuesta_json' => $respuesta
+            ['document_id' => $document->id],
+            [
+                'tipo_de_comprobante'     => $leer_respuesta['tipo_de_comprobante'] ?? null,
+                'serie'                   => $leer_respuesta['serie'] ?? null,
+                'numero'                  => $leer_respuesta['numero'] ?? null,
+                'enlace'                  => $leer_respuesta['enlace'] ?? null,
+                'aceptada_por_sunat'      => isset($leer_respuesta['aceptada_por_sunat']) ? (int)$leer_respuesta['aceptada_por_sunat'] : null,
+                'sunat_description'       => $leer_respuesta['sunat_description'] ?? null,
+                'sunat_note'              => $leer_respuesta['sunat_note'] ?? null,
+                'sunat_responsecode'      => $leer_respuesta['sunat_responsecode'] ?? null,
+                'sunat_soap_error'        => $leer_respuesta['sunat_soap_error'] ?? null,
+                'pdf_zip_base64'          => $leer_respuesta['pdf_zip_base64'] ?? null,
+                'xml_zip_base64'          => $leer_respuesta['xml_zip_base64'] ?? null,
+                'cdr_zip_base64'          => $leer_respuesta['cdr_zip_base64'] ?? null,
+                'enlace_del_pdf'          => $leer_respuesta['enlace_del_pdf'] ?? null,
+                'enlace_del_xml'          => $leer_respuesta['enlace_del_xml'] ?? null,
+                'enlace_del_cdr'          => $leer_respuesta['enlace_del_cdr'] ?? null,
+                'codigo_hash'             => $leer_respuesta['codigo_hash'] ?? null,
+                'cadena_para_codigo_qr'   => $leer_respuesta['cadena_para_codigo_qr'] ?? null,
+                'respuesta_json'          => $respuesta
             ]
         );
-
-
-            // 🔥 ACTUALIZAR ESTADO SUNAT
-                if (!isset($leer_respuesta['errors'])) {
-                    $document->update([
-                        'state_sunat'   => 'ACEPTADO',
-                        'state_type_id' => '05'
-                    ]);
-
-                    // ✅ Solo incrementa cuando SUNAT acepta
-                    $configuration = Configuration::first();
-                    if ($configuration) {
-                        $configuration->increment('quantity_documents');
-                    }
-
-                } else {
-                    $document->update([
-                        'state_sunat' => 'RECHAZADO'
-                    ]);
-                }
-
-
-            if (isset($leer_respuesta['errors'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => is_array($leer_respuesta['errors'])
-                        ? implode(", ", $leer_respuesta['errors'])
-                        : $leer_respuesta['errors'],
-                    'document_id' => $id
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Comprobante enviado correctamente',
-                'document_id' => $id,
-                'enlace' => $leer_respuesta['enlace'] ?? "",
-                'aceptada_por_sunat' => $leer_respuesta['aceptada_por_sunat'] ?? false,
-                'codigo_hash' => $leer_respuesta['codigo_hash'] ?? ""
-            ]);
-
+        Log::info('EnvioSunat: DocumentResponse guardado correctamente', ['document_id' => $document->id]);
+    } catch (\Exception $e) {
+        Log::error('EnvioSunat: error al guardar DocumentResponse', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
     }
+
+    // --- Actualizar estado SUNAT ---
+    if (!isset($leer_respuesta['errors'])) {
+        $document->update([
+            'state_sunat'   => 'ACEPTADO',
+            'state_type_id' => '05'
+        ]);
+        Log::info('EnvioSunat: documento ACEPTADO por SUNAT', ['document_id' => $document->id]);
+
+        $configuration = Configuration::first();
+        if ($configuration) {
+            $configuration->increment('quantity_documents');
+        }
+    } else {
+        $document->update(['state_sunat' => 'RECHAZADO']);
+        Log::warning('EnvioSunat: documento RECHAZADO por SUNAT', [
+            'document_id' => $document->id,
+            'errors'      => $leer_respuesta['errors'],
+        ]);
+    }
+
+    // --- Respuesta al frontend ---
+    if (isset($leer_respuesta['errors'])) {
+        return response()->json([
+            'success'     => false,
+            'message'     => is_array($leer_respuesta['errors'])
+                ? implode(", ", $leer_respuesta['errors'])
+                : $leer_respuesta['errors'],
+            'document_id' => $id
+        ]);
+    }
+
+    Log::info("EnvioSunat ✅ FIN exitoso", ['document_id' => $id]);
+
+    return response()->json([
+        'success'            => true,
+        'message'            => 'Comprobante enviado correctamente',
+        'document_id'        => $id,
+        'enlace'             => $leer_respuesta['enlace'] ?? "",
+        'aceptada_por_sunat' => $leer_respuesta['aceptada_por_sunat'] ?? false,
+        'codigo_hash'        => $leer_respuesta['codigo_hash'] ?? ""
+    ]);
+}
+
 
     public function consultarAnulacionSunat($id)
 {
