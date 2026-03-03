@@ -1853,8 +1853,8 @@ export default {
             this.$http.get(`/configurations/record`).then(response => {
                 // ✅ Solo aplica defaults si es item NUEVO, y convierte a entero
                 if (!this.recordId) {
-                    this.form.hasigv = response.data.data.include_igv ? 1 : 0
-                    this.form.purchasehasigv = response.data.data.include_igv ? 1 : 0
+                    this.form.hasigv = 1;  // Siempre "Sí" en nuevos productos
+                    this.form.purchasehasigv = 1;
                 }
                 this.setStorage('configuration', response.data.data)
                 this.$store.commit('setConfiguration', response.data.data)
