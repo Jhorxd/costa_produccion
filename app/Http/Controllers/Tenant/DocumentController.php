@@ -401,8 +401,6 @@ public function recordsTotal(Request $request)
         ];
     }
 
-    Log::info("EnvioSunat: items construidos", ['items_count' => count($data['items'])]);
-
     $data_json = json_encode($data);
 
     // --- Token y ruta ---
@@ -425,35 +423,32 @@ public function recordsTotal(Request $request)
         Log::info('EnvioSunat: resultado búsqueda token', [
             'token_found' => (bool) $tokenRecord,
             'ruta'        => $tokenRecord->ruta ?? null,
-            // ⚠️ Muestra solo los últimos 6 chars del token por seguridad
             'token_tail'  => $tokenRecord ? ('...' . substr($tokenRecord->token, -6)) : null,
         ]);
     } else {
         Log::warning('EnvioSunat: usuario sin establishment o no autenticado', [
-            'user_id'          => optional($user)->id,
-            'establishment'    => optional($user)->establishment,
+            'user_id'       => optional($user)->id,
+            'establishment' => optional($user)->establishment,
         ]);
     }
+    if (!$tokenRecord) {
 
-    if ($tokenRecord) {
-        $ruta  = $tokenRecord->ruta;
-        $token = $tokenRecord->token;
-    } else {
-        Log::error('EnvioSunat: no se encontró tokenRecord, abortando envío', [
-            'document_id' => $id,
-        ]);
         return response()->json([
             'success' => false,
-            'message' => 'No se encontró configuración de token para el establecimiento.',
-        ], 500);
+            'message' => 'ENVIO A SUNAT DESACTIVADO, CONTACTARSE CON SOPORTE',
+        ], 200);
     }
 
+    $ruta  = $tokenRecord->ruta;
+    $token = $tokenRecord->token;
+
     Log::info('EnvioSunat: antes de enviar a API (cURL)', [
-        'ruta'        => $ruta,
-        'token_tail'  => '...' . substr($token, -6),
-        'payload_size'=> strlen($data_json),
-        'data'        => $data, // JSON completo para revisión
+        'ruta'         => $ruta,
+        'token_tail'   => '...' . substr($token, -6),
+        'payload_size' => strlen($data_json),
+        'data'         => $data,
     ]);
+
 
     // --- cURL ---
     $ch = curl_init();
