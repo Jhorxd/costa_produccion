@@ -28,7 +28,8 @@ class CreateItemUnitTypesTable extends Migration
             ['id' => 10, 'description' => 'Inhaladores'],
             ['id' => 11, 'description' => 'Parche trasdérmico'],
             ['id' => 12, 'description' => 'Solución'],
-            ['id' => 13, 'description' => 'Espuma']
+            ['id' => 13, 'description' => 'Espuma'],
+            ['id' => 14, 'description' => 'Ovulos']
         ]);
     }
 
