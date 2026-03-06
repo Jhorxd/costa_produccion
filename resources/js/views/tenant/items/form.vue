@@ -2521,6 +2521,33 @@ export default {
                 this.form.suggested_price = 0
             }
         },
+        async clickDelete(id) {
+        if (!id) return
+
+        // Opcional: confirmación
+         if (!confirm('¿Eliminar esta unidad de presentación?')) return
+
+        try {
+            const { data } = await this.$http.delete(`/items/item-unit-type/${id}`)
+
+            if (data.success) {
+                const index = this.form.item_unit_types.findIndex(r => r.id === id)
+                if (index !== -1) {
+                    this.form.item_unit_types.splice(index, 1)
+                }
+                this.$message.success(data.message)
+            } else {
+                this.$message.error(data.message || 'No se pudo eliminar la unidad')
+            }
+        } catch (e) {
+            console.error(e)
+            this.$message.error('Error al eliminar la unidad')
+        }
+    },
+
+    clickCancel(index) {
+        this.form.item_unit_types.splice(index, 1)
+    },
         saveCategory() {
             this.form_category.add = false
 
