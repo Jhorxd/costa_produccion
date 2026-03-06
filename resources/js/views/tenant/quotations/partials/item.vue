@@ -1683,55 +1683,51 @@ export default {
             this.form.unit_price_value = price;
             this.form.item.unit_type_id = this.item_unit_type.unit_type_id;
         },
-selectedPrice(row) {
-    console.log('selectedPrice called', { row });  // Ver si llega al método
-    console.log('row data:', {
-        id: row.id,
-        price_default: row.price_default,
-        price1: row.price1,
-        price2: row.price2,
-        price3: row.price3
-    });
-    
-    let valor = 0;
-    console.log('price_default value:', row.price_default, typeof row.price_default);
-    
-    switch (row.price_default) {
-        case 1:
-            valor = row.price1 || 0;
-            console.log('Case 1, valor:', valor);
-            break;
-        case 2:
-            valor = row.price2 || 0;
-            console.log('Case 2, valor:', valor);
-            break;
-        case 3:
-            valor = row.price3 || 0;
-            console.log('Case 3, valor:', valor);
-            break;
-        default:
-            console.warn('price_default no válido:', row.price_default);
-    }
-    
-    console.log('Asignando valores:', {
-        item_unit_type_id: row.id,
-        unit_price: valor,
-        unit_type_id: row.unit_type_id
-    });
-    
-    this.form.item_unit_type_id = row.id;
-    this.item_unit_type = row;
-    this.form.unit_price = valor;
-    this.form.unit_price_value = valor;
-    this.form.item.unit_type_id = row.unit_type_id;
-    
-    console.log('Antes de calculateQuantity/getTables', { form: this.form });
-    
-    this.calculateQuantity();
-    this.getTables();
-    
-    console.log('selectedPrice finalizado');
-},
+        selectedPrice(row, amount = false, label = false) {
+            this.label_selected = label
+
+            if (this.isSelectedPrice && this.isSelectedPrice(row) && !amount) {
+                // Quitar precio de presentación y volver al precio base del item
+                this.form.item_unit_type_id = null
+                this.item_unit_type = {}
+                this.form.unit_price = this.form.item.sale_unit_price
+                this.form.unit_price_value = this.form.item.sale_unit_price
+                this.form.item.unit_type_id = this.form.item.original_unit_type_id
+            } else {
+                let valor = 0
+
+                if (amount) {
+                    // Si te mandan un monto específico, usas ese
+                    valor = amount
+                } else {
+                    const def = parseInt(row.price_default)
+                    switch (def) {
+                        case 1:
+                            valor = row.price1
+                            break
+                        case 2:
+                            valor = row.price2
+                            break
+                        case 3:
+                            valor = row.price3
+                            break
+                        default:
+                            console.warn('price_default no coincide:', row.price_default)
+                    }
+                }
+
+                this.factorSelected = row.quantity_unit
+                this.form.item_unit_type_id = row.id
+                this.item_unit_type = row
+                this.form.unit_price = valor
+                this.form.unit_price_value = valor
+                this.form.item.unit_type_id = row.unit_type_id
+            }
+
+            this.calculateQuantity()
+            this.getTables()
+        },
+
 
         addRowLotGroup(id) {
             this.form.IdLoteSelected = id
