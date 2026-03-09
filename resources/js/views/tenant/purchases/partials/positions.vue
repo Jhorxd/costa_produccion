@@ -1,419 +1,422 @@
 <template>
-    <el-dialog
-      :title="titleDialog"
-      :visible="showDialog"
-      @close="close"
-      @open="create"
-    >
-      <div class="row">
-        <div :class="dataModalLocal.item_data.has_lot?'col-md-2':'col-md-4'">
-          <label class="control-label">Producto</label>
-          <el-input 
-            type="text" 
-            class="form-control-feedback" 
-            v-model="dataModalLocal.item_data.item_name"
-            readonly
-          ></el-input>
-        </div>
-        <div class="col-md-3" v-if="dataModalLocal.item_data.has_lot">
-          <label class="control-label">Nombre de Lote</label>
-          <el-input 
-            type="text" 
-            class="form-control-feedback" 
-            v-model="dataModalLocal.position_data.lot_name"
-          ></el-input>
-        </div>
-        <div class="col-md-3" v-if="dataModalLocal.item_data.has_lot">
-          <label class="control-label">Fecha Exp.</label>
-          <el-date-picker 
-            type="date"
-            class="form-control-feedback" 
-            v-model="dataModalLocal.position_data.expiration_date"
-          ></el-date-picker>
-        </div>
-        <div :class="dataModalLocal.item_data.has_lot?'col-md-2':'col-md-4'">
-          <div class="form-group">
-            <label class="control-label">Almacenes</label>
-            <el-select v-model="dataModalLocal.position_data.warehouse_id" @change="changeWarehouse">
-                <el-option
-                    v-for="option in warehouses"
-                    :key="option.id"
-                    :disabled="option.id == dataModalLocal.position_data.warehouse_id"
-                    :label="option.description"
-                    :value="option.id"
-                ></el-option>
-            </el-select>
-          </div>
-        </div>
-        <div :class="dataModalLocal.item_data.has_lot?'col-md-2':'col-md-4'">
-          <div class="form-group">
-            <label class="control-label">Ubicaciones</label>
-            <el-select v-model="dataModalLocal.position_data.location_id" @change="changeLocation">
-                <el-option
-                    v-for="option in locations"
-                    :key="option.id"
-                    :disabled="option.id == dataModalLocal.position_data.location_id"
-                    :label="option.name"
-                    :value="option.id"
-                ></el-option>
-            </el-select>
-          </div>
+  <el-dialog
+    :title="titleDialog"
+    :visible="showDialog"
+    @close="close"
+    @open="create"
+  >
+    <div class="row">
+      <div :class="dataModalLocal.item_data.has_lot ? 'col-md-2' : 'col-md-4'">
+        <label class="control-label">Producto</label>
+        <el-input
+          type="text"
+          class="form-control-feedback"
+          v-model="dataModalLocal.item_data.item_name"
+          readonly
+        ></el-input>
+      </div>
+
+      <div class="col-md-3" v-if="dataModalLocal.item_data.has_lot">
+        <label class="control-label">Nombre de Lote</label>
+        <el-input
+          type="text"
+          class="form-control-feedback"
+          v-model="dataModalLocal.position_data.lot_name"
+        ></el-input>
+      </div>
+
+      <div class="col-md-3" v-if="dataModalLocal.item_data.has_lot">
+        <label class="control-label">Fecha Exp.</label>
+        <el-date-picker
+          type="date"
+          class="form-control-feedback"
+          v-model="dataModalLocal.position_data.expiration_date"
+        ></el-date-picker>
+      </div>
+
+      <div :class="dataModalLocal.item_data.has_lot ? 'col-md-2' : 'col-md-4'">
+        <div class="form-group">
+          <label class="control-label">Almacenes</label>
+          <el-select
+            v-model="dataModalLocal.position_data.warehouse_id"
+            @change="changeWarehouse"
+          >
+            <el-option
+              v-for="option in warehouses"
+              :key="option.id"
+              :disabled="option.id == dataModalLocal.position_data.warehouse_id"
+              :label="option.description"
+              :value="option.id"
+            ></el-option>
+          </el-select>
         </div>
       </div>
-      <div class="position-container" v-if="positions.length>0">
-        <div class="boxes-container">
-          <div v-for="(row, rowIndex) in matrix" :key="rowIndex" class="row-container">
-            <div v-for="(box, colIndex) in row" :key="colIndex" class="position-box">
-              <div class="box-content">
-                <p class="margin-bottom">{{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}</p>
-                <p>Stock disponible: {{ box.stock_available }}</p>
-                <el-input v-if="box.is_selected" placeholder="Cantidad"
-                  v-model="box.quantity"
-                  style="width: 100%;">
-                </el-input>
-                <el-button
-                  type="primary"
-                  @click="selectBox(box)"
-                  :class="{ 'selected-button': box.is_selected }"
-                  :disabled="disabledPosition(box)"
-                >
-                  {{ box.is_selected ? 'Seleccionado' : 'Seleccionar' }}
-                </el-button>
-              </div>
+
+      <div :class="dataModalLocal.item_data.has_lot ? 'col-md-2' : 'col-md-4'">
+        <div class="form-group">
+          <label class="control-label">Ubicaciones</label>
+          <el-select
+            v-model="dataModalLocal.position_data.location_id"
+            @change="changeLocation"
+          >
+            <el-option
+              v-for="option in locations"
+              :key="option.id"
+              :disabled="option.id == dataModalLocal.position_data.location_id"
+              :label="option.name"
+              :value="option.id"
+            ></el-option>
+          </el-select>
+        </div>
+      </div>
+    </div>
+
+    <div class="position-container" v-if="positions.length > 0">
+      <div class="boxes-container">
+        <div
+          v-for="(row, rowIndex) in matrix"
+          :key="rowIndex"
+          class="row-container"
+        >
+          <div
+            v-for="(box, colIndex) in row"
+            :key="colIndex"
+            class="position-box"
+          >
+            <div class="box-content">
+              <p class="margin-bottom">
+                {{ box.code_location }}-{{ box.row }}-{{ numberToLetter(box.column) }}
+              </p>
+              <p>Stock disponible: {{ box.stock_available }}</p>
+
+              <el-input
+                class="input-stock"
+                placeholder="Cantidad"
+                v-model.number="box.quantity"
+                type="number"
+                :min="0"
+                :max="box.stock_available"
+                :disabled="disabledPosition(box)"
+              ></el-input>
             </div>
           </div>
         </div>
-        <div class="form-actions text-right pt-2 mt-2">
-          <el-button class="second-buton" @click.prevent="close">Cancelar</el-button>
-          <el-button @click.prevent="saveChanges" type="primary">Guardar</el-button>
-        </div>
       </div>
-    </el-dialog>
-  </template>
+
+      <div class="form-actions text-right pt-2 mt-2">
+        <el-button class="second-buton" @click.prevent="close">Cancelar</el-button>
+        <el-button @click.prevent="saveChanges" type="primary">Guardar</el-button>
+      </div>
+    </div>
+  </el-dialog>
+</template>
 
 <script>
-import { forEach } from 'lodash';
-
-
 export default {
-    props: [
-        'showDialog',
-        'dataModal'
-    ],
-    data() {
-        return {
-            titleDialog: 'Selección de posición',
-            resource: 'transfers',
-            matrix: [],
-            warehouses: [],
-            positions: [],
-            locations: [],
-            dataModalLocal:{
-              item_data:{
-                item_id:'',
-                item_name:'',
-                quantity:0,
-                has_lot:'',
-                current_stock: 0,
-                stock_max: 0,
-                quantity_delivered: 0
-              },
-              position_data:{
-                expiration_date:'',
-                lot_name:'',
-                warehouse_id:'',
-                location_id:'',
-                position_id:'',
-                quantity:0,
-              },
-              stock_positions:[]
-            },
-        };
+  props: [
+    'showDialog',
+    'dataModal'
+  ],
+  data() {
+    return {
+      titleDialog: 'Selección de posición',
+      resource: 'transfers',
+      matrix: [],
+      warehouses: [],
+      positions: [],
+      locations: [],
+      dataModalLocal: {
+        item_data: {
+          item_id: '',
+          item_name: '',
+          quantity: 0,
+          has_lot: '',
+          current_stock: 0,
+          stock_max: 0,
+          quantity_delivered: 0
+        },
+        position_data: {
+          expiration_date: '',
+          lot_name: '',
+          warehouse_id: '',
+          location_id: '',
+          position_id: '',
+          quantity: 0
+        },
+        positions_data: [] // NUEVO: lista de posiciones + cantidades
+      }
+    };
+  },
+  async created() {
+    await this.getWarehouses();
+  },
+  methods: {
+    disabledPosition(position) {
+      let stock_available = parseInt(position.stock_available);
+      // si quieres, aquí podrías considerar ya lo que el usuario escribió en quantity
+      return stock_available <= 0 && !position.exist_item;
     },
-    async created() {
-        await this.getWarehouses();
+
+    async create() {
+      // Copiamos los datos que vienen del padre
+      this.dataModalLocal = JSON.parse(JSON.stringify(this.dataModal));
+
+      // Si ya tenía warehouse y location, cargamos posiciones
+      if (this.dataModalLocal.position_data.location_id && this.dataModalLocal.item_data.item_id) {
+        await this.getPositions(
+          this.dataModalLocal.position_data.location_id,
+          this.dataModalLocal.item_data.item_id
+        );
+
+        if (this.positions.length > 0) {
+          this.buildMatrix(this.positions);
+
+          // Si el padre ya tenía positions_data, rellenamos las quantities
+          if (this.dataModalLocal.positions_data && this.dataModalLocal.positions_data.length) {
+            this.applyExistingPositionsData();
+          }
+        }
+      }
     },
-    methods: {
-        disabledPosition(position){
-          let stock_available = parseInt(position.stock_available);
-          this.dataModalLocal.stock_positions.forEach(element => {
-            if(position.id == element.position_id){
-              stock_available++;
-            }
+
+    applyExistingPositionsData() {
+      const map = {};
+      this.dataModalLocal.positions_data.forEach(p => {
+        map[`${p.position_id}`] = p.quantity;
+      });
+
+      this.matrix.forEach(row => {
+        row.forEach(box => {
+          if (box.id && map[`${box.id}`] !== undefined) {
+            box.quantity = map[`${box.id}`];
+          }
+        });
+      });
+    },
+
+    changeWarehouse() {
+      this.dataModalLocal.position_data.location_id = '';
+      this.dataModalLocal.position_data.position_id = '';
+      this.locations = [];
+      this.positions = [];
+      this.matrix = [];
+      this.getLocations(this.dataModalLocal.position_data.warehouse_id);
+    },
+
+    async getWarehouses() {
+      const response = await this.$http.get(`/warehouses-by-active-establishment`);
+      if (response.data.success) {
+        this.warehouses = response.data.data;
+      }
+    },
+
+    async getLocations(warehouse_id) {
+      await this.$http
+        .get(`/${this.resource}/locations/${warehouse_id}`)
+        .then(response => {
+          const response_data = response.data;
+          if (response_data.success) {
+            this.locations = response_data.data;
+          }
+        });
+    },
+
+    async getPositions(location_id, item_id) {
+      await this.$http
+        .get(`/get-position-add-item/${location_id}/${item_id}`)
+        .then(response => {
+          const response_data = response.data;
+          if (response_data.success) {
+            this.positions = response_data.data;
+          }
+        });
+    },
+
+    async changeLocation() {
+      this.dataModalLocal.position_data.position_id = '';
+      this.positions = [];
+      this.matrix = [];
+      await this.getPositions(
+        this.dataModalLocal.position_data.location_id,
+        this.dataModalLocal.item_data.item_id
+      );
+
+      if (this.positions.length > 0) {
+        this.buildMatrix(this.positions);
+      }
+    },
+
+    buildMatrix(positions) {
+      const maxRow = Math.max(...positions.map(loc => loc.row));
+      const maxCol = Math.max(...positions.map(loc => loc.column));
+
+      const newPositions = [];
+      for (let i = maxRow; i > 0; i--) {
+        const row = [];
+        for (let j = 1; j <= maxCol; j++) {
+          const existingPosition = positions.flat().find(
+            p => p.row == i && p.column == j
+          );
+          row.push({
+            id: existingPosition ? existingPosition.id : null,
+            row: i,
+            column: j,
+            status: existingPosition ? existingPosition.status : 'available',
+            stock_available: existingPosition ? existingPosition.stock_available : 0,
+            code_location: existingPosition ? existingPosition.code_location : 'An',
+            exist_item: existingPosition ? Boolean(existingPosition.exist_item) : false,
+            quantity: 0 // cantidad a recibir en esta posición
           });
+        }
+        newPositions.push(row);
+      }
+      this.matrix = newPositions;
+    },
 
-          if(position.exist_item){
-            return false;
-          }else{
-            if(stock_available>0){
-              return false;
-            }else{
-              return true;
-            }
-          }
-        },
-        async create() {          
-          this.dataModalLocal = this.dataModal;
-          
-          if(this.dataModalLocal.position_data.position_id!=''){
-            await this.getPositions(this.dataModalLocal.position_data.location_id, this.dataModalLocal.item_data.item_id);
-            this.stock_positions=this.dataModalLocal.stock_positions;
-            const stock_position_finded = this.stock_positions.findIndex(element => element.item_id==this.dataModalLocal.item_data.item_id);
-            
-            if(stock_position_finded!=-1){
-              /* this.matrix.forEach(row => {
-                const finded = row.findIndex(element => element.id==this.stock_positions[stock_position_finded].position_id);
-                if(finded != -1){
-                  row[finded].is_selected = true;
-                }
-              }); */
+    numberToLetter(number) {
+      let letter = '';
+      while (number > 0) {
+        const remainder = (number - 1) % 26;
+        letter = String.fromCharCode(65 + remainder) + letter;
+        number = Math.floor((number - 1) / 26);
+      }
+      return letter;
+    },
 
-              /* const positionFinded = this.positions.findIndex(element => element.id==this.stock_positions[stock_position_finded].position_id)
-              if(positionFinded!=-1){
-                this.positions[positionFinded].is_selected = true;
-              } */
-            }
-            
-            
-            if (this.positions.length>0){
-              this.buildMatrix(this.positions);
-            }
-          }
-          /* this.positions = [...this.dataModal.positions];
-          if(this.dataModal.positions!=null){
-            this.location_id = {...this.dataModal.location_id};
-          }else{
-            this.location_id = '';
-          }
-          //await this.getLocations(this.warehouse_id); //llenamos locations
-          if (this.positions.length>0){
-            this.buildMatrix(this.positions);
-          } */
-        },
-        changeWarehouse(){
-          this.dataModalLocal.position_data.location_id='';
-          this.dataModalLocal.position_data.position_id='';
-          this.locations=[];
-          this.positions=[];
-          this.getLocations(this.dataModalLocal.position_data.warehouse_id);
-        },
-        async getWarehouses(){
-          const response = await this.$http.get(`/warehouses-by-active-establishment`);
-          if(response.data.success){
-            this.warehouses = response.data.data;
-          }
-        },
-        async getLocations(warehouse_id){
-          await this.$http
-            .get(`/${this.resource}/locations/${warehouse_id}`)
-            .then(response => {
-                const response_data = response.data;
-                if(response_data.success){
-                  this.locations = response_data.data;
-                }
-            })
-        },
-        async getPositions(location_id, item_id){
-          await this.$http
-            .get(`/get-position-add-item/${location_id}/${item_id}`)
-            .then(response => {
-                const response_data = response.data;
-                if(response_data.success){
-                  this.positions = response_data.data;
-                }
-            })
-        },
-        async changeLocation(){
-          this.dataModalLocal.position_data.position_id='';
-          this.positions=[];
-          await this.getPositions(this.dataModalLocal.position_data.location_id, this.dataModalLocal.item_data.item_id);
-          this.positions.map(position_element => {
-            if(position_element.is_selected!=undefined){
-              return position_element;
-            }else{
-              return {
-                ...position_element,
-                is_selected: false
-              }
-            }
-          });
-          
-          if (this.positions.length>0){
-            this.buildMatrix(this.positions);
-          }
-        },
-        
-        buildMatrix(positions) {
-            const maxRow = Math.max(...positions.map((loc) => loc.row));
-            const maxCol = Math.max(...positions.map((loc) => loc.column));
-            
-            const newPositions = [];
-            for (let i = maxRow; i > 0; i--) {
-                const row = [];
-                for (let j = 1; j <= maxCol; j++) {
-                    const existingPosition = positions.flat().find(p => p.row == i && p.column == j);
-                    row.push({
-                        id: existingPosition ? existingPosition.id : null,
-                        row: i,
-                        column: j,
-                        status: existingPosition ? existingPosition.status : 'available',
-                        stock_available: existingPosition ? existingPosition.stock_available : 0,
-                        code_location: existingPosition ? existingPosition.code_location: 'An',
-                        is_selected: existingPosition ? Boolean(existingPosition.is_selected): false,
-                        exist_item: existingPosition ? Boolean(existingPosition.exist_item): false,
-                        quantity: existingPosition ? existingPosition.quantity: 0,
-                    });
-                }
-                newPositions.push(row);
-            }
-            this.matrix = newPositions;
-        },
-        numberToLetter(number) {
-            let letter = '';
-            while (number > 0) {
-                const remainder = (number - 1) % 26;
-                letter = String.fromCharCode(65 + remainder) + letter;
-                number = Math.floor((number - 1) / 26);
-            }
-            return letter;
-        },
-        selectBox(box) {
-            if(box.is_selected){
-              box.is_selected = false;
-              const position_finded = this.positions.find(position => position.row == box.row && position.column == box.column);
-              if(position_finded){
-                position_finded.is_selected = false
-              }
-            }else{
-              this.matrix.forEach(row => {
-                  row.forEach(element => {
-                    if(element.is_selected){
-                      element.is_selected = false;
-                      const position_finded = this.positions.find(position => position.row == element.row && position.column == element.column);
-                      if(position_finded){
-                        position_finded.is_selected = false
-                      }
-                      const stock_position_finded = this.dataModalLocal.stock_positions.findIndex(stock_position_element => stock_position_element.position_id==element.id && stock_position_element.item_id == this.dataModalLocal.item_data.item_id);
-                      if(stock_position_finded!=-1){
-                        this.dataModalLocal.stock_positions.splice(stock_position_finded, 1);
-                      }
-                    }
-                  });
-              });
-              const position_finded = this.positions.find(position => position.row == box.row && position.column == box.column);
-              if(position_finded){
-                position_finded.is_selected = true;
-              }
-              this.dataModalLocal.stock_positions.push({
-                position_id: box.id,
-                item_id: this.dataModalLocal.item_data.item_id
-              });
-              box.is_selected = true;
-            }
-        },
-        isOneSelected() {
-          if (this.positions.length > 0) {
-            return this.positions.some(element => element.is_selected);
-          }
-          return false;
-        },
-        formatDate(date) {
-          if (!date) return null; // Manejar el caso de fecha nula o indefinida
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0'); // Meses van de 0 a 11
-          const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        },
-        getQuantityOfPositionSelected() {
-          for (const row of this.matrix) {
-            const findedElementIndex = row.findIndex(element => element.is_selected === true);
-            if (findedElementIndex !== -1) {
-              return parseInt(row[findedElementIndex].quantity);
-            }
-          }
-          return 0;
-        },
-        saveChanges(){
-          let is_one_selected = this.isOneSelected(); // verificar si hay almenos un seleccionado;
-          if(!is_one_selected){
-            return this.$message.error("Elige una posición");
-          }
+    formatDate(date) {
+      if (!date) return null;
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    },
 
-          if(this.dataModalLocal.item_data.has_lot){
-            if(this.dataModalLocal.position_data.lot_name==''){
-              return this.$message.error("Completa el nombre del nuevo lote");
-            }
-
-            if(this.dataModalLocal.position_data.expiration_date==''){
-              return this.$message.error("Completa la fecha de expiración");
-            }
-          }
-
-          const current_stock = parseInt(this.dataModalLocal.item_data.current_stock);
-          const stock_max = parseInt(this.dataModalLocal.item_data.stock_max);
-          const quantity_selected = this.getQuantityOfPositionSelected();
-          const quantity_required = parseInt(this.dataModalLocal.item_data.quantity);
-          const quantity_delivered = parseInt(this.dataModalLocal.item_data.quantity_delivered);
-
-          console.log(quantity_required);
-          console.log(quantity_delivered);
-          
-          
-
-          if(quantity_selected>this.dataModalLocal.item_data.quantity){
-            return this.$message.error("La cantidad ingresada supera la cantidad registrada en la compra ("+(this.dataModalLocal.item_data.quantity)+")");
-          }
-
-          const quantity_available = quantity_required-quantity_delivered;
-          if(quantity_selected>quantity_available){
-            return this.$message.error("La cantidad ingresada supera la cantidad disponible de recepción ("+(quantity_available)+")");
-          }
-
-          if((current_stock+quantity_selected)>stock_max){
-            return this.$message.error("Se supera el stock máximo para el item, disponible: "+(stock_max-current_stock));
-          }
-
-          const index_stock_position = this.dataModalLocal.stock_positions.findIndex(element => element.item_id == this.dataModalLocal.item_data.item_id);
-          if(index_stock_position!=-1){
-            this.dataModalLocal.position_data.position_id = this.dataModalLocal.stock_positions[index_stock_position].position_id;
-          }
-          
-          this.dataModalLocal.position_data.expiration_date = this.formatDate(this.dataModalLocal.position_data.expiration_date);
-          this.dataModalLocal.position_data.quantity = quantity_selected;
-          this.$emit('positions-save', this.dataModalLocal);
-          this.resetData();
-          this.close();
-          this.$message.success("Posición guardada correctamente");
-        },
-        resetData() {
-            this.matrix = [];
-            this.locations = [];
-            this.positions = [];
-            this.dataModalLocal={
-              item_data:{
-                item_id:'',
-                item_name:'',
-                quantity:0,
-                has_lot:'',
-                current_stock: 0,
-                stock_max: 0,
-                quantity_delivered: 0
-              },
-              position_data:{
-                expiration_date:'',
-                lot_name:'',
-                warehouse_id:'',
-                location_id:'',
-                position_id:''
-              },
-              stock_positions:[]
-            };
-        },
-        close() {
-            this.$emit('update:showDialog', false);
-            this.resetData();
-        },
+saveChanges() {
+  // 1) Validaciones de lote
+  if (this.dataModalLocal.item_data.has_lot) {
+    if (!this.dataModalLocal.position_data.lot_name) {
+      this.$message.error("Completa el nombre del nuevo lote");
+      return;
     }
+    if (!this.dataModalLocal.position_data.expiration_date) {
+      this.$message.error("Completa la fecha de expiración");
+      return;
+    }
+  }
+
+  const current_stock = parseInt(this.dataModalLocal.item_data.current_stock);
+  const stock_max = parseInt(this.dataModalLocal.item_data.stock_max);
+  const quantity_required = parseInt(this.dataModalLocal.item_data.quantity);
+  const quantity_delivered = parseInt(this.dataModalLocal.item_data.quantity_delivered);
+  const quantity_available_to_receive = quantity_required - quantity_delivered;
+
+  let totalSelected = 0;
+  const positions_data = [];
+
+  // 2) Construir positions_data y totalSelected
+  this.matrix.forEach(row => {
+    row.forEach(box => {
+      const qty = parseInt(box.quantity) || 0;
+      if (qty > 0) {
+        totalSelected += qty;
+        positions_data.push({
+          position_id: box.id,
+          quantity: qty,
+          warehouse_id: this.dataModalLocal.position_data.warehouse_id,
+          location_id: this.dataModalLocal.position_data.location_id
+        });
+      }
+    });
+  });
+
+  // 3) Validar que haya al menos una posición con cantidad
+  if (positions_data.length === 0) {
+    this.$message.error("Ingresa una cantidad en al menos una posición");
+    return;
+  }
+
+  // 4) Validar cada posición contra su stock_available
+  for (const row of this.matrix) {
+    for (const box of row) {
+      const qty = parseInt(box.quantity) || 0;
+      if (qty > 0 && qty > box.stock_available) {
+        this.$message.error(
+          `La cantidad en ${box.code_location}-${box.row}-${this.numberToLetter(box.column)} ` +
+          `supera el stock disponible (${box.stock_available}).`
+        );
+        return;
+      }
+    }
+  }
+
+  // 5) Validaciones de totales
+  if (totalSelected > quantity_required) {
+    this.$message.error(
+      `La cantidad total (${totalSelected}) supera la cantidad registrada en la compra (${quantity_required}).`
+    );
+    return;
+  }
+
+  if (totalSelected > quantity_available_to_receive) {
+    this.$message.error(
+      `La cantidad total (${totalSelected}) supera la cantidad disponible de recepción (${quantity_available_to_receive}).`
+    );
+    return;
+  }
+
+  if ((current_stock + totalSelected) > stock_max) {
+    this.$message.error(
+      "Se supera el stock máximo para el item, disponible: " +
+      (stock_max - current_stock)
+    );
+    return;
+  }
+
+  // 6) Formateo de fecha de lote
+  this.dataModalLocal.position_data.expiration_date =
+    this.formatDate(this.dataModalLocal.position_data.expiration_date);
+
+  // 7) Guardamos lista de posiciones
+  this.dataModalLocal.positions_data = positions_data;
+
+  this.$emit('positions-save', this.dataModalLocal);
+  this.resetData();
+  this.close();
+  this.$message.success("Posiciones guardadas correctamente");
+},
+
+    resetData() {
+      this.matrix = [];
+      this.locations = [];
+      this.positions = [];
+      this.dataModalLocal = {
+        item_data: {
+          item_id: '',
+          item_name: '',
+          quantity: 0,
+          has_lot: '',
+          current_stock: 0,
+          stock_max: 0,
+          quantity_delivered: 0
+        },
+        position_data: {
+          expiration_date: '',
+          lot_name: '',
+          warehouse_id: '',
+          location_id: '',
+          position_id: '',
+          quantity: 0
+        },
+        positions_data: []
+      };
+    },
+
+    close() {
+      this.$emit('update:showDialog', false);
+      this.resetData();
+    }
+  }
 };
 </script>
 
@@ -456,28 +459,12 @@ export default {
   gap: 5px;
 }
 
-.text-right {
-  text-align: right;
-  margin-top: 20px;
+.input-stock {
+  max-width: 100%;
+  margin: 0px;
 }
 
-.selected-button {
-  background-color: #67c23a !important;
-  border-color: #67c23a !important;
-  color: white !important;
-}
-
-.selected-button:hover {
-  background-color: #5daf34 !important;
-  border-color: #5daf34 !important;
-}
-
-.input-stock{
-    max-width: 100px;
-    margin:0px;
-}
-
-.margin-bottom{
-    margin-bottom: 0px;
+.margin-bottom {
+  margin-bottom: 0px;
 }
 </style>

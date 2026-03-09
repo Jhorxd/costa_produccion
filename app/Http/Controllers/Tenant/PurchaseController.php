@@ -338,114 +338,190 @@ use Modules\Inventory\Models\InventoryWarehouseLocation;
     
         }
 
-        public function updatePosition(Request $data){
-            try {
-                DB::connection('tenant')->transaction(function () use ($data) {
-                    foreach ($data['items'] as $row) {
-                        $item = $row['item'];
-                        if(!empty($item['position_data']) && $item['position_data']['position_id']!=null){
-                            $position_data = $item['position_data'];
-                            
-                            $position = WarehouseLocationPosition::find($position_data['position_id']);
-                            
-                            $enabled_add_position=false;
-                            $item_position = ItemPosition::where('position_id',$position_data['position_id'])->where('item_id',(int)$row['item_id'])->first();
-                            if($item_position){
-                                $enabled_add_position=true;
-                            }else{
-                                $location = InventoryWarehouseLocation::find($position_data['location_id']);
-                                $stock_available = (int)$location->maximum_stock - (int)$position['quantity_used'];
-                                if($stock_available>0){
-                                    $enabled_add_position=true;
-                                    $position->quantity_used+=1;
-                                }
-                            }
-                            
-                            if($enabled_add_position){
-                                if($item['lots_enabled']){
-                                    $lot_new = new ItemLotsGroup();
-                                    $lot_new->code = $position_data['lot_name'];
-                                    $lot_new->quantity = (int)$position_data['quantity'];
-                                    $lot_new->date_of_due = $position_data['expiration_date'];
-                                    $lot_new->item_id = $row['item_id'];
-                                    $lot_new->status = 1;
-                                    $lot_new->warehouse_id = $position_data['warehouse_id'];
-                                    $lot_new->save();
-        
-                                    $item_position_new = new ItemPosition();
-                                    $item_position_new->item_id = $row['item_id'];
-                                    $item_position_new->lots_group_id = $lot_new->id;
-                                    $item_position_new->stock = (int)$position_data['quantity'];
-                                    $item_position_new->position_id = $position_data['position_id'];
-                                    $item_position_new->location_id = $position_data['location_id'];
-                                    $item_position_new->warehouse_id = $position_data['warehouse_id'];
-                                    $item_position_new->save();
-                                }else{
-                                    $itemPosition = ItemPosition::firstOrNew(
-                                        [
-                                            'item_id' => $row['item_id'],
-                                            'position_id' => $position_data['position_id'],
-                                            'location_id' => $position_data['location_id'],
-                                            'warehouse_id' => $position_data['warehouse_id'],
-                                        ]
-                                    );
+public function updatePosition(Request $data)
+{
+    try {
+        DB::connection('tenant')->transaction(function () use ($data) {
 
-                                    $itemPosition->stock = ($itemPosition->stock ?? 0) + (int)$position_data['quantity'];
+            foreach ($data['items'] as $row) {
 
-                                    $itemPosition->save();
-                                }
-        
-                                $position->save();
+                // si no viene lista de posiciones, saltamos
+                if (empty($row['item']['positions_data']) || !is_array($row['item']['positions_data'])) {
+                    continue;
+                }
 
-                                $purchase_item = PurchaseItem::where('purchase_id', $data['id'])->where('item_id', $row['item_id'])->first();
-                                if ($purchase_item) {
-                                    $itemData = (array)$purchase_item->item;
-                                    $itemData['position_data'] = $position_data;
-                                    
-                                    $purchase_item->item = $itemData;
-                                    $purchase_item->quantity_delivered += (int)$position_data['quantity'];
+                $item      = $row['item'];
+                $itemId    = (int)$row['item_id'];
+                $lineQty   = (int)$row['quantity']; // cantidad de la línea de compra
 
-                                    if((int)$row['quantity']==$purchase_item->quantity_delivered){
-                                        $purchase_item->is_delivered = 1;
-                                    }
+                // buscamos la línea de compra
+                $purchase_item = PurchaseItem::where('purchase_id', $data['id'])
+                    ->where('item_id', $itemId)
+                    ->first();
 
-                                    $purchase_item->save();
+                if (!$purchase_item) {
+                    continue;
+                }
 
-                                    $purchase = Purchase::find($purchase_item->purchase_id);
+                $itemData = (array)$purchase_item->item;
+                $deliveredBefore = (int)$purchase_item->quantity_delivered;
+                $sumReceivedThisCall = 0;
 
-                                    $purchase->real_amount_due += (float) $purchase_item->total;
+                // procesamos cada posición asignada
+                foreach ($item['positions_data'] as $position_data) {
 
-                                    $purchase->save();
+                    if (empty($position_data['position_id'])) {
+                        continue;
+                    }
 
-                                    $presentationQuantity = (!empty($itemData['presentation'])) ? $itemData['presentation']['quantity_unit'] : 1;
-    
-                                    $warehouse = ($purchase_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id) : $this->findWarehouse();
+                    $position = WarehouseLocationPosition::find($position_data['position_id']);
+                    if (!$position) {
+                        continue;
+                    }
 
-                                    $this->createInventoryKardex($purchase_item->purchase, $purchase_item->item_id, /*$purchase_item->quantity*/ ((int)$position_data['quantity'] * $presentationQuantity), $warehouse->id);
-                                    $this->updateStock($purchase_item->item_id, ((int)$position_data['quantity'] * $presentationQuantity), $warehouse->id);
+                    $qty = (int)($position_data['quantity'] ?? 0);
+                    if ($qty <= 0) {
+                        continue;
+                    }
 
-                                    $kardex = $this->saveKardex('purchase', $purchase_item->item_id, $purchase_item->purchase_id, (int)$position_data['quantity'], 'purchase');
-    
-                                    $this->updateItemStock($purchase_item->item_id, $kardex->quantity, false);
-                                }
+                    $enabled_add_position = false;
+
+                    // ya existe ItemPosition para este item+posición?
+                    $item_position = ItemPosition::where('position_id', $position_data['position_id'])
+                        ->where('item_id', $itemId)
+                        ->first();
+
+                    if ($item_position) {
+                        $enabled_add_position = true;
+                    } else {
+                        // lógica de capacidad a nivel de ubicación/posición
+                        $location = InventoryWarehouseLocation::find($position_data['location_id']);
+                        if ($location) {
+                            // OJO: aquí podrías usar capacidad por posición si ya la tienes
+                            $stock_available = (int)$location->maximum_stock - (int)$position['quantity_used'];
+                            if ($stock_available > 0) {
+                                $enabled_add_position = true;
+                                $position->quantity_used += 1;
                             }
                         }
                     }
-                });
 
-                return [
-                    'success' => true,
-                    'message' => "Actualizado correctamente"
-                ];
-            } catch (\Throwable $th) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $th->getMessage(),
-                ], 500);
+                    if (!$enabled_add_position) {
+                        continue;
+                    }
+
+                    // Lógica de ingreso con o sin lotes
+                    if (!empty($item['lots_enabled'])) {
+
+                        $lot_new = new ItemLotsGroup();
+                        $lot_new->code         = $position_data['lot_name'] ?? null;
+                        $lot_new->quantity     = $qty;
+                        $lot_new->date_of_due  = $position_data['expiration_date'] ?? null;
+                        $lot_new->item_id      = $itemId;
+                        $lot_new->status       = 1;
+                        $lot_new->warehouse_id = $position_data['warehouse_id'] ?? null;
+                        $lot_new->save();
+
+                        $item_position_new = new ItemPosition();
+                        $item_position_new->item_id       = $itemId;
+                        $item_position_new->lots_group_id = $lot_new->id;
+                        $item_position_new->stock         = $qty;
+                        $item_position_new->position_id   = $position_data['position_id'];
+                        $item_position_new->location_id   = $position_data['location_id'];
+                        $item_position_new->warehouse_id  = $position_data['warehouse_id'];
+                        $item_position_new->save();
+
+                    } else {
+
+                        $itemPosition = ItemPosition::firstOrNew(
+                            [
+                                'item_id'     => $itemId,
+                                'position_id' => $position_data['position_id'],
+                                'location_id' => $position_data['location_id'],
+                                'warehouse_id'=> $position_data['warehouse_id'],
+                            ]
+                        );
+
+                        $itemPosition->stock = ($itemPosition->stock ?? 0) + $qty;
+                        $itemPosition->save();
+                    }
+
+                    $position->save();
+
+                    // kardex y stock general
+                    $purchase = Purchase::find($purchase_item->purchase_id);
+
+                    if ($purchase) {
+
+                        $purchase->real_amount_due += (float)$purchase_item->total;
+                        $purchase->save();
+
+                        $itemDataLine = (array)$purchase_item->item;
+                        $presentationQuantity = (!empty($itemDataLine['presentation']))
+                            ? $itemDataLine['presentation']['quantity_unit']
+                            : 1;
+
+                        $warehouse = ($purchase_item->warehouse_id)
+                            ? $this->findWarehouse($this->findWarehouseById($purchase_item->warehouse_id)->establishment_id)
+                            : $this->findWarehouse();
+
+                        // cantidad total considerando presentación
+                        $qty_for_stock = $qty * $presentationQuantity;
+
+                        $this->createInventoryKardex(
+                            $purchase_item->purchase,
+                            $itemId,
+                            $qty_for_stock,
+                            $warehouse->id
+                        );
+
+                        $this->updateStock($itemId, $qty_for_stock, $warehouse->id);
+
+                        $kardex = $this->saveKardex(
+                            'purchase',
+                            $itemId,
+                            $purchase_item->purchase_id,
+                            $qty,
+                            'purchase'
+                        );
+
+                        $this->updateItemStock($itemId, $kardex->quantity, false);
+                    }
+
+                    $sumReceivedThisCall += $qty;
+                }
+
+                // actualizar la línea de compra con el total recibido en esta llamada
+                if ($sumReceivedThisCall > 0) {
+
+                  // guardamos las posiciones en el item embebido si quieres tener el historial
+                  $itemData['positions_data'] = $item['positions_data'];
+                  $purchase_item->item = $itemData;
+
+                  $purchase_item->quantity_delivered += $sumReceivedThisCall;
+
+                  if ($purchase_item->quantity_delivered >= $lineQty) {
+                      $purchase_item->is_delivered = 1;
+                  }
+
+                  $purchase_item->save();
+                }
             }
+        });
 
-            
-        }
+        return [
+            'success' => true,
+            'message' => "Actualizado correctamente"
+        ];
+
+    } catch (\Throwable $th) {
+        return response()->json([
+            'success' => false,
+            'message' => $th->getMessage(),
+        ], 500);
+    }
+}
+
 
         public function store(PurchaseRequest $request)
         {
