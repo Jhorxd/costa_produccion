@@ -255,63 +255,109 @@ class InventoryKardex extends ModelTenant
                 // $data['type_transaction'] = "Nota de venta";
                 $data['date_of_issue'] = isset($inventory_kardexable->date_of_issue) ? $inventory_kardexable->date_of_issue->format('Y-m-d') : '';
                 break;
-            case $models[3]:
-            {
-                $transaction = '';
-                $input = '';
-                $output = '';
-                if (!$inventory_kardexable->type) {
-                    $transaction = InventoryTransaction::findOrFail($inventory_kardexable->inventory_transaction_id);
-                }
-                if ($inventory_kardexable->type != null) {
-                    $input = ($inventory_kardexable->type == 1) ? $qty : "-";
-                } else {
-                    $input = ($transaction->type == 'input') ? $qty : "-";
-                }
-                if ($inventory_kardexable->type != null) {
-                    $output = ($inventory_kardexable->type == 2 || $inventory_kardexable->type == 3) ? $qty : "-";
-                } else {
-                    $output = ($transaction->type == 'output') ? $qty : "-";
-                }
+           case $models[3]:
+{
+    $transaction = '';
+    $input = '-';
+    $output = '-';
 
-                // dd($inventory_kardexable->date_of_issue->format('Y-m-d'));
-                $user = auth()->user();
-                $data['balance'] = $balance += $qty;
-                $data['type_transaction'] = $inventory_kardexable->description;
-                $data['date_of_issue'] = isset($inventory_kardexable->date_of_issue) ? $inventory_kardexable->date_of_issue->format('Y-m-d') : '';
-                $data['guide_id'] = null;
+    // Si es traslado (type 2), tratamos distinto
+    if ($inventory_kardexable->type == 2) {
 
-                $guide = Guide::query()->where('id', $inventory_kardexable->guide_id)->first();
-                if($guide) {
-                    $data['number'] = $guide->series.'-'.$guide->number;
-                    $data['date_of_issue'] = $guide->date_of_issue->format('Y-m-d');
-                    $data['guide_id'] = $guide->id;
-                }
+        // Quitamos solo el signo, manteniendo decimales
+        $qtyUnsigned = ($qty < 0) ? $qty * -1 : $qty;
 
-                $inventory_transfer = InventoryTransfer::query()->where('id', $inventory_kardexable->inventories_transfer_id)->first();
-                if($inventory_transfer) {
-                    $data['number'] = $inventory_transfer->series.'-'.$inventory_transfer->number;
-                    $data['date_of_issue'] = $inventory_transfer->created_at->format('Y-m-d');
-                    
-                    $lotCodesArray = [];
-                    $items = (array)$inventory_transfer->item;
-                    foreach ($items as $item) {
-                        foreach ($item->lots as $lot) {
-                            $lotCodesArray[] = $lot->code;
-                        }
-                    }
-                    $finalLotCodesString = implode(' - ', $lotCodesArray);
-                    $data['lots'] = !empty($finalLotCodesString) ? $finalLotCodesString : '-';
-                }
-                if ($inventory_kardexable->warehouse_destination_id === $user->establishment_id) {
-                    $data['input'] = $output;
-                    $data['output'] = $input;
-                } else {
-                    $data['input'] = $input;
-                    $data['output'] = $output;
-                }
-                break;
+        // Almacén actual para el que se arma este registro
+        $currentWarehouse = $this->warehouse_id; // o el campo que uses para filtrado
+
+        if ($currentWarehouse == $inventory_kardexable->warehouse_id) {
+            // Origen -> salida
+            $input  = '-';
+            $output = $qtyUnsigned;
+        } elseif ($currentWarehouse == $inventory_kardexable->warehouse_destination_id) {
+            // Destino -> entrada
+            $input  = $qtyUnsigned;
+            $output = '-';
+        } else {
+            $input  = '-';
+            $output = '-';
+        }
+
+        // Saldo con signo real
+        $data['balance'] = $balance += $qty;
+
+    } else {
+
+        // Lógica anterior para otros tipos de inventario
+        if (!$inventory_kardexable->type) {
+            $transaction = InventoryTransaction::findOrFail($inventory_kardexable->inventory_transaction_id);
+        }
+
+        if ($inventory_kardexable->type != null) {
+            $input = ($inventory_kardexable->type == 1) ? $qty : "-";
+        } else {
+            $input = ($transaction->type == 'input') ? $qty : "-";
+        }
+
+        if ($inventory_kardexable->type != null) {
+            $output = ($inventory_kardexable->type == 2 || $inventory_kardexable->type == 3) ? $qty : "-";
+        } else {
+            $output = ($transaction->type == 'output') ? $qty : "-";
+        }
+
+        $data['balance'] = $balance += $qty;
+    }
+
+    $user = auth()->user();
+    $data['type_transaction'] = $inventory_kardexable->description;
+    $data['date_of_issue'] = isset($inventory_kardexable->date_of_issue)
+        ? $inventory_kardexable->date_of_issue->format('Y-m-d')
+        : '';
+    $data['guide_id'] = null;
+
+    $guide = Guide::query()->where('id', $inventory_kardexable->guide_id)->first();
+    if ($guide) {
+        $data['number'] = $guide->series.'-'.$guide->number;
+        $data['date_of_issue'] = $guide->date_of_issue->format('Y-m-d');
+        $data['guide_id'] = $guide->id;
+    }
+
+    $inventory_transfer = InventoryTransfer::query()
+        ->where('id', $inventory_kardexable->inventories_transfer_id)
+        ->first();
+
+    if ($inventory_transfer) {
+        $data['number'] = $inventory_transfer->series.'-'.$inventory_transfer->number;
+        $data['date_of_issue'] = $inventory_transfer->created_at->format('Y-m-d');
+
+        $lotCodesArray = [];
+        $items = (array)$inventory_transfer->item;
+        foreach ($items as $item) {
+            foreach ($item->lots as $lot) {
+                $lotCodesArray[] = $lot->code;
             }
+        }
+        $finalLotCodesString = implode(' - ', $lotCodesArray);
+        $data['lots'] = !empty($finalLotCodesString) ? $finalLotCodesString : '-';
+    }
+
+    // Para traslados usamos lo calculado; otros tipos mantienen lógica anterior
+    if ($inventory_kardexable->type == 2) {
+        $data['input'] = $input;
+        $data['output'] = $output;
+    } else {
+        if ($inventory_kardexable->warehouse_destination_id === $user->establishment_id) {
+            $data['input'] = $output;
+            $data['output'] = $input;
+        } else {
+            $data['input'] = $input;
+            $data['output'] = $output;
+        }
+    }
+
+    break;
+}
+
             case $models[4]:
                 $data['balance'] = $balance += $qty;
                 $data['number'] = optional($inventory_kardexable)->prefix . '-' . optional($inventory_kardexable)->id;
@@ -343,9 +389,22 @@ class InventoryKardex extends ModelTenant
                 $data['date_of_issue'] = isset($inventory_kardexable->date_of_issue) ? $inventory_kardexable->date_of_issue->format('Y-m-d') : '';
                 break;
         }
-        $data['date_of_register'] = isset($inventory_kardexable->date_of_issue) ? $inventory_kardexable->date_of_issue->format('Y-m-d') : '';
+        $data['date_of_register'] = isset($inventory_kardexable->date_of_issue)
+            ? $inventory_kardexable->date_of_issue->format('Y-m-d')
+            : '';
+
         $decimalRound = 6; // Cantidad de decimales a aproximar
-        $data['balance'] =$data['balance'] ? round( $data['balance'] ,$decimalRound):0;
+        $data['balance'] = $data['balance'] ? round($data['balance'], $decimalRound) : 0;
+
+        // Formatear entrada/salida a 4 decimales
+        if (is_numeric($data['input'])) {
+            $data['input'] = number_format($data['input'], 4, '.', '');
+        }
+        if (is_numeric($data['output'])) {
+            $data['output'] = number_format($data['output'], 4, '.', '');
+        }
+
         return $data;
+
     }
 }

@@ -11,12 +11,20 @@
             </ol>
 <div class="right-wrapper pull-right">
   <!-- Sincronizar: todos lo ven -->
-  <button
+  <!-- <button
     class="btn btn-custom btn-sm mt-2 mr-2"
     type="button"
     @click.prevent="clickSincronizar()"
   >
     <i class="fa fa-plus-circle"></i> Sincronizar
+  </button> -->
+
+    <button
+    class="btn btn-custom btn-sm mt-2 mr-2"
+    type="button"
+    @click.prevent="clickExportDigemid()"
+  >
+    <i class="fa fa-plus-circle"></i> EXPORTAR DIGEMID
   </button>
 
   <!-- Exportar: todos lo ven -->
@@ -664,6 +672,9 @@ export default {
         },
         clickExport() {
             this.showExportDialog = true;
+        },
+        clickExportDigemid() {
+            window.open('/items/export-digemid', '_blank')
         },
         clickExportWp() {
             this.showExportWpDialog = true;

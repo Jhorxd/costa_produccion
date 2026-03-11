@@ -352,26 +352,25 @@
         <span class="separator"></span>
         <ul class="notifications">
     <!-- Botón cambiar perfil -> login-page -->
-    <li>
-        <a href="http://basenueva.costa.test/login-page"
-        class="notification-icon text-secondary"
-        data-toggle="tooltip"
-        data-placement="bottom"
-        title="Cambiar fondo de login">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"
-                class="icon icon-tabler icons-tabler-outline icon-tabler-photo">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                <path d="M15 8h.01" />
-                <path d="M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4z" />
-                <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
-                <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
-            </svg>
-        </a>
-
-    </li>
+        <li>
+            <a href="{{ route('tenant.profile.switch') }}"
+            class="notification-icon text-secondary"
+            data-toggle="tooltip"
+            data-placement="bottom"
+            title="Cambiar fondo de login">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-photo">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M15 8h.01" />
+                    <path d="M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4z" />
+                    <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+                    <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+                </svg>
+            </a>
+        </li>
 
     <!-- JA: Notificacion del sistema
     <li>

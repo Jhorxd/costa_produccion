@@ -1538,6 +1538,147 @@ class ItemController extends Controller
 
     }
 
+public function exportReportDigemid(Request $request)
+{
+    ini_set('max_execution_time', 0);
+
+    $records = Item::whereTypeUser()
+        ->whereNotIsSet()
+        ->select(
+            'items.id',
+            'items.description',   // ← actualizado
+            'items.internal_id',   // ← actualizado
+            'items.barcode',
+            'items.cod_digemid',
+            'items.sanitary',
+            'items.active_principle',
+            'items.concentration',
+            'items.laboratory',
+            'items.sale_unit_price',
+            'items.stock'
+        )
+        ->get();
+
+    $export = new class($records) implements 
+        \Maatwebsite\Excel\Concerns\FromCollection, 
+        \Maatwebsite\Excel\Concerns\WithHeadings,
+        \Maatwebsite\Excel\Concerns\WithStyles,
+        \Maatwebsite\Excel\Concerns\WithColumnWidths
+        // ← quita ShouldAutoSize, es incompatible con WithColumnWidths
+    {
+        private $records;
+
+        public function __construct($records)
+        {
+            $this->records = $records;
+        }
+
+        public function collection()
+        {
+            return $this->records->map(function($item) {
+                return [
+                    $item->id,
+                    $item->description,   // ← actualizado
+                    $item->internal_id,   // ← actualizado
+                    $item->barcode,
+                    $item->cod_digemid,
+                    $item->sanitary,
+                    $item->active_principle,
+                    $item->concentration,
+                    $item->laboratory,
+                    number_format($item->sale_unit_price, 2),
+                    number_format($item->stock, 2)
+                ];
+            });
+        }
+
+        public function headings(): array
+        {
+            return [
+                'ID',
+                'Nombre',
+                'Código',
+                'Código Barras',
+                'Cód. Digemid',
+                'Sanitario',
+                'Principio Activo',
+                'Concentración',
+                'Laboratorio',
+                'Precio Venta',
+                'Stock'
+            ];
+        }
+
+        public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+        {
+            $lastRow = $this->records->count() + 1;
+
+            $sheet->getStyle('A1:K1')->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                    'size' => 11
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '2563EB']
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color'       => ['rgb' => '1E40AF']
+                    ]
+                ]
+            ]);
+
+            $sheet->getStyle('A2:K' . $lastRow)->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color'       => ['rgb' => 'E2E8F0']
+                    ]
+                ],
+                'alignment' => [
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                ]
+            ]);
+
+            $sheet->getStyle('A2:A' . $lastRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('J2:K' . $lastRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            $sheet->getRowDimension(1)->setRowHeight(25);
+
+            return [];
+        }
+
+        public function columnWidths(): array
+        {
+            return [
+                'A' => 8,
+                'B' => 35,
+                'C' => 15,
+                'D' => 18,
+                'E' => 18,
+                'F' => 18,
+                'G' => 25,
+                'H' => 20,
+                'I' => 25,
+                'J' => 15,
+                'K' => 12,
+            ];
+        }
+    };
+
+    return app(\Maatwebsite\Excel\Excel::class)->download($export, 'Reporte_Items_Digemid_'.now().'.xlsx');
+}
+
+
+
+
+
     /**
      * @param \Illuminate\Http\Request $request
      *

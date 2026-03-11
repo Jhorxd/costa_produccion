@@ -66,7 +66,7 @@
                                 ></small>
                             </div>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end" v-if="form.warehouse_destination_id!=null">
+                        <!-- <div class="col-md-2 d-flex align-items-end" v-if="form.warehouse_destination_id!=null">
                             <div class="form-group">
                                 <el-button
                                     type="primary"
@@ -74,7 +74,7 @@
                                 >Posición de destino
                                 </el-button>
                             </div>
-                        </div>
+                        </div> -->
                         <div class="col-md-6">
                             <div :class="{'has-danger': errors.description}"
                                  class="form-group">

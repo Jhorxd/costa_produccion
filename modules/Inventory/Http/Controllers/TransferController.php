@@ -322,147 +322,96 @@ class TransferController extends Controller
         }
     }
 
-    public function store_approve(TransferApproveRequest $request)
-    {
-        DB::connection('tenant')->beginTransaction();
-        try{
+public function store_approve(TransferApproveRequest $request)
+{
+    DB::connection('tenant')->beginTransaction();
 
-            $inventory_transfer = InventoryTransfer::firstOrNew(['id' => $request->id]);
-            $items = $request->items;
-            foreach ($items as $it){
-                $stock_transfer = 0;
-                if($it['has_positions']){
-                    if($it['has_lots']){
-                        if(count($it['positions'])>0){
-                            foreach ($it['positions'] as $position) {
-                                foreach ($position['lots_group_list'] as $element) {
-                                    $stock_transfer += $element['compromise_quantity'];
-                                    $lot = ItemLotsGroup::find($element['id']);
-                                    if($lot){
-                                        if((int) $element['compromise_quantity']==$lot->quantity){
-                                            $lot->warehouse_id = $request->warehouse_destination_id;
-                                            $lot->save();
-                                        }else{
-                                            $lot_new = $lot->replicate();
+    try {
 
-                                            unset($lot_new->created_at);
-                                            unset($lot_new->updated_at);
+        $inventory_transfer = InventoryTransfer::firstOrNew(['id' => $request->id]);
+        $items = $request->items;
 
-                                            $lot_new->quantity = (int) $element['compromise_quantity'];
+        foreach ($items as $it) {
 
-                                            $lot_new->warehouse_id = $request->warehouse_destination_id;
+            $itemId = (int)$it['id'];
 
-                                            $lot->quantity -= (int) $element['compromise_quantity'];
-                                            $lot->save();
+            // 1) Calcular stock_transfer
+            $stock_transfer = 0;
 
-                                            $lot_new->save();
-                                        }
-                                        
-                                        $lot_position = ItemPosition::find($element['item_position_id']);
-                                        if($lot_position){
-                                            if ((int) $element['compromise_quantity'] == $lot->quantity) {
-                                                if (isset($request->location_destination_id) && isset($request->position_destination_id)) {
-                                                    $lot_position->position_id = $request->position_destination_id;
-                                                    $lot_position->location_id = $request->location_destination_id;
-                                                    $lot_position->warehouse_id = $request->warehouse_destination_id;
-                                                    $lot_position->save();
-                                                } else {
-                                                    $lot_position->delete();
-                                                }
-                                            } else{
-                                                $lot_position_new = $lot_position->replicate();
-                                                
-                                                unset($lot_position_new->created_at);
-                                                unset($lot_position_new->updated_at);
-                                                $lot_position_new->stock = (int) $element['compromise_quantity'];
-                                                $lot_position_new->position_id = $request->position_destination_id;
-                                                $lot_position_new->location_id = $request->location_destination_id;
-                                                $lot_position_new->warehouse_id = $request->warehouse_destination_id;
+            if (!empty($it['has_lots']) && !empty($it['lots']) && is_array($it['lots'])) {
 
-                                                $lot_position->stock -= (int) $element['compromise_quantity'];
-                                                $lot_position->save();
+                foreach ($it['lots'] as $lotItem) {
 
-                                                $lot_position_new->save();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }else{
-                        $stock_transfer = (int)$it['stock_necessary'];
-                        //quitamos stock por posicion
-                        if(count($it['positions'])>0){
-                            foreach ($it['positions'] as $position) {
-                                $item_position = ItemPosition::where('item_id', $it['id'])->where('position_id', $position['id'])->first();
-                                if($item_position){
-                                    $stock_position = (int)$position['stock'];
-                                    if($item_position->stock>$stock_position){
-                                        $item_position->stock -= $stock_position;
-                                    }else{
-                                        $item_position->delete();
-                                    }
-                                }
-                            }
-                        }
+                    $lot = ItemLotsGroup::find($lotItem['id'] ?? null);
+                    if (!$lot) continue;
+
+                    $qtyMove = (int)($lotItem['compromise_quantity'] ?? 0);
+                    if ($qtyMove <= 0) continue;
+
+                    $stock_transfer += $qtyMove;
+
+                    if ($qtyMove >= (int)$lot->quantity) {
+                        $lot->warehouse_id = $request->warehouse_destination_id;
+                        $lot->save();
+                    } else {
+                        $lot_new = $lot->replicate();
+                        unset($lot_new->created_at, $lot_new->updated_at);
+
+                        $lot_new->quantity     = $qtyMove;
+                        $lot_new->warehouse_id = $request->warehouse_destination_id;
+
+                        $lot->quantity -= $qtyMove;
+                        $lot->save();
+
+                        $lot_new->save();
                     }
-                }else{//solo para stock directo del item
-                    $stock_transfer = (int)$it['stock_necessary'];
-                    
-                }
-                
-                if(isset($request->location_destination_id) && isset($request->position_destination_id) && !$it['has_lots']){
-                    $item_position = ItemPosition::firstOrNew(['item_id' => $it['id'], 'position_id' => $request->position_destination_id]);
-                    if (!$item_position->exists) {
-                        $item_position->stock = $stock_transfer;
-                        $item_position->location_id = $request->location_destination_id;
-                        $item_position->warehouse_id = $request->warehouse_destination_id;
-                    }else{
-                        $item_position->stock += $stock_transfer;
-                    }
-                    $item_position->save();
                 }
 
-                $inventory = new Inventory();
-                $inventory->type = 2;
-                $inventory->description = 'Traslado';
-                $inventory->item_id = $it['id'];
-                $inventory->warehouse_id = $request->warehouse_init_id;
-                $inventory->warehouse_destination_id = $request->warehouse_destination_id;
-                $inventory->quantity = $stock_transfer;
-                $inventory->inventories_transfer_id = $inventory_transfer->id;
-                $inventory->save();
-
-                 //quitamos el stock por almacén
-                 $item_warehouse_init = ItemWarehouse::where('item_id', $it['id'])->where('warehouse_id', $request->warehouse_init_id)->first();
-                 if ($item_warehouse_init) {
-                     if($item_warehouse_init->stock==0){
-                         $item_warehouse_init->delete();
-                     }  
-                 }
+            } else {
+                $stock_transfer = (int)($it['quantity'] ?? 0);
             }
 
-            if(!$inventory_transfer->state)
-            {
-                $inventory_transfer->state = true;
-                $inventory_transfer->save();
-            }
+            if ($stock_transfer <= 0) continue;
 
-            DB::connection('tenant')->commit();
-            return [
-                'success' => true,
-                'message' => 'Traslado aprobado con éxito'
-            ];
+            // (2 y 3) QUITADOS: no tocar item_warehouse ORIGEN/DESTINO
 
-        }catch (\Exception $e){
-            DB::connection('tenant')->rollBack();
-
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
+            // 4) Registrar en inventories (kardex) solamente
+            $inventory = new Inventory();
+            $inventory->type                     = 2;
+            $inventory->description              = 'Traslado';
+            $inventory->item_id                  = $itemId;
+            $inventory->warehouse_id             = $request->warehouse_init_id;
+            $inventory->warehouse_destination_id = $request->warehouse_destination_id;
+            $inventory->quantity                 = $stock_transfer;
+            $inventory->inventories_transfer_id  = $inventory_transfer->id;
+            $inventory->save();
         }
+
+        if (!$inventory_transfer->state) {
+            $inventory_transfer->state = true;
+            $inventory_transfer->save();
+        }
+
+        DB::connection('tenant')->commit();
+
+        return [
+            'success' => true,
+            'message' => 'Traslado aprobado con éxito'
+        ];
+
+    } catch (\Exception $e) {
+        DB::connection('tenant')->rollBack();
+
+        return [
+            'success' => false,
+            'message' => $e->getMessage()
+        ];
     }
+}
+
+
+
+
 
 
     public function searchItems(Request $request)

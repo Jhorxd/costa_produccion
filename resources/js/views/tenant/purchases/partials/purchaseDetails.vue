@@ -11,58 +11,44 @@
           <table class="table">
             <thead>
               <tr>
-                <!-- <th>#</th> -->
                 <th>Descripción</th>
-                <th>Almacén</th>
-                <th>Ubicación</th>
-                <th>Posición</th>
                 <th>Lote</th>
                 <th class="text-center">Unidad</th>
-                <th class="text-center">Acción</th>
-                <!--
-                <th class="text-right">Cantidad</th>
-                <th class="text-right">Valor Unitario</th>
-                <th class="text-right">Precio Unitario</th>
-                <th class="text-right">Descuento</th>
-                <th class="text-right">Cargo</th>
-                <th class="text-right">Total</th>
-                -->
-                <th></th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-center">Almacén</th>
               </tr>
             </thead>
             <tbody v-if="Object.keys(itemData).length > 0">
               <tr v-for="(row, index) in mappedItems" :key="index">
-                <td class="text-center">{{ row.item.description }}</td>
-                <td class="text-left">{{ row.data_position.warehouse_name || '-' }}</td>
-                <td class="text-left">{{ row.data_position.location_name || '-' }}</td>
-                <td class="text-left">
-                  <!-- Muestra un resumen simple de posiciones si existiera -->
-                  <span v-if="row.positions_data && row.positions_data.length">
-                    {{ row.positions_data.length }} posición(es)
-                  </span>
-                  <span v-else>
-                    {{ row.data_position.position != null ? getNamePosition(row.data_position.position) : '-' }}
-                  </span>
-                </td>
-                <td class="text-left">{{ row.lot_code || '-' }}</td>
+                <td>{{ row.item.description }}</td>
+                <td>{{ row.lot_code || '-' }}</td>
                 <td class="text-center">{{ row.item.unit_type_id }}</td>
-                <td class="text-center" v-if="!row.is_delivered">
-                  <button
-                    class="btn waves-effect waves-light btn-xs btn-success"
-                    type="button"
-                    @click.prevent="clickSelectPosition(row)"
+                <td class="text-center">{{ row.quantity }}</td>
+                <td class="text-center">
+                  <span v-if="row.is_delivered" class="text-success">
+                    <i class="fa fa-check-circle"></i> Recibido
+                  </span>
+                  <el-select
+                    v-else
+                    v-model="itemData.items[index].warehouse_id"
+                    placeholder="Seleccionar almacén"
+                    size="small"
                   >
-                    Posición
-                  </button>
+                    <el-option
+                      v-for="option in warehouses"
+                      :key="option.id"
+                      :label="option.description"
+                      :value="option.id"
+                    />
+                  </el-select>
                 </td>
-                <td class="text-center" v-else> - </td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div class="form-actions text-right pt-2 mt-2">
-          <el-button class="second-buton" @click.prevent="close">Cancelar</el-button>
+          <el-button @click.prevent="close">Cancelar</el-button>
           <el-button
             @click.prevent="saveChanges"
             type="primary"
@@ -71,87 +57,78 @@
             Guardar
           </el-button>
         </div>
-
-        <positions
-          :key="purchase_id || 0"
-          :dataModal="positionData"
-          :showDialog.sync="showDialogSelectPosition"
-          @positions-save="savePositionsData"
-          ref="positions"
-        >
-        </positions>
       </div>
     </div>
   </el-dialog>
 </template>
 
 <script>
-// import { create } from 'lodash';
-import positions from './positions.vue';
-
 export default {
-  props: [
-    'showDialog',
-    'purchase_id'
-  ],
-  components: {
-    positions
-  },
+  props: ['showDialog', 'purchase_id'],
   data() {
     return {
       titleDialog: 'Recepción de productos',
       resource: 'purchases',
       itemData: {},
-      positionData: {},
-      showDialogSelectPosition: false,
-      stock_positions: [],       // la puedes seguir usando si la necesitas
-      item_selected: '',
+      warehouses: [],
       stateSubmitButton: true
     };
   },
   computed: {
     mappedItems() {
-      // Reemplaza el optional chaining con una verificación tradicional
-      return (this.itemData.items && this.itemData.items.map(item => ({
-        ...item,
-        isPositionEnabled: this.enabledSelectPosition(item)
-      }))) || [];
+      return (this.itemData.items && this.itemData.items.map(item => ({ ...item }))) || [];
     }
   },
-  async created() {
-  },
-  async mounted() {
-    // await this.getPurchase(this.purchase_id);
+  watch: {
+    itemData: {
+      deep: true,
+      handler() {
+        this.stateSubmitButton = !this.enableSubmitButton();
+      }
+    }
   },
   methods: {
     async getPurchase(purchase_id) {
       try {
         const response = await this.$http.get(`/${this.resource}/record/${purchase_id}`);
-
-        if (response.status == 200) {
+        if (response.status === 200) {
           this.itemData = response.data.data.purchase;
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
+      }
+    },
+
+    async getWarehouses() {
+      const response = await this.$http.get(`/warehouses-by-active-establishment`);
+      if (response.data.success) {
+        this.warehouses = response.data.data;
       }
     },
 
     enableSubmitButton() {
-      if (this.itemData.items.length > 0) {
-        return this.itemData.items.some(item => item.is_delivered == 0);
-      }
-      return false;
+      if (!this.itemData.items || this.itemData.items.length === 0) return false;
+
+      const pendientes = this.itemData.items.filter(item => !item.is_delivered);
+
+      // Sin pendientes → todos entregados → bloquear
+      if (pendientes.length === 0) return false;
+
+      // Habilitar solo si todos los pendientes tienen almacén
+      return pendientes.every(item => !!item.warehouse_id);
     },
 
     async create() {
-      await this.getPurchase(this.purchase_id);
+      await Promise.all([
+        this.getPurchase(this.purchase_id),
+        this.getWarehouses()
+      ]);
       this.stateSubmitButton = !this.enableSubmitButton();
-      console.log(this.itemData);
-      console.log(this.enableSubmitButton());
     },
 
     resetData() {
       this.itemData = {};
+      this.warehouses = [];
       this.stateSubmitButton = true;
     },
 
@@ -160,90 +137,34 @@ export default {
       this.resetData();
     },
 
-    initModalDataPosition() {
-      return {
-        item_data: {
-          item_id: '',
-          item_name: '',
-          quantity: 0,
-          has_lot: '',
-          current_stock: 0,
-          stock_max: 0,
-          quantity_delivered: 0
-        },
-        // ya no dependemos de un solo position_data; lo dejamos por compatibilidad
-        position_data: {
-          expiration_date: '',
-          lot_name: '',
-          warehouse_id: '',
-          location_id: '',
-          position_id: ''
-        },
-        // NUEVO: lista de asignaciones posición + cantidad
-        positions_data: []
-      };
-    },
-
-    getNamePosition(position) {
-      const name = position.code + '-' + position.row + '-' + this.numberToLetter(position.column);
-      return name;
-    },
-
-    numberToLetter(number) {
-      let letter = '';
-      while (number > 0) {
-        const remainder = (number - 1) % 26;
-        letter = String.fromCharCode(65 + remainder) + letter;
-        number = Math.floor((number - 1) / 26);
-      }
-      return letter;
-    },
-
-    enabledSelectPosition(item) {
-      // Puedes relajar esta condición si quieres reabrir el modal aunque ya tenga posiciones
-      if (item.item.positions_data && item.item.positions_data.length) {
-        return true;
-      }
-      if (item.item.position_data == undefined && item.data_position.position == null) {
-        return true;
-      }
-      return true;
-    },
-
-    clickSelectPosition(item) {
-      this.item_selected = item;
-      this.positionData = this.initModalDataPosition();
-
-      // Si ya tenía posiciones previas, las cargamos para editar
-      if (item.item.positions_data && item.item.positions_data.length) {
-        this.positionData.positions_data = JSON.parse(JSON.stringify(item.item.positions_data));
-      }
-
-      this.positionData.item_data.item_id = item.item_id;
-      this.positionData.item_data.item_name = item.item.description;
-      this.positionData.item_data.quantity = parseInt(item.quantity);
-      this.positionData.item_data.has_lot = item.item.lots_enabled;
-      this.positionData.item_data.current_stock = item.stock;
-      this.positionData.item_data.stock_max = item.stock_max;
-      this.positionData.item_data.quantity_delivered = item.quantity_delivered;
-
-      this.showDialogSelectPosition = true;
-    },
-
-    savePositionsData(data) {
-      // data.positions_data viene desde positions.vue con la lista de { position_id, quantity, ... }
-      // No tocamos más position_data; lo dejamos por compatibilidad si lo necesitas en otro lado
-      this.$set(this.item_selected.item, 'positions_data', data.positions_data);
-      this.positionData = this.initModalDataPosition();
-    },
-
     async saveChanges() {
-      console.log(this.itemData);
-      const response = await this.$http.post(`/purchases/updatePosition`, this.itemData);
-      if (response.data.success) {
-        await this.getPurchase(this.purchase_id);
-        this.close();
-        this.$message.success("Cambios registrados correctamente");
+      try {
+        const itemsSinAlmacen = this.itemData.items
+          .filter(item => !item.is_delivered && !item.warehouse_id);
+
+        if (itemsSinAlmacen.length > 0) {
+          this.$message.error('Todos los productos deben tener un almacén asignado');
+          return;
+        }
+
+        const payload = {
+          ...this.itemData,
+          items: this.itemData.items.map(item => ({
+            id: item.id,
+            warehouse_id: item.warehouse_id,
+            quantity: item.quantity
+          }))
+        };
+
+        const response = await this.$http.post(`/purchases/updatePosition`, payload);
+        if (response.data.success) {
+          await this.getPurchase(this.purchase_id);
+          this.close();
+          this.$message.success('Stock registrado correctamente');
+        }
+      } catch (error) {
+        console.error(error);
+        this.$message.error('Error al guardar los cambios');
       }
     }
   }
