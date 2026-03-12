@@ -639,10 +639,6 @@
                 @endif
             </table>
         </td>
-        <td width="18%" class="text-right">
-            <img src="data:image/png;base64, {{ $document->qr }}" style="margin-right: -10px;" width="16%"/>
-            <p style="font-size: 8px">{{ $document->hash }}</p>
-        </td>
     </tr>
 </table>
 </body>

@@ -812,10 +812,7 @@
                 @endif
             @endif
         </td>
-        <td width="35%" class="text-right">
-            <img src="data:image/png;base64, {{ $document->qr }}" style="margin-right: -10px;"/>
-            <p style="font-size: 9px">Código Hash: {{ $document->hash }}</p>
-        </td>
+
     </tr>
 </table>
 @php

@@ -663,9 +663,6 @@
         </tr>
     @endforeach
     <tr>
-        <td class="text-center pt-1">
-            <img class="" style="max-width: 100px" src="data:image/png;base64, {{ $document->qr }}" />
-        </td>
         <td>
             @if ($document->detraction)
                 <p>Operación sujeta al Sistema de Pago de Obligaciones Tributarias</p>
@@ -694,7 +691,6 @@
                 @endif
             @endif
 
-            <p class="desc"><strong>CÓDIGO HASH:</strong> {{ $document->hash }}</p>
 
             @php
                 $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);

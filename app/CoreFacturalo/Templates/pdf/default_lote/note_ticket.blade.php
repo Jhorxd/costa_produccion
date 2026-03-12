@@ -263,12 +263,7 @@
             <td class="desc">{{ $document->optional->observations }}</td>
         </tr>
     @endif
-    <tr>
-        <td class="text-center pt-5"><img class="qr_code" src="data:image/png;base64, {{ $document->qr }}" /></td>
-    </tr>
-    <tr>
-        <td class="text-center desc">Código Hash: {{ $document->hash }}</td>
-    </tr>
+
     <tr>
         <td class="text-center desc pt-5">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
     </tr>
