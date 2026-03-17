@@ -1006,6 +1006,7 @@ export default {
             this.setGlobalIgvToItem()
         },
         async clickAddItem() {
+            // 1. Validaciones de Lotes (Manual)
             if (this.form.item.lots_enabled) {
                 if (!this.lot_code)
                     return this.$message.error('Código de lote es requerido');
@@ -1014,6 +1015,7 @@ export default {
                     return this.$message.error('Fecha de vencimiento es requerido si lotes esta habilitado.');
             }
 
+            // 2. Validaciones de Series
             if (this.form.item.series_enabled) {
                 if (this.lots.length > this.form.quantity)
                     return this.$message.error('La cantidad de series registradas es superior al stock');
@@ -1022,25 +1024,30 @@ export default {
                     return this.$message.error('La cantidad de series registradas son diferentes al stock');
             }
 
+            // 3. Lógica de Impuestos para Compra
             let affectation_igv_types_exonerated_unaffected = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']
-
             let unit_price = this.form.unit_price
 
             if (!affectation_igv_types_exonerated_unaffected.includes(this.form.affectation_igv_type_id)) {
-
+                // Calcula el precio dependiendo de si la compra incluye IGV o no
                 unit_price = (this.form.purchase_has_igv) ? this.form.unit_price : this.form.unit_price * (1 + this.percentageIgv);
-
             }
 
+            // 4. Manejo de Fecha de Vencimiento
             let date_of_due = this.form.date_of_due
             if (this.date_of_due != null && this.form.update_date_of_due && !this.form.item.lots_enabled) {
                 date_of_due = this.date_of_due;
             }
 
+            // 5. Preparación de datos para la fila
             this.form.item.unit_price = unit_price
-            this.form.item.presentation = this.item_unit_type;
+            this.form.item.presentation = this.item_unit_type; // Se asigna la presentación seleccionada
             this.form.affectation_igv_type = _.find(this.affectation_igv_types, {'id': this.form.affectation_igv_type_id})
+            
+            // Cálculo de la fila
             this.row = await calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv)
+            
+            // 6. Asignación de metadatos de compra/lote
             this.row.lot_code = await this.lot_code
             this.row.lots = await this.lots
             this.row.update_price = this.form.update_price
@@ -1048,13 +1055,21 @@ export default {
             this.row.update_purchase_price = this.form.update_purchase_price
             this.row.sale_unit_price = this.sale_unit_price
 
+            // Ejecuta tu función de cambio de almacén
             this.row = this.changeWarehouse(this.row)
 
             this.row.date_of_due = date_of_due
-
             this.row.item.name_product_pdf = this.row.name_product_pdf || ''
 
+            // 7. RESET Y EMISIÓN
+            // Primero inicializamos el formulario con tu función original
             this.initForm()
+
+            // --- LIMPIEZA ADICIONAL DE SEGURIDAD (FACTOR Y PRESENTACIÓN) ---
+            this.factorSelected = 1;      // Reset del factor a la unidad
+            this.item_unit_type = {};    // Limpieza de la presentación
+            this.label_selected = '';    // Limpieza de etiqueta visual
+            // ---------------------------------------------------------------
 
             this.$emit('add', this.row)
         },

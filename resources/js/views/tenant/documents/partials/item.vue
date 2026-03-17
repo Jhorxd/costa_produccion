@@ -1826,145 +1826,126 @@ export default {
         applyValidateStock() {
             return (this.validate_stock_add_item && (this.isFromInvoice !== undefined && this.isFromInvoice) && (this.isUpdateDocument !== undefined && !this.isUpdateDocument))
         },
-        async clickAddItem()
-        {
-            if(this.isRestrictedForSale) return this.$message.error('No puede agregar el producto, está restringido para venta.')
+        async clickAddItem() {
+            // 1. Validaciones de Restricción y Stock
+            if (this.isRestrictedForSale) return this.$message.error('No puede agregar el producto, está restringido para venta.')
 
             if (this.applyValidateStock()) {
                 const validate_current_stock = await this.validateCurrentStock()
                 if (!validate_current_stock.success) return this.$message.error(validate_current_stock.message)
             }
 
-            if(this.config.condition_sale_purchase_price_to_item) {
-                if (this.form.unit_price_value < this.form.item.purchase_unit_value) return this.$message.error('El Precio Unitario debe ser mayor o igual al costo de compra');
+            // 2. Validación de Precio vs Costo de Compra
+            if (this.config.condition_sale_purchase_price_to_item) {
+                if (this.form.unit_price_value < this.form.item.purchase_unit_value) {
+                    return this.$message.error('El Precio Unitario debe ser mayor o igual al costo de compra');
+                }
             }
 
             if (!this.form.item.description || !this.form.item.description.trim().length) {
                 return this.$message.error('La descripción es requerida');
             }
 
+            // 3. Validaciones de Precio Unitario (Notas vs Venta normal)
             if (this.isNoteErrorDescription) {
                 if (parseFloat(this.form.unit_price_value) < 0) return this.$message.error('El Precio Unitario debe ser mayor o igual 0');
             } else {
                 if (parseFloat(this.form.unit_price_value) <= 0) return this.$message.error('El Precio Unitario debe ser mayor a 0');
             }
 
-            if (parseInt(this.form.quantity)>parseInt(this.selectedRow.stock)){
+            // 4. Validaciones de Stock Disponible y Stock Mínimo
+            if (parseInt(this.form.quantity) > parseInt(this.selectedRow.stock)) {
                 return this.$message.error('El stock requerido supera al stock disponible');
             }
-            console.log(this.selectedRow);
             
-            if(this.selectedRow.stock_min!=null){
+            if (this.selectedRow.stock_min != null) {
                 const stock_available = parseInt(this.selectedRow.stock) - parseInt(this.selectedRow.stock_min);
-                if(parseInt(this.form.quantity)>stock_available){
-                    return this.$message.error('La cantidad requerida supera al stock mínimo. (Disponible: '+stock_available+')');
+                if (parseInt(this.form.quantity) > stock_available) {
+                    return this.$message.error('La cantidad requerida supera al stock mínimo. (Disponible: ' + stock_available + ')');
                 }
             }
 
-            // if(this.form.quantity < this.getMinQuantity()){
-            //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);
-            // }
             this.validateQuantity()
 
+            // 5. Validación de Lotes
             if (this.form.item.lots_enabled) {
-                if (!this.form.IdLoteSelected)
-                    return this.$message.error('Debe seleccionar lote.');
+                if (!this.form.IdLoteSelected) return this.$message.error('Debe seleccionar lote.');
             }
-            let extra = this.form.item.extra
 
+            let extra = this.form.item.extra
             if (this.validateTotalItem().total_item) return;
 
+            // 6. Cálculo de IGV
             let affectation_igv_type_id = this.form.affectation_igv_type_id
-            // let unit_price = (this.form.has_igv) ? this.form.unit_price_value : this.form.unit_price_value * 1.18;
             let unit_price = this.form.unit_price_value;
             if (this.form.has_igv === false) {
-                if (
-                    affectation_igv_type_id === "20" ||
-                    affectation_igv_type_id === "21" ||
-                    affectation_igv_type_id === "40"
-                ) {
-                    // do nothing
-                    // exonerado de igv
-                } else {
+                if (!["20", "21", "40"].includes(affectation_igv_type_id)) {
                     unit_price = this.form.unit_price_value * (1 + this.percentageIgv);
-
                 }
             }
 
-
-            //validar precio compra y venta
-            if (this.configuration) {
-                if (this.configuration.validate_purchase_sale_unit_price) {
-                    let val_purchase_unit_price = parseFloat(this.form.item.purchase_unit_price)
-
-                    if (val_purchase_unit_price > parseFloat(unit_price)) {
-                        return this.$message.error(`El precio de compra no puede ser superior al precio de venta (P. Compra: ${val_purchase_unit_price})`)
-                    }
+            // 7. Validación de margen de ganancia (Configuración)
+            if (this.configuration && this.configuration.validate_purchase_sale_unit_price) {
+                let val_purchase_unit_price = parseFloat(this.form.item.purchase_unit_price)
+                if (val_purchase_unit_price > parseFloat(unit_price)) {
+                    return this.$message.error(`El precio de compra no puede ser superior al precio de venta (P. Compra: ${val_purchase_unit_price})`)
                 }
             }
 
-
+            // 8. Preparación de datos para el cálculo de la fila
             this.form.input_unit_price_value = this.form.unit_price_value;
-
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
-            this.form.item.presentation = this.item_unit_type;
-            this.form.affectation_igv_type = _.find(this.affectation_igv_types, {'id': affectation_igv_type_id});
+            this.form.item.presentation = this.item_unit_type; // Importante para el factor
+            this.form.affectation_igv_type = _.find(this.affectation_igv_types, { 'id': affectation_igv_type_id });
 
             let IdLoteSelected = this.form.IdLoteSelected
             let document_item_id = this.form.document_item_id
 
+            // Manejo de descuentos exactos
             this.form.discounts.forEach(discount => {
-                    if ((this.configuration.global_discount_type_id === "02" && this.configuration.exact_discount) && discount.discount_type.id == "00" ) {
-                        discount.amount_exact = _.round(discount.amount / ( 1 + this.percentageIgv), 2)
-                    } 
+                if ((this.configuration.global_discount_type_id === "02" && this.configuration.exact_discount) && discount.discount_type.id == "00") {
+                    discount.amount_exact = _.round(discount.amount / (1 + this.percentageIgv), 2)
+                }
             })
 
+            // 9. Generación de la fila (row)
             this.row = calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv);
-
             this.row.item.name_product_pdf = this.row.name_product_pdf || '';
-            if (this.recordItem) {
-                this.row.indexi = this.recordItem.indexi
-            }
 
-            let select_lots = await _.filter(this.row.item.lots, {'has_sale': true})
-            let un_select_lots = await _.filter(this.row.item.lots, {'has_sale': false})
-
+            // 10. Validación de Series y Stock Final
+            let select_lots = await _.filter(this.row.item.lots, { 'has_sale': true })
             if (this.form.item.series_enabled) {
                 if (select_lots.length != this.form.quantity)
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
             }
 
-            if(this.form.item.stock <= 0)
-            {
-                return this.$message.error('El producto no cuenta con stock suficiente');
-            }
+            if (this.form.item.stock <= 0) return this.$message.error('El producto no cuenta con stock suficiente');
 
-            // this.row.edit = false;
-            // this.initForm();
+            // 11. Asignaciones finales a la fila
             this.row.item.extra = extra;
-            //this.initializeFields()
-
-            if (this.recordItem) {
-                this.row.indexi = this.recordItem.indexi
-            }
-
+            if (this.recordItem) this.row.indexi = this.recordItem.indexi
             this.row.IdLoteSelected = IdLoteSelected
             this.row.document_item_id = document_item_id
+            this.row.label_selected = this.label_selected;
 
             this.showMessageDetraction()
 
-            //console.log("row add",this.row)
-            this.row.label_selected = this.label_selected;
-            console.log("row add",this.row)
-
+            // 12. AGREGAR AL CARRITO
             this.$emit('add', this.row);
+
+            // --- 13. LIMPIEZA TOTAL PARA EL PRÓXIMO ITEM ---
             this.factorSelected = 1;
+            this.item_unit_type = {};
+            this.label_selected = '';
+            this.form.item_unit_type_id = null;
+            
             this.form.description = ''
             this.form.item_id = null
-            this.form.quantity=0;
-            this.form.unit_price_value=0;
-            this.readonly_total=0;
+            this.form.quantity = 0;
+            this.form.unit_price_value = 0;
+            this.readonly_total = 0;
+            // ----------------------------------------------
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()

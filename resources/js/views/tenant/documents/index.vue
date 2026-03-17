@@ -182,8 +182,8 @@
                         <th v-if="columns.sales_note.visible">Nota de venta</th>
                         <th v-if="columns.order_note.visible">Pedidos</th>
                         <th v-if="columns.send_it.visible">Email Enviado</th>
-                        <!-- <th>Estado</th> -->
                         <th>Estado</th>
+                        <th>Estado SUNAT</th>
                         <th v-if="columns.user_name.visible">Usuario</th>
                         <th
                             class="text-right"
@@ -388,7 +388,7 @@
                             </span>
                         </td>
 
-                        <!-- <td>
+                        <td>
                             <el-tooltip
                                 v-if="tooltip(row, false)"
                                 class="item"
@@ -454,7 +454,7 @@
                                     ></i>
                                 </el-tooltip>
                             </template>
-                        </td> -->
+                        </td>
                         <td>
                             <span
                                 class="badge bg-secondary text-white"

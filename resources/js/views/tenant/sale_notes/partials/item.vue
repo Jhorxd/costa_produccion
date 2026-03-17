@@ -1704,10 +1704,7 @@ export default {
 
         },
         async clickAddItem() {
-
-            // if(this.form.quantity < this.getMinQuantity()){
-            //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);
-            // }
+            // 1. Validaciones
             this.validateQuantity()
             if (!this.form.item.description || !this.form.item.description.trim().length) {
                 return this.$message.error('La descripción es requerida');
@@ -1716,77 +1713,73 @@ export default {
             const validate_id_lote_selected = this.validateIdLoteSelected()
             if(!validate_id_lote_selected.success) return this.$message.error(validate_id_lote_selected.message)
 
-
             if (this.validateTotalItem().total_item) return;
 
+            // 2. Lógica de IGV y Precio
             let affectation_igv_type_id = this.form.affectation_igv_type_id
-            // let unit_price = (this.form.has_igv) ? this.form.unit_price_value : this.form.unit_price_value * 1.18;
             let unit_price = this.form.unit_price_value;
+            
             if (this.form.has_igv === false) {
-                if(
-                    affectation_igv_type_id === "20" ||
-                    affectation_igv_type_id === "21" ||
-                    affectation_igv_type_id === "40"
-                ){
-                    // do nothing
-                    // exonerado de igv
-                }else{
+                if(!["20", "21", "40"].includes(affectation_igv_type_id)){
                     unit_price = this.form.unit_price_value * (1 + this.percentageIgv);
-
                 }
             }
 
-            //validar precio compra y venta
-            if(this.configuration.validate_purchase_sale_unit_price)
-            {
+            // 3. Validar precio compra vs venta
+            if(this.configuration.validate_purchase_sale_unit_price) {
                 let val_purchase_unit_price = parseFloat(this.form.item.purchase_unit_price)
-
                 if(val_purchase_unit_price > parseFloat(unit_price)){
                     return this.$message.error(`El precio de compra no puede ser superior al precio de venta (P. Compra: ${val_purchase_unit_price})`)
                 }
             }
 
+            // 4. Asignación de datos al formulario antes de calcular
             this.form.input_unit_price_value = this.form.unit_price_value;
-
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
+            
+            // IMPORTANTE: Se asigna la presentación (que contiene el factor) a la fila
             this.form.item.presentation = this.item_unit_type;
             this.form.affectation_igv_type = _.find(this.affectation_igv_types, {'id': affectation_igv_type_id});
 
             let IdLoteSelected = this.form.IdLoteSelected
             let document_item_id = this.form.document_item_id
+            
+            // Generar la fila final
             this.row = calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv);
-
             this.row.item.name_product_pdf = this.row.name_product_pdf || '';
 
-
+            // 5. Validación de Series y Stock
             let select_lots = await _.filter(this.row.item.lots, {'has_sale': true})
-            let un_select_lots = await _.filter(this.row.item.lots, {'has_sale': false})
-
             if (this.form.item.series_enabled) {
                 if (select_lots.length != this.form.quantity)
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
             }
 
-            if(this.form.item.stock <= 0)
-            {
+            if(this.form.item.stock <= 0) {
                 return this.$message.error('El producto no cuenta con stock suficiente');
             }
-            // this.row.item.lots = un_select_lots
-            // this.row.lots = select_lots
 
             if (this.recordItem) this.row.aux_index = this.recordItem.aux_index
 
             this.row.IdLoteSelected = IdLoteSelected
             this.row.document_item_id = document_item_id
 
+            // 6. Agregar al carrito
             this.$emit('add', this.row);
-            this.factorSelected = 1;
+
+            // --- 7. REINICIO TOTAL DEL FORMULARIO ---
+            this.factorSelected = 1;             // Reinicia el factor
+            this.item_unit_type = {};           // Limpia el objeto de presentación
+            this.label_selected = '';           // Limpia la etiqueta de precio (ej: "P. Mayor")
+            this.form.item_unit_type_id = null; // Limpia el ID de la unidad seleccionada
+            
             this.form.description = ''
             this.form.item_id = null
-            this.form.quantity=0;
-            this.form.unit_price_value=0;
-            this.readonly_total=0;
+            this.form.quantity = 0;
+            this.form.unit_price_value = 0;
+            this.readonly_total = 0;
+            // ----------------------------------------
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()
