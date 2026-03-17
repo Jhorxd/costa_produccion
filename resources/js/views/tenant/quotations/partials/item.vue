@@ -1433,6 +1433,14 @@ export default {
             this.$emit('update:showDialog', false)
         },
         async changeItem() {
+            // --- RESET DE SEGURIDAD ---
+            // Limpiamos factor y presentación para que el nuevo producto no herede datos del anterior
+            this.factorSelected = 1;
+            this.item_unit_type = {};
+            this.label_selected = '';
+            this.form.item_unit_type_id = null;
+            // ---------------------------
+
             this.form.item = _.find(this.items, {'id': this.form.item_id});
             this.form.item = this.setExtraFieldOfitem(this.form.item);
             this.item_unit_types = this.form.item.item_unit_types;
@@ -1501,91 +1509,91 @@ export default {
             this.total_item = null
         },
         async clickAddItem() {
-    console.log('unit_price_value ANTES:', this.form.unit_price_value)
-    console.log('unit_price ANTES:', this.form.unit_price)
-    console.log('quantity ANTES:', this.form.quantity)
+        console.log('unit_price_value ANTES:', this.form.unit_price_value)
+        console.log('unit_price ANTES:', this.form.unit_price)
+        console.log('quantity ANTES:', this.form.quantity)
 
-    // 1. Validaciones iniciales
-    if (this.isRestrictedForSale) {
-        return this.$message.error('No puede agregar el producto, está restringido para venta.')
-    }
-
-    if (!this.form.item.description || !this.form.item.description.trim().length) {
-        return this.$message.error('La descripción es requerida');
-    }
-
-    this.validateQuantity()
-
-    if (this.validateTotalItem().total_item) return;
-
-    // 2. Lógica de Impuestos (IGV)
-    let affectation_igv_type_id = this.form.affectation_igv_type_id
-    let unit_price = this.form.unit_price_value;
-
-    if (this.form.has_igv === false) {
-        if (
-            affectation_igv_type_id === "20" ||
-            affectation_igv_type_id === "21" ||
-            affectation_igv_type_id === "40"
-        ) {
-            // exonerado de igv
-        } else {
-            unit_price = this.form.unit_price_value * (1 + this.percentageIgv);
+        // 1. Validaciones iniciales
+        if (this.isRestrictedForSale) {
+            return this.$message.error('No puede agregar el producto, está restringido para venta.')
         }
-    }
 
-    // 3. Preparación de datos del item
-    this.form.input_unit_price_value = this.form.unit_price_value;
-    this.form.unit_price = unit_price;
-    this.form.item.unit_price = unit_price;
-    this.form.unit_price_value = unit_price;
+        if (!this.form.item.description || !this.form.item.description.trim().length) {
+            return this.$message.error('La descripción es requerida');
+        }
 
-    this.form.item.extra_attr_name = this.form.extra_attr_name;
-    this.form.item.extra_attr_value = this.form.extra_attr_value;
-    
-    // Asignamos la presentación seleccionada (el factor viene dentro de este objeto)
-    this.form.item.presentation = this.item_unit_type; 
-    
-    this.form.affectation_igv_type = _.find(this.affectation_igv_types, {'id': affectation_igv_type_id});
+        this.validateQuantity()
 
-    // 4. Cálculo de la fila (generación del objeto row)
-    this.row = calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv);
+        if (this.validateTotalItem().total_item) return;
 
-    this.row.item.name_product_pdf = this.row.name_product_pdf || '';
-    
-    if (this.recordItem) {
-        this.row.indexi = this.recordItem.indexi
-    }
+        // 2. Lógica de Impuestos (IGV)
+        let affectation_igv_type_id = this.form.affectation_igv_type_id
+        let unit_price = this.form.unit_price_value;
 
-    // 5. Emitir evento para agregar al carrito
-    this.$emit('add', this.row);
+        if (this.form.has_igv === false) {
+            if (
+                affectation_igv_type_id === "20" ||
+                affectation_igv_type_id === "21" ||
+                affectation_igv_type_id === "40"
+            ) {
+                // exonerado de igv
+            } else {
+                unit_price = this.form.unit_price_value * (1 + this.percentageIgv);
+            }
+        }
 
-    // --- 6. BLOQUE DE REINICIO / LIMPIEZA ---
-    // Reinicio de campos estándar
-    this.form.description = ''
-    this.form.item_id = null
-    this.form.quantity = 0;
-    this.form.unit_price_value = 0;
-    this.readonly_total = 0;
+        // 3. Preparación de datos del item
+        this.form.input_unit_price_value = this.form.unit_price_value;
+        this.form.unit_price = unit_price;
+        this.form.item.unit_price = unit_price;
+        this.form.unit_price_value = unit_price;
 
-    // Reinicio de Factor y Presentación (Lo que faltaba)
-    this.factorSelected = 1;               // Volver al factor base 1
-    this.item_unit_type = {};             // Limpiar el objeto de presentación
-    this.label_selected = '';             // Limpiar etiqueta de precio seleccionado
-    this.form.item_unit_type_id = null;   // Limpiar ID de unidad de presentación
-    // ----------------------------------------
+        this.form.item.extra_attr_name = this.form.extra_attr_name;
+        this.form.item.extra_attr_value = this.form.extra_attr_value;
+        
+        // Asignamos la presentación seleccionada (el factor viene dentro de este objeto)
+        this.form.item.presentation = this.item_unit_type; 
+        
+        this.form.affectation_igv_type = _.find(this.affectation_igv_types, {'id': affectation_igv_type_id});
 
-    // 7. Acciones post-agregado
-    if (this.search_item_by_barcode) {
-        this.cleanItems()
-    }
+        // 4. Cálculo de la fila (generación del objeto row)
+        this.row = calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv);
 
-    if (this.recordItem) {
-        this.close();
-    } else {
-        this.setFocusSelectItem();
-    }
-},
+        this.row.item.name_product_pdf = this.row.name_product_pdf || '';
+        
+        if (this.recordItem) {
+            this.row.indexi = this.recordItem.indexi
+        }
+
+        // 5. Emitir evento para agregar al carrito
+        this.$emit('add', this.row);
+
+        // --- 6. BLOQUE DE REINICIO / LIMPIEZA ---
+        // Reinicio de campos estándar
+        this.form.description = ''
+        this.form.item_id = null
+        this.form.quantity = 0;
+        this.form.unit_price_value = 0;
+        this.readonly_total = 0;
+
+        // Reinicio de Factor y Presentación (Lo que faltaba)
+        this.factorSelected = 1;               // Volver al factor base 1
+        this.item_unit_type = {};             // Limpiar el objeto de presentación
+        this.label_selected = '';             // Limpiar etiqueta de precio seleccionado
+        this.form.item_unit_type_id = null;   // Limpiar ID de unidad de presentación
+        // ----------------------------------------
+
+        // 7. Acciones post-agregado
+        if (this.search_item_by_barcode) {
+            this.cleanItems()
+        }
+
+        if (this.recordItem) {
+            this.close();
+        } else {
+            this.setFocusSelectItem();
+        }
+    },
         cleanItems() {
             this.items = []
             this.$refs.selectBarcode.$el.getElementsByTagName('input')[0].focus()

@@ -950,6 +950,14 @@ export default {
             this.form.item.unit_type_id = row.unit_type_id
         },
         changeItem() {
+            // --- RESET DE SEGURIDAD PARA COMPRAS ---
+            // Limpiamos factor y presentación para que el nuevo producto empiece como unidad simple
+            this.factorSelected = 1;
+            this.item_unit_type = {};
+            this.label_selected = '';
+            this.form.item_unit_type_id = null;
+            // ---------------------------------------
+
             const item = {..._.find(this.items, {'id': this.form.item_id})};
             this.form.item = item;
             this.form.item = this.setExtraFieldOfitem(this.form.item)
@@ -970,7 +978,6 @@ export default {
             this.form.has_isc = this.form.item.purchase_has_isc
             this.form.percentage_isc = this.form.item.purchase_percentage_isc
             this.form.system_isc_type_id = this.form.item.purchase_system_isc_type_id
-
         },
         setGlobalPurchaseCurrencyToItem(){
 

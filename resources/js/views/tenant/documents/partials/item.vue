@@ -1710,16 +1710,25 @@ export default {
         },
         async changeItem() {
             this.clearExtraInfoItem()
+            
+            // --- RESET DE SEGURIDAD PARA NUEVO PRODUCTO ---
+            // Esto evita que el producto nuevo herede el factor o la caja del anterior
+            this.factorSelected = 1;
+            this.item_unit_type = {};
+            this.label_selected = '';
+            this.form.item_unit_type_id = null;
+            // ----------------------------------------------
+
             this.form.item = _.find(this.items, {'id': this.form.item_id});
             this.form.item = this.setExtraFieldOfitem(this.form.item);
             this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types;
 
             this.form.unit_price_value = this.form.item.sale_unit_price;
+            
             if(!this.configuration.enable_list_product && this.selectedOptionPrice !== 1) {
                 if(this.form.item_unit_types.length) {
                     let first_list = this.form.item_unit_types[0];
                     let priceSelected = first_list[this.selectedOptionPrice];
-                    // row.sale_unit_price = priceSelected;
                     this.form.unit_price_value = priceSelected;
                 } else {
                     this.form.unit_price_value = "0"
@@ -1735,17 +1744,14 @@ export default {
             this.cleanTotalItem();
             this.showListStock = true
 
-
-            //asignar variables isc
+            // Asignar variables isc
             this.form.has_isc = this.form.item.has_isc
             this.form.percentage_isc = this.form.item.percentage_isc
             this.form.system_isc_type_id = this.form.item.system_isc_type_id
 
-
             if (this.hasAttributes()) {
                 const contex = this
                 this.form.item.attributes.forEach((row) => {
-
                     contex.form.attributes.push({
                         attribute_type_id: row.attribute_type_id,
                         description: row.description,
@@ -1760,16 +1766,6 @@ export default {
             this.form.lots_group = this.form.item.lots_group
             this.setExtraElements(this.form.item);
 
-            // if (!this.recordItem) {
-            //     await this.form.item.warehouses.forEach(element => {
-            //         if(element.checked){
-            //             this.form.warehouse_id = element.warehouse_id
-            //         }
-            //     });
-            // }
-
-            //this.item_unit_types = this.form.item.item_unit_types;
-            //(this.item_unit_types.length > 0) ? this.has_list_prices = true : this.has_list_prices = false;
             if (this.form.item.name_product_pdf && this.config.item_name_pdf_description) {
                 this.form.name_product_pdf = this.form.item.name_product_pdf;
             }
@@ -1777,7 +1773,6 @@ export default {
             this.addDescriptionToDocumentItem()
             this.calculateTotal()
             this.getLastPriceItem()
-
         },
         addDescriptionToDocumentItem()
         {
@@ -1827,7 +1822,7 @@ export default {
             return (this.validate_stock_add_item && (this.isFromInvoice !== undefined && this.isFromInvoice) && (this.isUpdateDocument !== undefined && !this.isUpdateDocument))
         },
         async clickAddItem() {
-            // 1. Validaciones de Restricción y Stock
+            // 1. Validaciones de Restricción y Stock Base
             if (this.isRestrictedForSale) return this.$message.error('No puede agregar el producto, está restringido para venta.')
 
             if (this.applyValidateStock()) {
@@ -1846,24 +1841,31 @@ export default {
                 return this.$message.error('La descripción es requerida');
             }
 
-            // 3. Validaciones de Precio Unitario (Notas vs Venta normal)
+            // 3. Validaciones de Precio Unitario
             if (this.isNoteErrorDescription) {
                 if (parseFloat(this.form.unit_price_value) < 0) return this.$message.error('El Precio Unitario debe ser mayor o igual 0');
             } else {
                 if (parseFloat(this.form.unit_price_value) <= 0) return this.$message.error('El Precio Unitario debe ser mayor a 0');
             }
 
-            // 4. Validaciones de Stock Disponible y Stock Mínimo
-            if (parseInt(this.form.quantity) > parseInt(this.selectedRow.stock)) {
-                return this.$message.error('El stock requerido supera al stock disponible');
+            // --- 4. VALIDACIÓN DE STOCK REAL (CONSIDERANDO EL FACTOR/PRESENTACIÓN) ---
+            // Calculamos el impacto real en el inventario: Cantidad x Factor (Ej: 2 cajas x 30 unidades = 60)
+            let factor = parseFloat(this.factorSelected || 1);
+            let quantity_real = parseFloat(this.form.quantity) * factor;
+            let stock_actual = parseFloat(this.selectedRow.stock);
+
+            if (quantity_real > stock_actual) {
+                return this.$message.error(`El stock requerido (${quantity_real} unidades) supera al stock disponible (${stock_actual} unidades)`);
             }
             
+            // Validación de Stock Mínimo factorizada
             if (this.selectedRow.stock_min != null) {
-                const stock_available = parseInt(this.selectedRow.stock) - parseInt(this.selectedRow.stock_min);
-                if (parseInt(this.form.quantity) > stock_available) {
-                    return this.$message.error('La cantidad requerida supera al stock mínimo. (Disponible: ' + stock_available + ')');
+                const stock_available = stock_actual - parseFloat(this.selectedRow.stock_min);
+                if (quantity_real > stock_available) {
+                    return this.$message.error(`La cantidad requerida (${quantity_real} unidades) supera al stock mínimo permitido. (Disponible real: ${stock_available} unidades)`);
                 }
             }
+            // ------------------------------------------------------------------------
 
             this.validateQuantity()
 
@@ -1884,7 +1886,7 @@ export default {
                 }
             }
 
-            // 7. Validación de margen de ganancia (Configuración)
+            // 7. Validación de margen de ganancia
             if (this.configuration && this.configuration.validate_purchase_sale_unit_price) {
                 let val_purchase_unit_price = parseFloat(this.form.item.purchase_unit_price)
                 if (val_purchase_unit_price > parseFloat(unit_price)) {
@@ -1892,24 +1894,24 @@ export default {
                 }
             }
 
-            // 8. Preparación de datos para el cálculo de la fila
+            // 8. Preparación de datos
             this.form.input_unit_price_value = this.form.unit_price_value;
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
-            this.form.item.presentation = this.item_unit_type; // Importante para el factor
+            this.form.item.presentation = this.item_unit_type; 
             this.form.affectation_igv_type = _.find(this.affectation_igv_types, { 'id': affectation_igv_type_id });
 
             let IdLoteSelected = this.form.IdLoteSelected
             let document_item_id = this.form.document_item_id
 
-            // Manejo de descuentos exactos
+            // Manejo de descuentos
             this.form.discounts.forEach(discount => {
                 if ((this.configuration.global_discount_type_id === "02" && this.configuration.exact_discount) && discount.discount_type.id == "00") {
                     discount.amount_exact = _.round(discount.amount / (1 + this.percentageIgv), 2)
                 }
             })
 
-            // 9. Generación de la fila (row)
+            // 9. Generación de la fila
             this.row = calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv);
             this.row.item.name_product_pdf = this.row.name_product_pdf || '';
 
@@ -1922,7 +1924,7 @@ export default {
 
             if (this.form.item.stock <= 0) return this.$message.error('El producto no cuenta con stock suficiente');
 
-            // 11. Asignaciones finales a la fila
+            // 11. Asignaciones finales
             this.row.item.extra = extra;
             if (this.recordItem) this.row.indexi = this.recordItem.indexi
             this.row.IdLoteSelected = IdLoteSelected
@@ -1934,7 +1936,7 @@ export default {
             // 12. AGREGAR AL CARRITO
             this.$emit('add', this.row);
 
-            // --- 13. LIMPIEZA TOTAL PARA EL PRÓXIMO ITEM ---
+            // --- 13. LIMPIEZA TOTAL ---
             this.factorSelected = 1;
             this.item_unit_type = {};
             this.label_selected = '';
@@ -1945,7 +1947,6 @@ export default {
             this.form.quantity = 0;
             this.form.unit_price_value = 0;
             this.readonly_total = 0;
-            // ----------------------------------------------
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()

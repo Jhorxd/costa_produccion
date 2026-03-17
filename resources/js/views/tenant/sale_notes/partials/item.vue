@@ -1442,10 +1442,9 @@ export default {
             }
 
         },
-        async updateItem(){
+        async updateItem() {
 
-            if (this.isUpdateItem)
-            {
+            if (this.isUpdateItem) {
                 await this.reloadDataItems(this.recordItem.item_id)
 
                 if (this.recordItem.item.barcode === this.various_item_barcode) {
@@ -1465,18 +1464,34 @@ export default {
 
                 this.setIdLoteSelected()
                 this.setItemLots()
+                
+                // --- CARGA DE DATOS DE EDICIÓN ---
                 this.setPresentationEditItem()
+                
+                // Aseguramos que el factor se cargue del item que estamos editando
+                if (this.recordItem.item && this.recordItem.item.presentation) {
+                    this.factorSelected = parseFloat(this.recordItem.item.presentation.quantity_unit);
+                    this.item_unit_type = this.recordItem.item.presentation;
+                } else {
+                    this.factorSelected = 1;
+                    this.item_unit_type = {};
+                }
+
                 this.setNameProductPdf()
                 this.calculateQuantity()
 
             } else {
+                // --- LIMPIEZA AL SALIR DE EDICIÓN ---
+                // Aquí es donde evitamos que "tome el del anterior"
                 this.isUpdateWarehouseId = null;
+                this.factorSelected = 1;      // Reset a unidad
+                this.item_unit_type = {};    // Borra la caja/presentación
+                this.label_selected = '';    // Borra la etiqueta visual
 
                 if (this.various_item) {
                     await this.setFocusSelectItem();
                 }
             }
-
         },
         // edicion de item
         setPresentationEditItem() {
@@ -1704,7 +1719,7 @@ export default {
 
         },
         async clickAddItem() {
-            // 1. Validaciones
+            // 1. Validaciones básicas
             this.validateQuantity()
             if (!this.form.item.description || !this.form.item.description.trim().length) {
                 return this.$message.error('La descripción es requerida');
@@ -1714,6 +1729,16 @@ export default {
             if(!validate_id_lote_selected.success) return this.$message.error(validate_id_lote_selected.message)
 
             if (this.validateTotalItem().total_item) return;
+
+            // --- NUEVA VALIDACIÓN DE STOCK REAL (FACTORIZADO) ---
+            // Calculamos cuánto se va a descontar realmente del inventario
+            let quantity_real = parseFloat(this.form.quantity) * parseFloat(this.factorSelected || 1);
+            let current_stock = parseFloat(this.form.item.stock);
+
+            if (quantity_real > current_stock) {
+                return this.$message.error(`Stock insuficiente. Cantidad solicitada (${quantity_real} unidades) supera el stock disponible (${current_stock} unidades).`);
+            }
+            // ----------------------------------------------------
 
             // 2. Lógica de IGV y Precio
             let affectation_igv_type_id = this.form.affectation_igv_type_id
@@ -1733,53 +1758,44 @@ export default {
                 }
             }
 
-            // 4. Asignación de datos al formulario antes de calcular
+            // 4. Asignación de datos al formulario
             this.form.input_unit_price_value = this.form.unit_price_value;
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
-            
-            // IMPORTANTE: Se asigna la presentación (que contiene el factor) a la fila
             this.form.item.presentation = this.item_unit_type;
             this.form.affectation_igv_type = _.find(this.affectation_igv_types, {'id': affectation_igv_type_id});
 
             let IdLoteSelected = this.form.IdLoteSelected
             let document_item_id = this.form.document_item_id
             
-            // Generar la fila final
             this.row = calculateRowItem(this.form, this.currencyTypeIdActive, this.exchangeRateSale, this.percentageIgv);
             this.row.item.name_product_pdf = this.row.name_product_pdf || '';
 
-            // 5. Validación de Series y Stock
+            // 5. Validación de Series
             let select_lots = await _.filter(this.row.item.lots, {'has_sale': true})
             if (this.form.item.series_enabled) {
                 if (select_lots.length != this.form.quantity)
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
             }
 
-            // if(this.form.item.stock <= 0) {
-            //     return this.$message.error('El producto no cuenta con stock suficiente');
-            // }
-
             if (this.recordItem) this.row.aux_index = this.recordItem.aux_index
-
             this.row.IdLoteSelected = IdLoteSelected
             this.row.document_item_id = document_item_id
 
             // 6. Agregar al carrito
             this.$emit('add', this.row);
 
-            // --- 7. REINICIO TOTAL DEL FORMULARIO ---
-            this.factorSelected = 1;             // Reinicia el factor
-            this.item_unit_type = {};           // Limpia el objeto de presentación
-            this.label_selected = '';           // Limpia la etiqueta de precio (ej: "P. Mayor")
-            this.form.item_unit_type_id = null; // Limpia el ID de la unidad seleccionada
+            // --- 7. REINICIO TOTAL ---
+            this.factorSelected = 1;
+            this.item_unit_type = {};
+            this.label_selected = '';
+            this.form.item_unit_type_id = null;
             
             this.form.description = ''
             this.form.item_id = null
             this.form.quantity = 0;
             this.form.unit_price_value = 0;
             this.readonly_total = 0;
-            // ----------------------------------------
 
             if (this.search_item_by_barcode) {
                 this.cleanItems()
