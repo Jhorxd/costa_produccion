@@ -1756,9 +1756,9 @@ export default {
                     return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
             }
 
-            if(this.form.item.stock <= 0) {
-                return this.$message.error('El producto no cuenta con stock suficiente');
-            }
+            // if(this.form.item.stock <= 0) {
+            //     return this.$message.error('El producto no cuenta con stock suficiente');
+            // }
 
             if (this.recordItem) this.row.aux_index = this.recordItem.aux_index
 
