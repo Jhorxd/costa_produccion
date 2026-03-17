@@ -1526,130 +1526,131 @@ public function item_tables()
     }
 
 
-    public function searchItems(Request $request)
-    {
+public function searchItems(Request $request)
+{
+    $establishment_id = auth()->user()->establishment_id;
+    $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
+    $warehouse_id = ($warehouse) ? $warehouse->id : null;
 
-        // dd($request->all());
-        $establishment_id = auth()->user()->establishment_id;
-        $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
-        $warehouse_id = ($warehouse) ? $warehouse->id : null;
-        /*
-        $items_not_services = $this->getItemsNotServices($request);
-        $items_services = $this->getItemsServices($request);
-        $all_items = $items_not_services->merge($items_services);
+    // 1. Obtenemos los items del controlador de Notas de Venta
+    $items = SearchItemController::getItemsToSaleNote($request);
 
-        $items = collect($all_items)->transform(function($row) use($warehouse_id, $warehouse){
-        */
-        $items = SearchItemController::getItemsToSaleNote($request);
+    // 2. Formateamos las fechas de toda la colección
+    if ($items) {
+        $items = collect($items)->map(function ($item) {
+            
+            // Limpiar fecha de vencimiento principal
+            if (isset($item['date_of_due']) && $item['date_of_due']) {
+                $item['date_of_due'] = \Carbon\Carbon::parse($item['date_of_due'])->format('Y-m-d');
+            }
 
-        /*
-        $items = SearchItemController::getItemsToSaleNote($request)->transform(function ($row) use ($warehouse_id, $warehouse) {
-            $detail = $this->getFullDescription($row, $warehouse);
+            // Limpiar fechas dentro de lots_group
+            if (isset($item['lots_group']) && is_iterable($item['lots_group'])) {
+                $item['lots_group'] = collect($item['lots_group'])->map(function ($lot) {
+                    if (isset($lot['date_of_due']) && $lot['date_of_due']) {
+                        $lot['date_of_due'] = \Carbon\Carbon::parse($lot['date_of_due'])->format('Y-m-d');
+                    }
+                    return $lot;
+                });
+            }
 
-            return [
-                'id' => $row->id,
-                'full_description' => $detail['full_description'],
-                'brand' => $detail['brand'],
-                'category' => $detail['category'],
-                'stock' => $detail['stock'],
-                'description' => $row->description,
-                'currency_type_id' => $row->currency_type_id,
-                'currency_type_symbol' => $row->currency_type->symbol,
-                'sale_unit_price' => round($row->sale_unit_price, 2),
-                'purchase_unit_price' => $row->purchase_unit_price,
-                'unit_type_id' => $row->unit_type_id,
-                'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
-                'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
-                'has_igv' => (bool)$row->has_igv,
-                'lots_enabled' => (bool)$row->lots_enabled,
-                'series_enabled' => (bool)$row->series_enabled,
-                'is_set' => (bool)$row->is_set,
-                'warehouses' => collect($row->warehouses)->transform(function ($row) use ($warehouse_id) {
-                    return [
-                        'warehouse_id' => $row->warehouse->id,
-                        'warehouse_description' => $row->warehouse->description,
-                        'stock' => $row->stock,
-                        'checked' => ($row->warehouse_id == $warehouse_id) ? true : false,
-                    ];
-                }),
-                'item_unit_types' => $row->item_unit_types,
-                'lots' => [],
-                'lots_group' => collect($row->lots_group)->transform(function ($row) {
-                    return [
-                        'id' => $row->id,
-                        'code' => $row->code,
-                        'quantity' => $row->quantity,
-                        'date_of_due' => $row->date_of_due,
-                        'checked' => false
-                    ];
-                }),
-                'lot_code' => $row->lot_code,
-                'date_of_due' => $row->date_of_due
-            ];
+            return $item;
         });
-*/
-        return compact('items');
-
     }
 
+    // 3. Retornamos la data normalizada
+    return compact('items');
+}
 
-    public function searchItemById($id)
-    {
-        return  SearchItemController::getItemsToSaleNote(null, $id);
-        $establishment_id = auth()->user()->establishment_id;
-        $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
-        $search_item = $this->getItemsNotServicesById($id);
 
-        if(count($search_item) == 0){
-            $search_item = $this->getItemsServicesById($id);
-        }
+public function searchItemById($id)
+{
+    // 1. Obtenemos los datos del controlador que manda actualmente
+    $res = SearchItemController::getItemsToSaleNote(null, $id);
 
-        $items = collect($search_item)->transform(function($row) use($warehouse){
-            $detail = $this->getFullDescription($row, $warehouse);
-            return [
-                'id' => $row->id,
-                'full_description' => $detail['full_description'],
-                'brand' => $detail['brand'],
-                'category' => $detail['category'],
-                'stock' => $detail['stock'],
-                'description' => $row->description,
-                'currency_type_id' => $row->currency_type_id,
-                'currency_type_symbol' => $row->currency_type->symbol,
-                'sale_unit_price' => round($row->sale_unit_price, 2),
-                'purchase_unit_price' => $row->purchase_unit_price,
-                'unit_type_id' => $row->unit_type_id,
-                'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
-                'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
-                'has_igv' => (bool)$row->has_igv,
-                'lots_enabled' => (bool)$row->lots_enabled,
-                'series_enabled' => (bool)$row->series_enabled,
-                'is_set' => (bool)$row->is_set,
-                'warehouses' => collect($row->warehouses)->transform(function ($row) use ($warehouse) {
-                    return [
-                        'warehouse_id' => $row->warehouse->id,
-                        'warehouse_description' => $row->warehouse->description,
-                        'stock' => $row->stock,
-                        'checked' => ($row->warehouse_id == $warehouse->id) ? true : false,
-                    ];
-                }),
-                'item_unit_types' => $row->item_unit_types,
-                'lots' => [],
-                'lots_group' => collect($row->lots_group)->transform(function ($row) {
-                    return [
-                        'id' => $row->id,
-                        'code' => $row->code,
-                        'quantity' => $row->quantity,
-                        'date_of_due' => $row->date_of_due,
-                        'checked' => false
-                    ];
-                }),
-                'lot_code' => $row->lot_code,
-                'date_of_due' => $row->date_of_due
-            ];
+    // 2. Si el controlador devuelve datos, formateamos las fechas a string
+    // Usamos collect para manejar tanto arrays como objetos de forma segura
+    if ($res) {
+        $res = collect($res)->map(function ($item) {
+            // Formatear fecha del item principal
+            if (isset($item['date_of_due']) && $item['date_of_due']) {
+                $item['date_of_due'] = \Carbon\Carbon::parse($item['date_of_due'])->format('Y-m-d');
+            }
+
+            // Formatear fechas dentro de lots_group (el selector de lotes)
+            if (isset($item['lots_group']) && is_iterable($item['lots_group'])) {
+                $item['lots_group'] = collect($item['lots_group'])->map(function ($lot) {
+                    if (isset($lot['date_of_due']) && $lot['date_of_due']) {
+                        $lot['date_of_due'] = \Carbon\Carbon::parse($lot['date_of_due'])->format('Y-m-d');
+                    }
+                    return $lot;
+                });
+            }
+            return $item;
         });
 
-        return compact('items');
+        // Retornamos el resultado ya procesado
+        return $res;
     }
+
+    // --- A partir de aquí es tu código original ---
+    // Solo se ejecutaría si SearchItemController devolviera null
+    
+    $establishment_id = auth()->user()->establishment_id;
+    $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
+    $search_item = $this->getItemsNotServicesById($id);
+
+    if(count($search_item) == 0){
+        $search_item = $this->getItemsServicesById($id);
+    }
+
+    $items = collect($search_item)->transform(function($row) use($warehouse){
+        $detail = $this->getFullDescription($row, $warehouse);
+        return [
+            'id' => $row->id,
+            'full_description' => $detail['full_description'],
+            'brand' => $detail['brand'],
+            'category' => $detail['category'],
+            'stock' => $detail['stock'],
+            'description' => $row->description,
+            'currency_type_id' => $row->currency_type_id,
+            'currency_type_symbol' => $row->currency_type->symbol,
+            'sale_unit_price' => round($row->sale_unit_price, 2),
+            'purchase_unit_price' => $row->purchase_unit_price,
+            'unit_type_id' => $row->unit_type_id,
+            'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
+            'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
+            'has_igv' => (bool)$row->has_igv,
+            'lots_enabled' => (bool)$row->lots_enabled,
+            'series_enabled' => (bool)$row->series_enabled,
+            'is_set' => (bool)$row->is_set,
+            'warehouses' => collect($row->warehouses)->transform(function ($row) use ($warehouse) {
+                return [
+                    'warehouse_id' => $row->warehouse->id,
+                    'warehouse_description' => $row->warehouse->description,
+                    'stock' => $row->stock,
+                    'checked' => ($row->warehouse_id == $warehouse->id) ? true : false,
+                ];
+            }),
+            'item_unit_types' => $row->item_unit_types,
+            'lots' => [],
+            'lots_group' => collect($row->lots_group)->transform(function ($row) {
+                return [
+                    'id' => $row->id,
+                    'code' => $row->code,
+                    'quantity' => $row->quantity,
+                    // Formateamos también aquí por si acaso se usa esta lógica
+                    'date_of_due' => $row->date_of_due ? \Carbon\Carbon::parse($row->date_of_due)->format('Y-m-d') : null,
+                    'checked' => false
+                ];
+            }),
+            'lot_code' => $row->lot_code,
+            'date_of_due' => $row->date_of_due ? \Carbon\Carbon::parse($row->date_of_due)->format('Y-m-d') : null,
+        ];
+    });
+
+    return compact('items');
+}
 
 
     public function getFullDescription($row, $warehouse){

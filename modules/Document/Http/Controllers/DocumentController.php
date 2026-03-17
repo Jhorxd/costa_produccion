@@ -283,14 +283,37 @@ class DocumentController extends Controller
     }
 
 
-    public function searchItems(Request $request)
-    {
+public function searchItems(Request $request)
+{
+    // 1. Obtenemos la colección de items según la búsqueda del request
+    $items = SearchItemController::getItemsToDocuments($request);
 
-        $items = SearchItemController::getItemsToDocuments($request);
+    // 2. Formateamos la colección completa para normalizar las fechas
+    if ($items) {
+        $items = collect($items)->map(function ($item) {
+            
+            // Limpiar fecha de vencimiento principal del item
+            if (isset($item['date_of_due']) && $item['date_of_due']) {
+                $item['date_of_due'] = \Carbon\Carbon::parse($item['date_of_due'])->format('Y-m-d');
+            }
 
-        return compact('items');
+            // Limpiar fechas dentro de cada lote en lots_group
+            if (isset($item['lots_group']) && is_iterable($item['lots_group'])) {
+                $item['lots_group'] = collect($item['lots_group'])->map(function ($lot) {
+                    if (isset($lot['date_of_due']) && $lot['date_of_due']) {
+                        $lot['date_of_due'] = \Carbon\Carbon::parse($lot['date_of_due'])->format('Y-m-d');
+                    }
+                    return $lot;
+                });
+            }
 
+            return $item;
+        });
     }
+
+    // 3. Retornamos la colección ya procesada con strings en lugar de objetos Carbon
+    return compact('items');
+}
 
 
     /**
@@ -413,8 +436,33 @@ class DocumentController extends Controller
 
     public function searchItemById($id)
     {
-        // $items = SearchItemController::searchByIdToModal($id);
+        // 1. Obtenemos los items del controlador para Documentos
         $items = SearchItemController::getItemsToDocuments(null, $id);
+
+        // 2. Formateamos las fechas para que sean strings "YYYY-MM-DD"
+        if ($items) {
+            $items = collect($items)->map(function ($item) {
+                
+                // Limpiar fecha del item principal
+                if (isset($item['date_of_due']) && $item['date_of_due']) {
+                    $item['date_of_due'] = \Carbon\Carbon::parse($item['date_of_due'])->format('Y-m-d');
+                }
+
+                // Limpiar fechas dentro de lotes (lots_group)
+                if (isset($item['lots_group']) && is_iterable($item['lots_group'])) {
+                    $item['lots_group'] = collect($item['lots_group'])->map(function ($lot) {
+                        if (isset($lot['date_of_due']) && $lot['date_of_due']) {
+                            $lot['date_of_due'] = \Carbon\Carbon::parse($lot['date_of_due'])->format('Y-m-d');
+                        }
+                        return $lot;
+                    });
+                }
+
+                return $item;
+            });
+        }
+
+        // 3. Retornamos la colección ya procesada
         return compact('items');
     }
 
