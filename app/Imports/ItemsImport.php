@@ -37,13 +37,25 @@ class ItemsImport implements ToCollection
             $total = count($filteredRows);
             $warehouse_id_de = request('warehouse_id');
             $registered = 0;
+            $skipped = 0; // Contador de saltados
+            $skipped_items = []; // Lista de nombres saltados
             unset($filteredRows[0]);
             foreach ($filteredRows as $row) {
 
                 //-----------------------
-                $description = $row[0];
                 $item_type_id = '01';
-                $internal_id = ($row[1])?:null;
+                $description = trim($row[0]);
+                $internal_id = ($row[1]) ?: null;
+
+                // --- VALIDACIÓN DE DUPLICADOS ---
+                if (!$internal_id) {
+                    $existsByDescription = \App\Models\Tenant\Item::where('description', $description)->exists();
+                    if ($existsByDescription) {
+                        $skipped++; // Sumamos al contador
+                        $skipped_items[] = $description; // Guardamos el nombre
+                        continue; 
+                    }
+                }
                 $model = ($row[2]) ? : null;
                 $item_code = ($row[3])?:null;
                 $unit_type_id = $row[4];
@@ -339,7 +351,7 @@ class ItemsImport implements ToCollection
 
                 }
             }
-            $this->data = compact('total', 'registered', 'warehouse_id_de');
+            $this->data = compact('total', 'registered', 'warehouse_id_de', 'skipped', 'skipped_items');
 
     }
 

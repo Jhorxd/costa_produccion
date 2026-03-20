@@ -1221,33 +1221,62 @@ class ItemController extends Controller
     }
 
 
-    public function import(Request $request)
-    {
-        $request->validate([
-            'warehouse_id' => 'required|numeric|min:1'
-        ]);
-        if ($request->hasFile('file')) {
-            try {
-                $import = new ItemsImport();
-                $import->import($request->file('file'), null, Excel::XLSX);
-                $data = $import->getData();
-                return [
-                    'success' => true,
-                    'message' =>  __('app.actions.upload.success'),
-                    'data' => $data
-                ];
-            } catch (Exception $e) {
+public function import(Request $request)
+{
+    $request->validate([
+        'warehouse_id' => 'required|numeric|min:1',
+        'file' => 'required|file|mimes:xlsx,xls'
+    ]);
+
+    if ($request->hasFile('file')) {
+        try {
+            // --- ESCUDO PARA ARCHIVOS GIGANTES ---
+            $rows = \Maatwebsite\Excel\Facades\Excel::toArray([], $request->file('file'));
+            $totalRows = isset($rows[0]) ? count($rows[0]) - 1 : 0; 
+
+            if ($totalRows > 500) {
                 return [
                     'success' => false,
-                    'message' =>  $e->getMessage()
+                    'message' => "El archivo tiene {$totalRows} filas. El límite máximo es de 500 para evitar saturar el sistema."
                 ];
             }
+            // --- FIN DEL ESCUDO ---
+
+            $import = new ItemsImport();
+            $import->import($request->file('file'), null, \Maatwebsite\Excel\Excel::XLSX);
+            
+            // Obtenemos el array con total, registered, skipped y skipped_items
+            $data = $import->getData();
+
+            // Construcción del mensaje dinámico
+            $registeredCount = $data['registered'] ?? 0;
+            $skippedCount = $data['skipped'] ?? 0;
+            
+            $message = "Importación finalizada. Registrados/Actualizados: {$registeredCount}.";
+            
+            if ($skippedCount > 0) {
+                $message .= " Se omitieron {$skippedCount} productos porque sus descripciones ya existen en la base de datos.";
+            }
+
+            return [
+                'success' => true,
+                'message' => $message,
+                'data' => $data
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => "Error en la línea {$e->getLine()}: " . $e->getMessage()
+            ];
         }
-        return [
-            'success' => false,
-            'message' =>  __('app.actions.upload.error'),
-        ];
     }
+
+    return [
+        'success' => false,
+        'message' => __('app.actions.upload.error'),
+    ];
+}
 
     public function importRestaurant(Request $request)
     {

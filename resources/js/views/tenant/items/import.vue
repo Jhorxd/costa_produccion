@@ -80,32 +80,80 @@
                 this.titleDialog = 'Importar Productos'
             },
             async submit() {
-                if (! this.form.warehouse_id) {
+                // 1. Evitar múltiples clics si ya está cargando
+                if (this.loading_submit) return;
+
+                // 2. Validaciones previas
+                if (!this.form.warehouse_id) {
                     this.$message.warning('Seleccione un almacén para poder continuar');
                     return;
                 }
-                this.loading_submit = true
-                await this.$refs.upload.submit()
-                this.loading_submit = false
+
+                if (this.$refs.upload.uploadFiles.length === 0) {
+                    this.$message.warning('Seleccione un archivo xlsx');
+                    return;
+                }
+
+                // 3. Bloquear el botón
+                this.loading_submit = true;
+
+                // 4. Disparar la subida (esto es asíncrono pero no devuelve promesa)
+                this.$refs.upload.submit();
+
+                // OJO: No pongas "this.loading_submit = false" aquí.
+                // El botón se desbloqueará en successUpload() o errorUpload().
             },
             close() {
                 this.$emit('update:showDialog', false)
                 this.initForm()
             },
-            successUpload(response, file, fileList) {
-                if (response.success) {
-                    this.$message.success(response.message)
-                    this.$eventHub.$emit('reloadData')
-                    this.$eventHub.$emit('reloadTables')
-                    this.$refs.upload.clearFiles()
-                    this.close()
-                } else {
-                    this.$message({message:response.message, type: 'error'})
-                }
-            },
-            errorUpload(error) {
-                console.log(error)
-            }
+successUpload(response, file, fileList) {
+    this.loading_submit = false;
+
+    if (response.success) {
+        // Si hay omitidos, usamos un formato de notificación más persistente
+        if (response.data && response.data.skipped > 0) {
+            this.$notify({
+                title: 'Importación Completada',
+                message: response.message,
+                type: 'warning',
+                duration: 0 // No se cierra solo para que el usuario lo lea bien
+            });
+        } else {
+            this.$message.success(response.message);
+        }
+
+        this.$eventHub.$emit('reloadData')
+        this.$eventHub.$emit('reloadTables')
+        this.$refs.upload.clearFiles()
+        this.close()
+    } else {
+        this.$message({
+            message: response.message, 
+            type: 'error',
+            duration: 8000 // Más tiempo para errores de validación
+        })
+    }
+},
+
+errorUpload(error) {
+    this.loading_submit = false;
+    try {
+        const res = JSON.parse(error.message);
+        
+        // Si el error viene de una validación de Laravel ($request->validate)
+        if (res.errors) {
+            const firstError = Object.values(res.errors)[0][0];
+            this.$message.error(firstError);
+        } else if (res.message) {
+            this.$message.error(res.message);
+        } else {
+            this.$message.error('Error desconocido en el servidor.');
+        }
+    } catch (e) {
+        this.$message.error('Error fatal: El archivo es muy pesado o el formato es incorrecto.');
+    }
+}
         }
     }
 </script>
